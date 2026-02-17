@@ -1,0 +1,56 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.4.2/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "ignoreUnknown": false,
+        "includes": [
+            "src/**",
+            "test/**",
+            "biome.json",
+            "jest.config.js",
+            "nest-cli.json",
+            "package.json",
+            "tsconfig.node.json",
+            "tsconfig.app.json",
+            "tsconfig.json",
+            ".editorconfig",
+            ".vscode/settings.json",
+            "!package-lock.json"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "suspicious": { "noExplicitAny": "error" },
+            "nursery": { "noFloatingPromises": "off" },
+            "style": { "useImportType": "off" }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "trailingCommas": "all"
+        },
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        }
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    }
+}
