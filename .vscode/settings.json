@@ -3,6 +3,7 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports.biome": "explicit"
     },
+    "css.lint.unknownAtRules": "ignore",
     "[javascript]": {
         "editor.defaultFormatter": "biomejs.biome"
     },

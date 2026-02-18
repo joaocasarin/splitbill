@@ -11,8 +11,8 @@
             "src/**",
             "test/**",
             "biome.json",
-            "jest.config.js",
-            "nest-cli.json",
+            "components.json",
+            "vite.config.ts",
             "package.json",
             "tsconfig.node.json",
             "tsconfig.app.json",
@@ -43,6 +43,11 @@
         },
         "parser": {
             "unsafeParameterDecoratorsEnabled": true
+        }
+    },
+    "css": {
+        "parser": {
+            "tailwindDirectives": true
         }
     },
     "assist": {
