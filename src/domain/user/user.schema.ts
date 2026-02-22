@@ -1,7 +1,7 @@
 import z from "zod";
 import { EntityIdSchema } from "../common/entity-id.schema";
 
-export const MemberSchema = z.object({
+export const UserSchema = z.object({
     id: EntityIdSchema,
     name: z
         .string()
@@ -9,4 +9,4 @@ export const MemberSchema = z.object({
         .max(25, { error: "Name cannot exceed 25 characters" }),
 });
 
-export type Member = z.infer<typeof MemberSchema>;
+export type User = z.infer<typeof UserSchema>;

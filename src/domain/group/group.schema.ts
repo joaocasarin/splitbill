@@ -1,7 +1,6 @@
 import z from "zod";
 import { EntityIdSchema } from "../common/entity-id.schema";
 import { ExpenseSchema } from "../expense/expense.schema";
-import { MemberSchema } from "../member/member.schema";
 import { SettlementSchema } from "../settlement/settlement.schema";
 
 export const GroupSchema = z
@@ -11,14 +10,13 @@ export const GroupSchema = z
             .string()
             .min(4, { error: "Group name must be at least 4 characters" })
             .max(20, { error: "Group name cannot exceed 20 characters" }),
-        members: z
-            .array(MemberSchema)
+        memberIds: z
+            .array(EntityIdSchema)
             .min(2)
-            .refine(
-                (members) =>
-                    new Set(members.map((m) => m.id)).size === members.length,
-                { error: "Duplicate member IDs in group", path: ["members"] },
-            ),
+            .refine((ids) => new Set(ids).size === ids.length, {
+                error: "Duplicate member IDs in group",
+                path: ["memberIds"],
+            }),
         expenses: z.array(ExpenseSchema),
         settlements: z.array(SettlementSchema),
     })
@@ -41,7 +39,7 @@ export const GroupSchema = z
             });
         }
 
-        const memberIds = new Set(data.members.map((m) => m.id));
+        const memberIds = new Set(data.memberIds.map((id) => id));
         data.expenses.forEach((expense, ei) => {
             if (!memberIds.has(expense.payerId)) {
                 ctx.addIssue({
