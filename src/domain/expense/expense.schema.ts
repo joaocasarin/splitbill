@@ -14,7 +14,6 @@ const BaseExpenseFields = {
         .max(50, { error: "Title cannot exceed 50 characters" }),
     total: ExpenseTotalSchema,
     payerId: EntityIdSchema,
-    createdAt: z.iso.datetime(),
 };
 
 export const EqualExpenseSchema = z.object({
