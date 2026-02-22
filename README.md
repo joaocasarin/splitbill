@@ -1,73 +1,136 @@
-# React + TypeScript + Vite
+# Expense Sharing Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A fully client-side deterministic expense splitting application built with React and Vite.
 
-Currently, two official plugins are available:
+No backend.  
+No authentication.  
+Fully shareable via URL.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Table of Contents
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+1. [Overview](#1-overview)
+2. [Features](#2-features)
+3. [Architecture](#3-architecture)
+4. [State Management](#4-state-management)
+5. [Money Handling](#5-money-handling)
+6. [URL Sharing](#6-url-sharing)
+7. [Financial Invariants](#7-financial-invariants)
+8. [Future Roadmap](#8-future-roadmap)
+9. [Documentation](#9-documentation)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 1. Overview
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+This application allows users to:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Create users
+- Create groups
+- Add expenses
+- Register settlements
+- View dynamic balances
+- Share full application state via URL
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The system is designed with strong domain consistency and financial determinism.
+
+---
+
+## 2. Features
+
+- Integer-based money system (cents only)
+- Equal, fixed, and percentage split modes
+- Partial settlements supported
+- Deterministic balance computation
+- Full state sharing via compressed URL
+
+---
+
+## 3. Architecture
+
+The application state is structured as:
+
+```
+Global
+├── version
+├── users[]
+└── groups[]
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Users are global.  
+Groups reference users by ID.  
+Balances are computed dynamically — never stored.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 4. State Management
+
+No backend is used.
+
+The entire state is:
+
 ```
+JSON → compressed → URI encoded → stored in URL
+```
+
+Opening the link restores the exact application state.
+
+---
+
+## 5. Money Handling
+
+All monetary values use integer cents.
+
+Examples:
+- `1` = R$ 0.01
+- `100` = R$ 1.00
+
+No floating point arithmetic is used anywhere in the system.
+
+Percentages use basis points:
+- `10000` = 100%
+- `5000` = 50%
+- `1` = 0.01%
+
+---
+
+## 6. URL Sharing
+
+State is serialized using:
+
+1. `JSON.stringify`
+2. LZ-based compression
+3. `encodeURIComponent`
+
+Stored as `?state=...`
+
+If invalid or missing state is detected on load, an error screen is shown.
+
+---
+
+## 7. Financial Invariants
+
+The system guarantees:
+
+- Sum of all member balances in a group = `0`
+- No money is created or destroyed
+- All balances are derived state — never stored
+
+---
+
+## 8. Future Roadmap
+
+- Timestamps (`createdAt`, `updatedAt`) on all entities
+- Soft delete for users (`deletedAt`)
+- Member removal from groups
+- Debt simplification algorithm
+- Editing expenses and settlements
+- Migration system for version upgrades
+
+## 9. Documentation
+
+| File | Scope |
+|---|---|
+| [`DOMAIN_SPEC.md`](./DOMAIN_SPEC.md) | Schemas, business rules, validation architecture, design decisions |
+| [`APP_SPEC.md`](./APP_SPEC.md) | Tech stack, architecture, persistence strategy, roadmap |
