@@ -1,6 +1,6 @@
+import { EntityIdSchema } from "@domain/common";
+import { ShareAmountSchema } from "@domain/money";
 import { z } from "zod";
-import { EntityIdSchema } from "../common/entity-id.schema";
-import { ShareAmountSchema } from "../money/money.schema";
 
 export const SettlementSchema = z
     .object({

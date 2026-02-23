@@ -1,5 +1,5 @@
+import { EntityIdSchema } from "@domain/common";
 import z from "zod";
-import { EntityIdSchema } from "../common/entity-id.schema";
 
 export const UserSchema = z.object({
     id: EntityIdSchema,

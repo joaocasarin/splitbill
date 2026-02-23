@@ -1,6 +1,6 @@
+import { EntityIdSchema } from "@domain/common";
+import { ExpenseTotalSchema } from "@domain/money";
 import z from "zod";
-import { EntityIdSchema } from "../common/entity-id.schema";
-import { ExpenseTotalSchema } from "../money/money.schema";
 import {
     MoneyShareSchema,
     PercentageShareSchema,

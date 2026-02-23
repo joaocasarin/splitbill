@@ -1,7 +1,7 @@
+import { EntityIdSchema } from "@domain/common";
+import { ExpenseSchema } from "@domain/expense";
+import { SettlementSchema } from "@domain/settlement";
 import z from "zod";
-import { EntityIdSchema } from "../common/entity-id.schema";
-import { ExpenseSchema } from "../expense/expense.schema";
-import { SettlementSchema } from "../settlement/settlement.schema";
 
 export const GroupSchema = z
     .object({
@@ -39,7 +39,7 @@ export const GroupSchema = z
             });
         }
 
-        const memberIds = new Set(data.memberIds.map((id) => id));
+        const memberIds = new Set(data.memberIds);
         data.expenses.forEach((expense, ei) => {
             if (!memberIds.has(expense.payerId)) {
                 ctx.addIssue({

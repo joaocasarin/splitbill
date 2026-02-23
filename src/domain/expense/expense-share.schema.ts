@@ -1,7 +1,6 @@
+import { EntityIdSchema } from "@domain/common";
+import { PercentageBasePointSchema, ShareAmountSchema } from "@domain/money";
 import z from "zod";
-import { EntityIdSchema } from "../common/entity-id.schema";
-import { ShareAmountSchema } from "../money/money.schema";
-import { PercentageBasePointSchema } from "../money/percentage.schema";
 
 export const MoneyShareSchema = z.object({
     memberId: EntityIdSchema,
