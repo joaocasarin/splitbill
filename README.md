@@ -132,5 +132,5 @@ The system guarantees:
 
 | File | Scope |
 |---|---|
-| [`DOMAIN_SPEC.md`](./DOMAIN_SPEC.md) | Schemas, business rules, validation architecture, design decisions |
 | [`APP_SPEC.md`](./APP_SPEC.md) | Tech stack, architecture, persistence strategy, roadmap |
+| [`DOMAIN_SPEC.md`](./DOMAIN_SPEC.md) | Schemas, business rules, validation architecture, design decisions |
