@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-02-22 5:04am UTC-3  
+> **Last updated:** 2026-02-23 2:28am UTC-3  
 > **Status:** Draft
 
 ---
@@ -231,7 +231,7 @@ All monetary values are stored as **integers in cents (BRL)**. No floats anywher
 |---|---|---|---|
 | `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; distribute remainder randomly among participants |
 | `fixed` | `shares[]{memberId, value}` | No duplicates; sum = total | Direct use |
-| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding distributed randomly among participants |
+| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the first participant in the list |
 
 ---
 

@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-22 5:04am UTC-3  
+> **Last updated:** 2026-02-23 2:28am UTC-3  
 > **Status:** Draft
 
 ---
@@ -126,8 +126,8 @@ Two pure functions to implement in `src/domain/balance/`:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
   - For each settlement: `from.balance += amount`, `to.balance -= amount`
   - Handle all three split modes including bps → cents conversion for percentage
-  - Equal split: `Math.floor(total / n)` per member, remainder distributed randomly among participants
-  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding distributed randomly among participants
+  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first participant in the list
+  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first participant in the list
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
