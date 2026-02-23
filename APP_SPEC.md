@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-23 2:28am UTC-3  
+> **Last updated:** 2026-02-23  
 > **Status:** Draft
 
 ---
@@ -119,7 +119,7 @@ URL has no ?state= param
 
 Two pure functions to implement in `src/domain/balance/`:
 
-**`compute-balances.ts`**
+**`compute-balances.ts`** ✅ _Implemented_
 - Input: `Group`
 - Output: `MemberBalance[]`
 - Logic:

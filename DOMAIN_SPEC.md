@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-02-23 2:28am UTC-3  
+> **Last updated:** 2026-02-23  
 > **Status:** Draft
 
 ---
@@ -322,6 +322,7 @@ The rule `sum(shares) === total` in `FixedExpenseSchema` is a cross-field valida
 src/domain/
 ├── balance/
 │   └── balance.schema.ts        # MemberBalanceSchema, SimplifiedDebtSchema
+│   └── compute-balances.ts      # computeBalances()
 ├── common/
 │   └── entity-id.schema.ts      # EntityIdSchema
 |   └── constants.ts             # BPS_TOTAL, BPS_MIN...
