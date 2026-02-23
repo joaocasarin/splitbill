@@ -324,6 +324,7 @@ src/domain/
 │   └── balance.schema.ts        # MemberBalanceSchema, SimplifiedDebtSchema
 ├── common/
 │   └── entity-id.schema.ts      # EntityIdSchema
+|   └── constants.ts             # BPS_TOTAL, BPS_MIN...
 ├── expense/
 │   ├── expense-share.schema.ts  # MoneyShareSchema, PercentageShareSchema
 │   └── expense.schema.ts        # EqualExpense, FixedExpense, PercentageExpense, Expense
