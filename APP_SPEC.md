@@ -120,7 +120,7 @@ URL has no ?state= param
 Two pure functions to implement in `src/domain/balance/`:
 
 **`compute-balances.ts`**
-- Input: `Group` + `User[]` (for name resolution, optional)
+- Input: `Group`
 - Output: `MemberBalance[]`
 - Logic:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
