@@ -1,4 +1,11 @@
-import { EntityIdSchema } from "@domain/common";
+import {
+    BPS_TOTAL,
+    EntityIdSchema,
+    EQUAL_SPLIT_MEMBERS_MIN,
+    EXPENSE_SHARES_MIN,
+    EXPENSE_TITLE_MAX,
+    EXPENSE_TITLE_MIN,
+} from "@domain/common";
 import { ExpenseTotalSchema } from "@domain/money";
 import z from "zod";
 import {
@@ -10,8 +17,12 @@ const BaseExpenseFields = {
     id: EntityIdSchema,
     title: z
         .string()
-        .min(3, { error: "Title must be at least 3 characters" })
-        .max(50, { error: "Title cannot exceed 50 characters" }),
+        .min(EXPENSE_TITLE_MIN, {
+            error: `Title must be at least ${EXPENSE_TITLE_MIN} characters`,
+        })
+        .max(EXPENSE_TITLE_MAX, {
+            error: `Title cannot exceed ${EXPENSE_TITLE_MAX} characters`,
+        }),
     total: ExpenseTotalSchema,
     payerId: EntityIdSchema,
 };
@@ -21,7 +32,7 @@ export const EqualExpenseSchema = z.object({
     splitMode: z.literal("equal"),
     memberIds: z
         .array(EntityIdSchema)
-        .min(2)
+        .min(EQUAL_SPLIT_MEMBERS_MIN)
         .refine((ids) => new Set(ids).size === ids.length, {
             error: "memberIds cannot contain duplicates",
             path: ["memberIds"],
@@ -34,7 +45,7 @@ export const FixedExpenseSchema = z
         splitMode: z.literal("fixed"),
         shares: z
             .array(MoneyShareSchema)
-            .min(1)
+            .min(EXPENSE_SHARES_MIN)
             .refine(
                 (shares) =>
                     new Set(shares.map((s) => s.memberId)).size ===
@@ -58,14 +69,15 @@ export const PercentageExpenseSchema = z.object({
     splitMode: z.literal("percentage"),
     shares: z
         .array(PercentageShareSchema)
-        .min(1)
+        .min(EXPENSE_SHARES_MIN)
         .refine(
             (shares) =>
                 new Set(shares.map((s) => s.memberId)).size === shares.length,
             { error: "Duplicate memberIds in shares", path: ["shares"] },
         )
         .refine(
-            (shares) => shares.reduce((acc, s) => acc + s.value, 0) === 10000,
+            (shares) =>
+                shares.reduce((acc, s) => acc + s.value, 0) === BPS_TOTAL,
             { error: "Percentages must sum to 100%", path: ["shares"] },
         ),
 });

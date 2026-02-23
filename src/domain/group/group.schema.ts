@@ -1,4 +1,9 @@
-import { EntityIdSchema } from "@domain/common";
+import {
+    EntityIdSchema,
+    GROUP_MEMBERS_MIN,
+    GROUP_NAME_MAX,
+    GROUP_NAME_MIN,
+} from "@domain/common";
 import { ExpenseSchema } from "@domain/expense";
 import { SettlementSchema } from "@domain/settlement";
 import z from "zod";
@@ -8,11 +13,15 @@ export const GroupSchema = z
         id: EntityIdSchema,
         name: z
             .string()
-            .min(4, { error: "Group name must be at least 4 characters" })
-            .max(20, { error: "Group name cannot exceed 20 characters" }),
+            .min(GROUP_NAME_MIN, {
+                error: `Group name must be at least ${GROUP_NAME_MIN} characters`,
+            })
+            .max(GROUP_NAME_MAX, {
+                error: `Group name cannot exceed ${GROUP_NAME_MAX} characters`,
+            }),
         memberIds: z
             .array(EntityIdSchema)
-            .min(2)
+            .min(GROUP_MEMBERS_MIN)
             .refine((ids) => new Set(ids).size === ids.length, {
                 error: "Duplicate member IDs in group",
                 path: ["memberIds"],
