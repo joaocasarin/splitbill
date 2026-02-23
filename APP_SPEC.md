@@ -29,6 +29,7 @@ A **100% client-side** expense sharing web app (Splitwise-style) with no backend
 | Concern | Decision |
 |---|---|
 | Framework | React + Vite |
+| Testing | Vitest |
 | Schema & Validation | Zod v4 |
 | State persistence | URL (JSON → LZ compression → URI encode) |
 | Backend | None |
