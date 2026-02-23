@@ -29,6 +29,7 @@ A **100% client-side** expense sharing web app (Splitwise-style) with no backend
 | Concern | Decision |
 |---|---|
 | Framework | React + Vite |
+| Testing | Vitest |
 | Schema & Validation | Zod v4 |
 | State persistence | URL (JSON → LZ compression → URI encode) |
 | Backend | None |
@@ -89,20 +90,28 @@ Display an error screen. Do not attempt partial hydration.
 
 ## 5. ID Generation Strategy
 
-IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated in memory by a centralized `createId()` utility that maintains a counter.
+IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `user`, `group`, `expense`, and `settlement`.
 
-**Why integers instead of strings (uuid/nanoid)?**  
-Integer IDs produce a smaller URL payload and are simpler to generate without a library. Since there is no backend or multi-device sync, collision risk is zero within a single session.
+**Why per-type counters?**
+Each domain enforces ID uniqueness within its own scope — user IDs among users, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
+
+**Counter initialization:**
+When loading state from URL, `createIdGenerator` is called with the loaded `Global` — it scans all existing IDs and initializes each counter to `max(existingIds)` for that type. When starting from empty state, all counters start at `0` and the first generated ID of each type is `1`.
 
 > **Future consideration:** If multi-device sync or collaborative editing is ever needed, IDs should migrate to strings (nanoid or uuid) to avoid collisions across independent sessions.
 
 ---
 
 ## 6. Initial Load Behavior
-
 ```
 URL has ?state= param
-    └── valid → hydrate app
+    └── valid
+        └── URI decode
+        └── LZ decompress
+        └── JSON.parse
+        └── GlobalSchema.parse(data)     ← Zod validates full state
+        └── createIdGenerator(global)    ← initializes ID counters
+        └── hydrate app
     └── invalid → show error screen
 
 URL has no ?state= param

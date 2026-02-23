@@ -321,11 +321,12 @@ The rule `sum(shares) === total` in `FixedExpenseSchema` is a cross-field valida
 ```
 src/domain/
 ├── balance/
-│   └── balance.schema.ts        # MemberBalanceSchema, SimplifiedDebtSchema
+│   ├── balance.schema.ts        # MemberBalanceSchema, SimplifiedDebtSchema
 │   └── compute-balances.ts      # computeBalances()
 ├── common/
+│   ├── constants.ts             # BPS_TOTAL, BPS_MIN...
+│   ├── create-id.ts             # createIdGenerator()
 │   └── entity-id.schema.ts      # EntityIdSchema
-|   └── constants.ts             # BPS_TOTAL, BPS_MIN...
 ├── expense/
 │   ├── expense-share.schema.ts  # MoneyShareSchema, PercentageShareSchema
 │   └── expense.schema.ts        # EqualExpense, FixedExpense, PercentageExpense, Expense

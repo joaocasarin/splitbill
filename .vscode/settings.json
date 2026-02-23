@@ -4,6 +4,7 @@
         "source.organizeImports.biome": "explicit"
     },
     "css.lint.unknownAtRules": "ignore",
+    "typescript.preferences.importModuleSpecifier": "non-relative",
     "[javascript]": {
         "editor.defaultFormatter": "biomejs.biome"
     },
