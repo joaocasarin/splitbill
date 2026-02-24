@@ -224,6 +224,18 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 | Balance | Member's balance in the group must be 0 before removal |
 | History | Member's past expenses and settlements remain in the group unchanged |
 
+### Referential integrity conflict
+
+The current schema enforces that all expense and settlement references must exist in `group.memberIds`. This is intentionally strict for the current version.
+
+When member removal and soft delete are implemented, the referential integrity model must be revised. Two approaches are being considered:
+
+**Option A — Historical roster:** `memberIds` becomes the full historical roster. A separate `activeMemberIds` field tracks current active members. Validation splits: structural references check against `memberIds`, new expense/settlement creation checks against `activeMemberIds`.
+
+**Option B — Relaxed validation:** References in historical expenses and settlements are no longer validated against `memberIds`. Only new expenses and settlements validate against active members.
+
+This decision is deferred until soft delete and member removal are implemented.
+
 ---
 
 ### 8.4 Multi-currency (not in scope)
