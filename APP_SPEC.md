@@ -16,6 +16,7 @@
 6. [Initial Load Behavior](#6-initial-load-behavior)
 7. [Schema Version](#7-schema-version)
 8. [Roadmap & Pending Decisions](#8-roadmap--pending-decisions)
+9. [Business Rules](#9-business-rules)
 
 ---
 
@@ -64,6 +65,20 @@ When lookup performance is needed (e.g., inside calculation functions), arrays a
 
 **Balances are never stored.** They are always computed on demand from expenses and settlements. This keeps the URL payload minimal and prevents stored balance from ever diverging from the actual transaction history.
 
+### Migration path to backend
+
+The domain layer (`src/domain/`) is framework-agnostic by design. If a backend is added in the future:
+
+| Responsibility | Today | With backend |
+|---|---|---|
+| Schemas and types | `src/domain/` | unchanged |
+| Structural validation | Zod (domain layer) | unchanged |
+| Business rules | `src/domain/*.rules.ts` | move to backend `services/` |
+| Persistence | URL | database |
+| Client state | Zustand + URL | Zustand + API calls |
+
+Business rules are isolated in pure `*.rules.ts` functions today precisely to make this migration a file move, not a refactor.
+
 ---
 
 ## 4. State Persistence Strategy
@@ -92,6 +107,8 @@ Display an error screen. Do not attempt partial hydration.
 ## 5. ID Generation Strategy
 
 IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `user`, `group`, `expense`, and `settlement`.
+
+In practice, URL size limits (see [§6](#6-initial-load-behavior)) will be reached long before integer overflow becomes a concern.
 
 **Why per-type counters?**
 Each domain enforces ID uniqueness within its own scope — user IDs among users, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
@@ -241,3 +258,21 @@ This decision is deferred until soft delete and member removal are implemented.
 ### 8.4 Multi-currency (not in scope)
 
 Current version is BRL only. If added in the future, `Expense` would gain a `currency` field and balance computation would need exchange rate handling. Not planned.
+
+## 9. Business Rules
+
+Business rules are enforced at the UI and store layer — not at the schema layer. The schema validates structural correctness only.
+
+### 9.1 Settlement creation
+
+A settlement can only be created between two members with an active debt:
+
+- `fromMemberId` must have a negative balance in the group (owes money)
+- `toMemberId` must have a positive balance in the group (is owed money)
+- The amount must not exceed the outstanding balance of `fromMemberId`
+
+These rules are enforced by computing `computeBalances(group)` before presenting settlement options to the user. Only eligible members are shown in the UI.
+
+**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation()`
+
+> **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
