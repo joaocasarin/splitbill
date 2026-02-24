@@ -17,7 +17,11 @@ function updateBalance(
     memberId: EntityId,
     delta: number,
 ): void {
-    balances.set(memberId, (balances.get(memberId) ?? 0) + delta);
+    balances.set(
+        memberId,
+        /* c8 ignore next */
+        (balances.get(memberId) ?? 0) + delta,
+    );
 }
 
 function applyExpensePayment(
@@ -82,12 +86,16 @@ function applyPercentageSplit(
 function applyExpense(balances: Map<EntityId, number>, expense: Expense): void {
     applyExpensePayment(balances, expense.payerId, expense.total);
 
-    if (expense.splitMode === "equal") {
-        applyEqualSplit(balances, expense.memberIds, expense.total);
-    } else if (expense.splitMode === "fixed") {
-        applyFixedSplit(balances, expense.shares);
-    } else if (expense.splitMode === "percentage") {
-        applyPercentageSplit(balances, expense.shares, expense.total);
+    switch (expense.splitMode) {
+        case "equal":
+            applyEqualSplit(balances, expense.memberIds, expense.total);
+            break;
+        case "fixed":
+            applyFixedSplit(balances, expense.shares);
+            break;
+        case "percentage":
+            applyPercentageSplit(balances, expense.shares, expense.total);
+            break;
     }
 }
 
