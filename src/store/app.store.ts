@@ -3,6 +3,7 @@ import { createIdGenerator } from "@domain/common/create-id";
 import type { Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Settlement } from "@domain/settlement";
+import type { User } from "@domain/user";
 import { create } from "zustand";
 
 type AppStatus = "empty" | "loaded" | "error";
@@ -73,7 +74,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         url.searchParams.set("state", encoded);
         window.history.replaceState(null, "", url.toString());
     },
-    addUser: () => {},
+    addUser: (name: string) => {
+        const { global, createId, syncToUrl } = get();
+        const newUser: User = {
+            id: createId("user"),
+            name,
+        };
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                users: [...global.users, newUser],
+            },
+        });
+        syncToUrl();
+    },
     addGroup: () => {},
     addExpense: () => {},
     addSettlement: () => {},
