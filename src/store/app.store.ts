@@ -59,7 +59,13 @@ export const useAppStore = create<AppStore>()((set, _get) => ({
             set({ status: "error" });
         }
     },
-    initEmpty: () => {},
+    initEmpty: () => {
+        set({
+            status: "empty",
+            global: emptyGlobal,
+            createId: createIdGenerator(emptyGlobal),
+        });
+    },
     syncToUrl: () => {},
     addUser: () => {},
     addGroup: () => {},
