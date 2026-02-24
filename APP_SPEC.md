@@ -94,6 +94,8 @@ Display an error screen. Do not attempt partial hydration.
 
 IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `user`, `group`, `expense`, and `settlement`.
 
+In practice, URL size limits (see [§6](#6-initial-load-behavior)) will be reached long before integer overflow becomes a concern.
+
 **Why per-type counters?**
 Each domain enforces ID uniqueness within its own scope — user IDs among users, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
 
