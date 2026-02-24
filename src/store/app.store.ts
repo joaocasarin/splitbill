@@ -127,5 +127,29 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
-    addSettlement: () => {},
+    addSettlement: (groupId: EntityId, settlement: Omit<Settlement, "id">) => {
+        const { global, createId, syncToUrl } = get();
+        const newSettlement: Settlement = {
+            ...settlement,
+            id: createId("settlement"),
+        };
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((group) =>
+                    group.id === groupId
+                        ? {
+                              ...group,
+                              settlements: [
+                                  ...group.settlements,
+                                  newSettlement,
+                              ],
+                          }
+                        : group,
+                ),
+            },
+        });
+        syncToUrl();
+    },
 }));
