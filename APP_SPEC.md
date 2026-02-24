@@ -16,6 +16,7 @@
 6. [Initial Load Behavior](#6-initial-load-behavior)
 7. [Schema Version](#7-schema-version)
 8. [Roadmap & Pending Decisions](#8-roadmap--pending-decisions)
+9. [Business Rules](#9-business-rules)
 
 ---
 
@@ -241,3 +242,19 @@ This decision is deferred until soft delete and member removal are implemented.
 ### 8.4 Multi-currency (not in scope)
 
 Current version is BRL only. If added in the future, `Expense` would gain a `currency` field and balance computation would need exchange rate handling. Not planned.
+
+## 9. Business Rules
+
+Business rules are enforced at the UI and store layer — not at the schema layer. The schema validates structural correctness only.
+
+### 9.1 Settlement creation
+
+A settlement can only be created between two members with an active debt:
+
+- `fromMemberId` must have a negative balance in the group (owes money)
+- `toMemberId` must have a positive balance in the group (is owed money)
+- The amount must not exceed the outstanding balance of `fromMemberId`
+
+These rules are enforced by computing `computeBalances(group)` before presenting settlement options to the user. Only eligible members are shown in the UI.
+
+> **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
