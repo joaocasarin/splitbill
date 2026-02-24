@@ -34,7 +34,7 @@ const emptyGlobal: Global = {
     groups: [],
 };
 
-export const useAppStore = create<AppStore>()((set, _get) => ({
+export const useAppStore = create<AppStore>()((set, get) => ({
     status: "empty",
     global: emptyGlobal,
     createId: createIdGenerator(emptyGlobal),
@@ -66,7 +66,13 @@ export const useAppStore = create<AppStore>()((set, _get) => ({
             createId: createIdGenerator(emptyGlobal),
         });
     },
-    syncToUrl: () => {},
+    syncToUrl: () => {
+        const { global } = get();
+        const encoded = encodeURIComponent(JSON.stringify(global));
+        const url = new URL(window.location.href);
+        url.searchParams.set("state", encoded);
+        window.history.replaceState(null, "", url.toString());
+    },
     addUser: () => {},
     addGroup: () => {},
     addExpense: () => {},
