@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-23  
+> **Last updated:** 2026-02-24  
 > **Status:** Draft
 
 ---
@@ -14,7 +14,8 @@
 4. [State Persistence Strategy](#4-state-persistence-strategy)
 5. [ID Generation Strategy](#5-id-generation-strategy)
 6. [Initial Load Behavior](#6-initial-load-behavior)
-7. [Roadmap & Pending Decisions](#7-roadmap--pending-decisions)
+7. [Schema Version](#7-schema-version)
+8. [Roadmap & Pending Decisions](#8-roadmap--pending-decisions)
 
 ---
 
@@ -120,11 +121,48 @@ URL has no ?state= param
             └── only then can a Group be created
 ```
 
+### URL size considerations
+
+The entire state is stored in the URL. Browser and platform limits apply:
+
+| Context | Practical limit |
+|---|---|
+| Modern browsers | ~64KB |
+| Sharing platforms (WhatsApp, Twitter, etc.) | often much lower |
+
+The LZ compression reduces payload significantly, but large states (many groups, expenses, or settlements) may approach these limits. No hard cap is enforced by the application — it is the user's responsibility to be aware of this constraint.
+
+**If the URL becomes too long:**
+- Browsers may silently truncate it
+- Sharing platforms may reject or truncate it
+- The app will show an error screen on load (invalid state)
+
+There is no planned mitigation. This is an accepted architectural tradeoff of the URL-based persistence model.
+
 ---
 
-## 7. Roadmap & Pending Decisions
+## 7. Schema Version
 
-### 7.1 Calculation functions (immediate next step)
+The `Global` state includes a `version` field — a positive integer that identifies the schema version used to serialize the state.
+
+**Current version:** `1`
+
+**Purpose:**
+- Allows future migrations when the schema changes in a breaking way
+- On load, the app can detect outdated state and either migrate or reject it
+
+**Current behavior:**
+The version field is validated as a positive integer but not checked against any expected value. No migration logic exists yet.
+
+**Future behavior (when migrations are needed):**
+1. Read `version` from the parsed state
+2. If `version < currentVersion` → run migration chain
+3. If `version > currentVersion` → show error (state is from a newer version of the app)
+4. If `version === currentVersion` → hydrate normally
+
+## 8. Roadmap & Pending Decisions
+
+### 8.1 Calculation functions (immediate next step)
 
 Two pure functions to implement in `src/domain/balance/`:
 
@@ -145,7 +183,7 @@ Two pure functions to implement in `src/domain/balance/`:
 
 ---
 
-### 7.2 Timestamps (deferred)
+### 8.2 Timestamps (deferred)
 
 Timestamps are intentionally omitted from the current version to keep schemas and URL payloads lean while the core logic is being built.
 
@@ -160,7 +198,7 @@ Integer timestamps are smaller in the URL payload, require no parsing, and are d
 
 ---
 
-### 7.3 Soft delete for Users (deferred)
+### 8.3 Soft delete for Users (deferred)
 
 Users are never permanently removed. Instead, `deletedAt` is set on the `User` entity.
 
@@ -188,6 +226,6 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 
 ---
 
-### 7.4 Multi-currency (not in scope)
+### 8.4 Multi-currency (not in scope)
 
 Current version is BRL only. If added in the future, `Expense` would gain a `currency` field and balance computation would need exchange rate handling. Not planned.

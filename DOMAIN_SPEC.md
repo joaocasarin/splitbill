@@ -298,6 +298,21 @@ Enforced at every level. All division uses `Math.floor` or `Math.round` on integ
 ### `superRefine` for fixed sum validation
 The rule `sum(shares) === total` in `FixedExpenseSchema` is a cross-field validation (it involves both `shares` and `total`), so it lives in `superRefine` at the object level, not in a `refine` on the array alone.
 
+### Array order is domain-significant
+
+The order of arrays in the domain is not arbitrary — it has financial consequences:
+
+- **`group.memberIds[]`** — the first member absorbs remainder cents in equal splits
+- **`expense.memberIds[]`** (equal split) — the first member absorbs remainder cents
+- **`expense.shares[]`** (percentage split) — the first share absorbs rounding remainder
+
+**Consequences:**
+- Reordering these arrays changes the financial outcome
+- The UI must preserve insertion order — no arbitrary sorting
+- Once expenses exist in a group, member and share order should be treated as immutable
+
+**`group.expenses[]` and `group.settlements[]`** — order defines the chronological application sequence. `computeBalances` iterates them in array order. Reordering would not change the final balance (addition is commutative), but it would change the semantic meaning of the history.
+
 ---
 
 ## 6. Terminology Glossary
