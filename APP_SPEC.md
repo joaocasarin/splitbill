@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-23  
+> **Last updated:** 2026-02-24  
 > **Status:** Draft
 
 ---
@@ -119,6 +119,24 @@ URL has no ?state= param
         └── user must create at least one User
             └── only then can a Group be created
 ```
+
+### URL size considerations
+
+The entire state is stored in the URL. Browser and platform limits apply:
+
+| Context | Practical limit |
+|---|---|
+| Modern browsers | ~64KB |
+| Sharing platforms (WhatsApp, Twitter, etc.) | often much lower |
+
+The LZ compression reduces payload significantly, but large states (many groups, expenses, or settlements) may approach these limits. No hard cap is enforced by the application — it is the user's responsibility to be aware of this constraint.
+
+**If the URL becomes too long:**
+- Browsers may silently truncate it
+- Sharing platforms may reject or truncate it
+- The app will show an error screen on load (invalid state)
+
+There is no planned mitigation. This is an accepted architectural tradeoff of the URL-based persistence model.
 
 ---
 
