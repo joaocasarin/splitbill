@@ -315,7 +315,7 @@ Rules files:
 - Return structured results (`{ valid: true } | { valid: false; reason: string }`) rather than throwing
 - Are called by the store or UI layer, never by schemas
 
-### Array order is domain-
+### Array order is domain-significant
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
 
