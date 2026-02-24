@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-02-23  
+> **Last updated:** 2026-02-24  
 > **Status:** Draft
 
 ---
@@ -163,6 +163,9 @@ SettlementSchema
 **Rules:**
 - `fromMemberId ≠ toMemberId`.
 - Amount must be positive.
+
+**Note on financial validity:**
+The schema validates only structural correctness — `fromMemberId ≠ toMemberId` and `amount > 0`. It does not validate whether the settlement reflects an actual debt, nor whether the amount exceeds the outstanding balance. This is intentional: settlements are user-initiated records of real-world payments, and the domain does not restrict them beyond structural rules.
 
 **Conceptual distinction between `SimplifiedDebt` and `Settlement`:**
 
