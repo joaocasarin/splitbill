@@ -65,6 +65,20 @@ When lookup performance is needed (e.g., inside calculation functions), arrays a
 
 **Balances are never stored.** They are always computed on demand from expenses and settlements. This keeps the URL payload minimal and prevents stored balance from ever diverging from the actual transaction history.
 
+### Migration path to backend
+
+The domain layer (`src/domain/`) is framework-agnostic by design. If a backend is added in the future:
+
+| Responsibility | Today | With backend |
+|---|---|---|
+| Schemas and types | `src/domain/` | unchanged |
+| Structural validation | Zod (domain layer) | unchanged |
+| Business rules | `src/domain/*.rules.ts` | move to backend `services/` |
+| Persistence | URL | database |
+| Client state | Zustand + URL | Zustand + API calls |
+
+Business rules are isolated in pure `*.rules.ts` functions today precisely to make this migration a file move, not a refactor.
+
 ---
 
 ## 4. State Persistence Strategy
@@ -258,5 +272,7 @@ A settlement can only be created between two members with an active debt:
 - The amount must not exceed the outstanding balance of `fromMemberId`
 
 These rules are enforced by computing `computeBalances(group)` before presenting settlement options to the user. Only eligible members are shown in the UI.
+
+**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation()`
 
 > **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.

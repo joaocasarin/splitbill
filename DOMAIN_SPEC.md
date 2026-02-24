@@ -287,21 +287,35 @@ GlobalSchema.superRefine
 ## 5. Key Design Decisions
 
 ### `User` vs `Member` terminology
+
 The same person is called a `User` in the global context and a `Member` inside a group. This is not an inconsistency — it is an intentional domain modeling decision. `User` is an application-level entity; `Member` is the role that user plays within a group's context. This pattern is common in domain-driven design.
 
 ### Balance is always derived
+
 Storing balance would create a second source of truth that could diverge from the transaction history. All balances are computed fresh from `expenses` and `settlements` every time they are needed.
 
 ### No floating point
+
 Enforced at every level. All division uses `Math.floor` or `Math.round` on integer arithmetic. Remainders are handled algorithmically in the calculation layer, never stored.
 
 ### Divisibility not validated in schema
+
 `equal` split does not require `total % memberIds.length === 0`. Rejecting non-divisible amounts would block valid real-world cases (e.g., R$10 between 3 people). The remainder is handled in the calculation function.
 
 ### `superRefine` for fixed sum validation
+
 The rule `sum(shares) === total` in `FixedExpenseSchema` is a cross-field validation (it involves both `shares` and `total`), so it lives in `superRefine` at the object level, not in a `refine` on the array alone.
 
-### Array order is domain-significant
+### Business rules live in `*.rules.ts` files
+
+Business rules that require derived state (e.g., balances) cannot live in schemas. They are implemented as pure functions in `*.rules.ts` files co-located with their domain entity. This keeps them framework-agnostic and easy to migrate to a backend service layer in the future.
+
+Rules files:
+- Are pure TypeScript — no React, no store, no browser dependencies
+- Return structured results (`{ valid: true } | { valid: false; reason: string }`) rather than throwing
+- Are called by the store or UI layer, never by schemas
+
+### Array order is domain-
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
 
@@ -356,6 +370,7 @@ src/domain/
 │   ├── money.schema.ts          # ExpenseTotal, ShareAmount, BalanceAmount
 │   └── percentage.schema.ts     # PercentageBasePointSchema
 ├── settlement/
+│   ├── settlement.rules.ts      # validateSettlementCreation()
 │   └── settlement.schema.ts     # SettlementSchema
 └── user/
     └── user.schema.ts           # UserSchema
