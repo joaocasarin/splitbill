@@ -2,6 +2,7 @@ import type { EntityId } from "@domain/common";
 import { createIdGenerator } from "@domain/common/create-id";
 import type { Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
+import type { Group } from "@domain/group";
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { create } from "zustand";
@@ -89,7 +90,21 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
-    addGroup: () => {},
+    addGroup: (name: string, memberIds: EntityId[]) => {
+        const { global, createId, syncToUrl } = get();
+        const newGroup: Group = {
+            id: createId("group"),
+            name,
+            memberIds,
+            expenses: [],
+            settlements: [],
+        };
+        set({
+            status: "loaded",
+            global: { ...global, groups: [...global.groups, newGroup] },
+        });
+        syncToUrl();
+    },
     addExpense: () => {},
     addSettlement: () => {},
 }));
