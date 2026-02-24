@@ -1,8 +1,8 @@
+import { createIdGenerator } from "@domain/common/create-id";
+import type { Expense } from "@domain/expense";
+import type { Global } from "@domain/global";
+import type { Settlement } from "@domain/settlement";
 import { beforeEach, describe, expect, test } from "vitest";
-import { createIdGenerator } from "@/domain/common/create-id";
-import type { Expense } from "@/domain/expense";
-import type { Global } from "@/domain/global";
-import type { Settlement } from "@/domain/settlement";
 
 const emptyGlobal: Global = {
     version: 1,
