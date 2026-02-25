@@ -4,6 +4,7 @@ import { userConfig } from "./vite.config";
 export default defineConfig({
     ...userConfig,
     test: {
+        environment: "happy-dom",
         exclude: ["**/node_modules/**", "**/dist/**", "public/**"],
         coverage: {
             provider: "v8",
