@@ -7,8 +7,8 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"],
-            "@domain/*": ["src/domain/*"]
+            "@domain/*": ["src/domain/*"],
+            "@store": ["src/store/index.ts"]
         }
     }
 }

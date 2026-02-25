@@ -17,6 +17,7 @@
 7. [Schema Version](#7-schema-version)
 8. [Roadmap & Pending Decisions](#8-roadmap--pending-decisions)
 9. [Business Rules](#9-business-rules)
+10. [Store](#10-store)
 
 ---
 
@@ -276,3 +277,32 @@ These rules are enforced by computing `computeBalances(group)` before presenting
 **Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation()`
 
 > **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
+
+## 10. Store
+
+The application state is managed by a single Zustand store located at `src/store/app.store.ts`.
+
+### State shape
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `"empty" \| "loaded" \| "error"` | Current application status |
+| `global` | `Global` | The full domain state |
+| `createId` | `ReturnType<typeof createIdGenerator>` | ID generator initialized from current state |
+
+### Actions
+
+| Action | Description |
+|---|---|
+| `hydrateFromUrl()` | Reads `?state=` from URL, parses and validates, sets `status` accordingly |
+| `initEmpty()` | Resets store to empty state |
+| `syncToUrl()` | Serializes `global` and writes to `?state=` in URL |
+| `addUser(name)` | Creates a new user and syncs to URL |
+| `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
+| `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
+| `addSettlement(groupId, settlement)` | Adds a settlement to the specified group and syncs to URL |
+
+### Notes
+- `syncToUrl` is called automatically at the end of every mutating action
+- `createId` is re-initialized from the loaded state on `hydrateFromUrl` to prevent ID collisions
+- `syncToUrl` currently uses `JSON.stringify` + `encodeURIComponent` — LZ compression will be added in the URL Serialization context
