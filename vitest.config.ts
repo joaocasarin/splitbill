@@ -18,6 +18,7 @@ export default defineConfig({
                 "**/constants.ts",
                 "**/*.schema.ts",
                 "src/main.tsx",
+                "src/lib/utils.ts",
                 "**/*.d.ts",
                 "vite.config.ts",
                 "vitest.config.ts",

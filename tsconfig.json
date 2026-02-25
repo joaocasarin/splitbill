@@ -7,6 +7,7 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
+            "@App": ["src/App.tsx"],
             "@domain/*": ["src/domain/*"],
             "@store": ["src/store/index.ts"]
         }
