@@ -278,6 +278,14 @@ These rules are enforced by computing `computeBalances(group)` before presenting
 
 > **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
 
+### 9.2 Settlement creation — future iterations
+
+**Next step — free payments:**
+Any member can create a settlement to any other member in the group. Validation is structural only — `fromMemberId ≠ toMemberId` and `amount > 0`, already enforced by the schema. `validateSettlementCreation` is removed or simplified.
+
+**Future — simplified debts:**
+A toggle in the UI suggests optimized payments via `simplify-debts`. Does not affect settlement creation — only changes the suggestion shown to the user.
+
 ## 10. Store
 
 The application state is managed by a single Zustand store located at `src/store/app.store.ts`.
