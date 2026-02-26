@@ -7,6 +7,17 @@ export const MemberBalanceSchema = z.object({
     amount: BalanceAmountSchema, // negative = liability, positive = receivable
 });
 
+export const DirectDebtSchema = z
+    .object({
+        fromMemberId: EntityIdSchema,
+        toMemberId: EntityIdSchema,
+        amount: ShareAmountSchema,
+    })
+    .refine((e) => e.fromMemberId !== e.toMemberId, {
+        error: "A debt edge cannot have the same member on both sides",
+        path: ["toMemberId"],
+    });
+
 export const SimplifiedDebtSchema = z
     .object({
         fromMemberId: EntityIdSchema,
@@ -19,4 +30,5 @@ export const SimplifiedDebtSchema = z
     });
 
 export type MemberBalance = z.infer<typeof MemberBalanceSchema>;
+export type DirectDebt = z.infer<typeof DirectDebtSchema>;
 export type SimplifiedDebt = z.infer<typeof SimplifiedDebtSchema>;
