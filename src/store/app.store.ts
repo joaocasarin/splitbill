@@ -1,9 +1,14 @@
+import { computeDirectDebts } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 import { createIdGenerator } from "@domain/common/create-id";
 import type { Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
-import type { Settlement } from "@domain/settlement";
+import {
+    type Settlement,
+    type ValidationResult,
+    validateSettlementCreation,
+} from "@domain/settlement";
 import type { User } from "@domain/user";
 import { create } from "zustand";
 
@@ -25,7 +30,7 @@ type AppActions = {
     addSettlement: (
         groupId: EntityId,
         settlement: Omit<Settlement, "id">,
-    ) => void;
+    ) => ValidationResult;
 };
 
 export type AppStore = AppState & AppActions;
@@ -129,10 +134,31 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     addSettlement: (groupId: EntityId, settlement: Omit<Settlement, "id">) => {
         const { global, createId, syncToUrl } = get();
+
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        const directDebts = computeDirectDebts(group);
+
+        const validation = validateSettlementCreation(
+            directDebts,
+            settlement.fromMemberId,
+            settlement.toMemberId,
+            settlement.amount,
+        );
+
+        if (!validation.valid) {
+            return validation;
+        }
+
         const newSettlement: Settlement = {
             ...settlement,
             id: createId("settlement"),
         };
+
         set({
             status: "loaded",
             global: {
@@ -150,6 +176,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                 ),
             },
         });
+
         syncToUrl();
+
+        return { valid: true };
     },
 }));

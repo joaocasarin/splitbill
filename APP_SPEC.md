@@ -191,8 +191,14 @@ Two pure functions to implement in `src/domain/balance/`:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
   - For each settlement: `from.balance += amount`, `to.balance -= amount`
   - Handle all three split modes including bps → cents conversion for percentage
-  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first participant in the list
-  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first participant in the list
+  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first non-payer participant in the list
+  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first non-payer participant in the list
+
+**`compute-direct-debts.ts`** ✅ _Implemented_
+- Input: `Group`
+- Output: `DirectDebt[]`
+- Logic: for each expense, computes how much each non-payer owes the payer directly. Settlements reduce existing debts. Results with `amount <= 0` are filtered out.
+- Remainder absorption follows the same rule as `compute-balances`: first non-payer participant in the list.
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
@@ -266,17 +272,26 @@ Business rules are enforced at the UI and store layer — not at the schema laye
 
 ### 9.1 Settlement creation
 
-A settlement can only be created between two members with an active debt:
+Currently, a settlement can only be created between two members with a **direct debt** — i.e., one member owes the other as a result of expense splits, net of any prior settlements.
 
-- `fromMemberId` must have a negative balance in the group (owes money)
-- `toMemberId` must have a positive balance in the group (is owed money)
-- The amount must not exceed the outstanding balance of `fromMemberId`
+These rules are enforced by computing `computeDirectDebts(group)` before the settlement is created. The result is passed to `validateSettlementCreation()`, which checks:
 
-These rules are enforced by computing `computeBalances(group)` before presenting settlement options to the user. Only eligible members are shown in the UI.
+- A direct debt exists from `fromMemberId` to `toMemberId`
+- The `amount` does not exceed that debt
 
-**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation()`
+**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation(directDebts, fromMemberId, toMemberId, amount)`
 
-> **Why not in the schema?** Balance is derived state — it requires running `computeBalances`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
+The store (`addSettlement`) calls this validation before mutating state. If invalid, it returns `{ valid: false, reason: string }` without modifying the state or syncing to URL.
+
+> **Why not in the schema?** Direct debt is derived state — it requires running `computeDirectDebts`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
+
+### 9.2 Settlement creation — future iterations
+
+**Next step — free payments:**
+Any member can create a settlement to any other member in any amount. `validateSettlementCreation` is removed from the `addSettlement` flow. Validation becomes structural only — `fromMemberId ≠ toMemberId` and `amount > 0`, already enforced by `SettlementSchema`.
+
+**Future — simplified debts:**
+A UI toggle suggests optimized payment paths via `simplify-debts`. This does not affect settlement creation or validation — it only changes what suggestions are shown to the user. Settlements remain free-form user-initiated records.
 
 ## 10. Store
 
@@ -300,7 +315,7 @@ The application state is managed by a single Zustand store located at `src/store
 | `addUser(name)` | Creates a new user and syncs to URL |
 | `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
-| `addSettlement(groupId, settlement)` | Adds a settlement to the specified group and syncs to URL |
+| `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
 
 ### Notes
 - `syncToUrl` is called automatically at the end of every mutating action

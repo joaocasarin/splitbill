@@ -53,8 +53,8 @@ describe("computeBalances", () => {
 
             expect(balances).toEqual(
                 expect.arrayContaining([
-                    { memberId: 1, amount: 66 },
-                    { memberId: 2, amount: -33 },
+                    { memberId: 1, amount: 67 },
+                    { memberId: 2, amount: -34 },
                     { memberId: 3, amount: -33 },
                 ]),
             );
@@ -215,8 +215,8 @@ describe("computeBalances", () => {
 
             expect(balances).toEqual(
                 expect.arrayContaining([
-                    { memberId: 1, amount: 66 },
-                    { memberId: 2, amount: -33 },
+                    { memberId: 1, amount: 67 },
+                    { memberId: 2, amount: -34 },
                     { memberId: 3, amount: -33 },
                 ]),
             );

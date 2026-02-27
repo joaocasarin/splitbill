@@ -36,6 +36,7 @@ function applyEqualSplit(
     balances: Map<EntityId, number>,
     memberIds: EntityId[],
     total: number,
+    payerId: EntityId,
 ): void {
     const participantCount = memberIds.length;
     const baseShare = Math.floor(total / participantCount);
@@ -46,8 +47,12 @@ function applyEqualSplit(
     }
 
     if (remainder !== 0) {
-        const first = memberIds[0];
-        updateBalance(balances, first, -remainder);
+        const firstNonPayer = memberIds.find((id) => id !== payerId);
+
+        /* c8 ignore next */
+        if (firstNonPayer !== undefined) {
+            updateBalance(balances, firstNonPayer, -remainder);
+        }
     }
 }
 
@@ -64,6 +69,7 @@ function applyPercentageSplit(
     balances: Map<EntityId, number>,
     shares: Array<{ memberId: EntityId; value: number }>,
     total: number,
+    payerId: EntityId,
 ): void {
     const computedShares = shares.map((share) => ({
         memberId: share.memberId,
@@ -78,8 +84,14 @@ function applyPercentageSplit(
     }
 
     if (remainder !== 0) {
-        const first = shares[0].memberId;
-        updateBalance(balances, first, -remainder);
+        const firstNonPayer = computedShares.find(
+            (s) => s.memberId !== payerId,
+        );
+
+        /* c8 ignore next */
+        if (firstNonPayer !== undefined) {
+            updateBalance(balances, firstNonPayer.memberId, -remainder);
+        }
     }
 }
 
@@ -88,13 +100,23 @@ function applyExpense(balances: Map<EntityId, number>, expense: Expense): void {
 
     switch (expense.splitMode) {
         case "equal":
-            applyEqualSplit(balances, expense.memberIds, expense.total);
+            applyEqualSplit(
+                balances,
+                expense.memberIds,
+                expense.total,
+                expense.payerId,
+            );
             break;
         case "fixed":
             applyFixedSplit(balances, expense.shares);
             break;
         case "percentage":
-            applyPercentageSplit(balances, expense.shares, expense.total);
+            applyPercentageSplit(
+                balances,
+                expense.shares,
+                expense.total,
+                expense.payerId,
+            );
             break;
     }
 }
@@ -118,7 +140,7 @@ function balancesToArray(balances: Map<EntityId, number>): MemberBalance[] {
  * Computes the net balance of each member in a group.
  *
  * Remainder cents (equal split) and rounding remainders (percentage split)
- * are absorbed by the first participant in the list — deterministic by design.
+ * are absorbed by the first non-payer participant in the list — deterministic by design.
  *
  * Invariant: sum of all returned amounts === 0.
  */
