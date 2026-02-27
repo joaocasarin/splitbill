@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-23 2:28am UTC-3  
+> **Last updated:** 2026-02-24  
 > **Status:** Draft
 
 ---
@@ -14,7 +14,10 @@
 4. [State Persistence Strategy](#4-state-persistence-strategy)
 5. [ID Generation Strategy](#5-id-generation-strategy)
 6. [Initial Load Behavior](#6-initial-load-behavior)
-7. [Roadmap & Pending Decisions](#7-roadmap--pending-decisions)
+7. [Schema Version](#7-schema-version)
+8. [Roadmap & Pending Decisions](#8-roadmap--pending-decisions)
+9. [Business Rules](#9-business-rules)
+10. [Store](#10-store)
 
 ---
 
@@ -29,8 +32,9 @@ A **100% client-side** expense sharing web app (Splitwise-style) with no backend
 | Concern | Decision |
 |---|---|
 | Framework | React + Vite |
+| Testing | Vitest |
 | Schema & Validation | Zod v4 |
-| State persistence | URL (JSON → LZ compression → URI encode) |
+| State persistence | URL (JSON → LZString compression → URI encode) |
 | Backend | None |
 | Database | None |
 | Currency | BRL only (single currency) |
@@ -62,6 +66,20 @@ When lookup performance is needed (e.g., inside calculation functions), arrays a
 
 **Balances are never stored.** They are always computed on demand from expenses and settlements. This keeps the URL payload minimal and prevents stored balance from ever diverging from the actual transaction history.
 
+### Migration path to backend
+
+The domain layer (`src/domain/`) is framework-agnostic by design. If a backend is added in the future:
+
+| Responsibility | Today | With backend |
+|---|---|---|
+| Schemas and types | `src/domain/` | unchanged |
+| Structural validation | Zod (domain layer) | unchanged |
+| Business rules | `src/domain/*.rules.ts` | move to backend `services/` |
+| Persistence | URL | database |
+| Client state | Zustand + URL | Zustand + API calls |
+
+Business rules are isolated in pure `*.rules.ts` functions today precisely to make this migration a file move, not a refactor.
+
 ---
 
 ## 4. State Persistence Strategy
@@ -70,14 +88,13 @@ The entire `Global` state is serialized and stored in the URL as a query paramet
 
 **On save:**
 1. `JSON.stringify(globalState)`
-2. LZ-based compression
-3. URI-safe encoding
-4. Written to `?state=...` in the URL
+2. `LZString.compressToEncodedURIComponent` (compress + URI-safe encode in one step)
+3. Written to `?state=...` in the URL via `window.history.replaceState`
 
 **On load:**
 1. Read `?state=...` from URL
-2. URI decode
-3. LZ decompress
+2. `LZString.decompressFromEncodedURIComponent` — returns `null` on failure
+3. If `null` → throw (caught as invalid state)
 4. `JSON.parse`
 5. `GlobalSchema.parse(data)` — Zod validates the full state
 6. Hydrate application
@@ -89,20 +106,30 @@ Display an error screen. Do not attempt partial hydration.
 
 ## 5. ID Generation Strategy
 
-IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated in memory by a centralized `createId()` utility that maintains a counter.
+IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `user`, `group`, `expense`, and `settlement`.
 
-**Why integers instead of strings (uuid/nanoid)?**  
-Integer IDs produce a smaller URL payload and are simpler to generate without a library. Since there is no backend or multi-device sync, collision risk is zero within a single session.
+In practice, URL size limits (see [§6](#6-initial-load-behavior)) will be reached long before integer overflow becomes a concern.
+
+**Why per-type counters?**
+Each domain enforces ID uniqueness within its own scope — user IDs among users, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
+
+**Counter initialization:**
+When loading state from URL, `createIdGenerator` is called with the loaded `Global` — it scans all existing IDs and initializes each counter to `max(existingIds)` for that type. When starting from empty state, all counters start at `0` and the first generated ID of each type is `1`.
 
 > **Future consideration:** If multi-device sync or collaborative editing is ever needed, IDs should migrate to strings (nanoid or uuid) to avoid collisions across independent sessions.
 
 ---
 
 ## 6. Initial Load Behavior
-
 ```
 URL has ?state= param
-    └── valid → hydrate app
+    └── valid
+        └── URI decode
+        └── LZ decompress
+        └── JSON.parse
+        └── GlobalSchema.parse(data)     ← Zod validates full state
+        └── createIdGenerator(global)    ← initializes ID counters
+        └── hydrate app
     └── invalid → show error screen
 
 URL has no ?state= param
@@ -111,23 +138,66 @@ URL has no ?state= param
             └── only then can a Group be created
 ```
 
+### URL size considerations
+
+The entire state is stored in the URL. Browser and platform limits apply:
+
+| Context | Practical limit |
+|---|---|
+| Modern browsers | ~64KB |
+| Sharing platforms (WhatsApp, Twitter, etc.) | often much lower |
+
+The LZ compression reduces payload significantly, but large states (many groups, expenses, or settlements) may approach these limits. No hard cap is enforced by the application — it is the user's responsibility to be aware of this constraint.
+
+**If the URL becomes too long:**
+- Browsers may silently truncate it
+- Sharing platforms may reject or truncate it
+- The app will show an error screen on load (invalid state)
+
+There is no planned mitigation. This is an accepted architectural tradeoff of the URL-based persistence model.
+
 ---
 
-## 7. Roadmap & Pending Decisions
+## 7. Schema Version
 
-### 7.1 Calculation functions (immediate next step)
+The `Global` state includes a `version` field — a positive integer that identifies the schema version used to serialize the state.
+
+**Current version:** `1`
+
+**Purpose:**
+- Allows future migrations when the schema changes in a breaking way
+- On load, the app can detect outdated state and either migrate or reject it
+
+**Current behavior:**
+The version field is validated as a positive integer but not checked against any expected value. No migration logic exists yet.
+
+**Future behavior (when migrations are needed):**
+1. Read `version` from the parsed state
+2. If `version < currentVersion` → run migration chain
+3. If `version > currentVersion` → show error (state is from a newer version of the app)
+4. If `version === currentVersion` → hydrate normally
+
+## 8. Roadmap & Pending Decisions
+
+### 8.1 Calculation functions (immediate next step)
 
 Two pure functions to implement in `src/domain/balance/`:
 
-**`compute-balances.ts`**
+**`compute-balances.ts`** ✅ _Implemented_
 - Input: `Group`
 - Output: `MemberBalance[]`
 - Logic:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
   - For each settlement: `from.balance += amount`, `to.balance -= amount`
   - Handle all three split modes including bps → cents conversion for percentage
-  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first participant in the list
-  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first participant in the list
+  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first non-payer participant in the list
+  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first non-payer participant in the list
+
+**`compute-direct-debts.ts`** ✅ _Implemented_
+- Input: `Group`
+- Output: `DirectDebt[]`
+- Logic: for each expense, computes how much each non-payer owes the payer directly. Settlements reduce existing debts. Results with `amount <= 0` are filtered out.
+- Remainder absorption follows the same rule as `compute-balances`: first non-payer participant in the list.
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
@@ -136,7 +206,7 @@ Two pure functions to implement in `src/domain/balance/`:
 
 ---
 
-### 7.2 Timestamps (deferred)
+### 8.2 Timestamps (deferred)
 
 Timestamps are intentionally omitted from the current version to keep schemas and URL payloads lean while the core logic is being built.
 
@@ -151,7 +221,7 @@ Integer timestamps are smaller in the URL payload, require no parsing, and are d
 
 ---
 
-### 7.3 Soft delete for Users (deferred)
+### 8.3 Soft delete for Users (deferred)
 
 Users are never permanently removed. Instead, `deletedAt` is set on the `User` entity.
 
@@ -177,8 +247,76 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 | Balance | Member's balance in the group must be 0 before removal |
 | History | Member's past expenses and settlements remain in the group unchanged |
 
+### Referential integrity conflict
+
+The current schema enforces that all expense and settlement references must exist in `group.memberIds`. This is intentionally strict for the current version.
+
+When member removal and soft delete are implemented, the referential integrity model must be revised. Two approaches are being considered:
+
+**Option A — Historical roster:** `memberIds` becomes the full historical roster. A separate `activeMemberIds` field tracks current active members. Validation splits: structural references check against `memberIds`, new expense/settlement creation checks against `activeMemberIds`.
+
+**Option B — Relaxed validation:** References in historical expenses and settlements are no longer validated against `memberIds`. Only new expenses and settlements validate against active members.
+
+This decision is deferred until soft delete and member removal are implemented.
+
 ---
 
-### 7.4 Multi-currency (not in scope)
+### 8.4 Multi-currency (not in scope)
 
 Current version is BRL only. If added in the future, `Expense` would gain a `currency` field and balance computation would need exchange rate handling. Not planned.
+
+## 9. Business Rules
+
+Business rules are enforced at the UI and store layer — not at the schema layer. The schema validates structural correctness only.
+
+### 9.1 Settlement creation
+
+Currently, a settlement can only be created between two members with a **direct debt** — i.e., one member owes the other as a result of expense splits, net of any prior settlements.
+
+These rules are enforced by computing `computeDirectDebts(group)` before the settlement is created. The result is passed to `validateSettlementCreation()`, which checks:
+
+- A direct debt exists from `fromMemberId` to `toMemberId`
+- The `amount` does not exceed that debt
+
+**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation(directDebts, fromMemberId, toMemberId, amount)`
+
+The store (`addSettlement`) calls this validation before mutating state. If invalid, it returns `{ valid: false, reason: string }` without modifying the state or syncing to URL.
+
+> **Why not in the schema?** Direct debt is derived state — it requires running `computeDirectDebts`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
+
+### 9.2 Settlement creation — future iterations
+
+**Next step — free payments:**
+Any member can create a settlement to any other member in any amount. `validateSettlementCreation` is removed from the `addSettlement` flow. Validation becomes structural only — `fromMemberId ≠ toMemberId` and `amount > 0`, already enforced by `SettlementSchema`.
+
+**Future — simplified debts:**
+A UI toggle suggests optimized payment paths via `simplify-debts`. This does not affect settlement creation or validation — it only changes what suggestions are shown to the user. Settlements remain free-form user-initiated records.
+
+## 10. Store
+
+The application state is managed by a single Zustand store located at `src/store/app.store.ts`.
+
+### State shape
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `"empty" \| "loaded" \| "error"` | Current application status |
+| `global` | `Global` | The full domain state |
+| `createId` | `ReturnType<typeof createIdGenerator>` | ID generator initialized from current state |
+
+### Actions
+
+| Action | Description |
+|---|---|
+| `hydrateFromUrl()` | Reads `?state=` from URL, parses and validates, sets `status` accordingly |
+| `initEmpty()` | Resets store to empty state |
+| `syncToUrl()` | Serializes `global` and writes to `?state=` in URL |
+| `addUser(name)` | Creates a new user and syncs to URL |
+| `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
+| `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
+| `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
+
+### Notes
+- `syncToUrl` is called automatically at the end of every mutating action
+- `createId` is re-initialized from the loaded state on `hydrateFromUrl` to prevent ID collisions
+- `syncToUrl` currently uses `JSON.stringify` + `encodeURIComponent` — LZ compression will be added in the URL Serialization context

@@ -10,15 +10,16 @@
         "includes": [
             "src/**",
             "test/**",
+            ".vscode/**",
             "biome.json",
             "components.json",
             "vite.config.ts",
+            "vitest.config.ts",
             "package.json",
             "tsconfig.node.json",
             "tsconfig.app.json",
             "tsconfig.json",
             ".editorconfig",
-            ".vscode/settings.json",
             "!package-lock.json"
         ]
     },

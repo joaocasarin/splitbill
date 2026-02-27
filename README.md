@@ -44,6 +44,7 @@ The system is designed with strong domain consistency and financial determinism.
 - Partial settlements supported
 - Deterministic balance computation
 - Full state sharing via compressed URL
+- Direct-debt validation on settlement creation
 
 ---
 
@@ -127,6 +128,8 @@ The system guarantees:
 - Debt simplification algorithm
 - Editing expenses and settlements
 - Migration system for version upgrades
+- Free payments (settlement between any two members without debt constraint)
+- Simplified debts toggle (suggested optimized payment paths)
 
 ## 9. Documentation
 

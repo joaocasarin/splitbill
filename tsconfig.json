@@ -7,8 +7,9 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"],
-            "@domain/*": ["src/domain/*"]
+            "@App": ["src/App.tsx"],
+            "@domain/*": ["src/domain/*"],
+            "@store": ["src/store/index.ts"]
         }
     }
 }
