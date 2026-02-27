@@ -200,9 +200,17 @@ SimplifiedDebtSchema
 └── amount: ShareAmount (always positive)
 ```
 
+```
+DirectDebtSchema
+├── fromMemberId: EntityId (who owes)
+├── toMemberId: EntityId (who receives)
+└── amount: ShareAmount (always positive)
+```
+
 **Invariant:** The sum of all `MemberBalance.amount` values in a group must always equal `0`.
 
 > **Note:** `SimplifiedDebt` is mapped but not part of the initial scope. See [APP_SPEC.md](./APP_SPEC.md).
+> **Note:** Output of computeDirectDebts(). Used by validateSettlementCreation() to enforce direct-payment rules.
 
 ---
 
@@ -232,9 +240,9 @@ All monetary values are stored as **integers in cents (BRL)**. No floats anywher
 
 | Mode | Data stored | Schema-level validation | Calc-level logic |
 |---|---|---|---|
-| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the first participant in the list |
+| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the first non-payer participant in the list |
 | `fixed` | `shares[]{memberId, value}` | No duplicates; sum = total | Direct use |
-| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the first participant in the list |
+| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the first non-payer participant in the list |
 
 ---
 
@@ -319,9 +327,9 @@ Rules files:
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
 
-- **`group.memberIds[]`** — the first member absorbs remainder cents in equal splits
+- **`group.memberIds[]`** — the first non-payer participant absorbs remainder cents in equal splits
 - **`expense.memberIds[]`** (equal split) — the first member absorbs remainder cents
-- **`expense.shares[]`** (percentage split) — the first share absorbs rounding remainder
+- **`expense.shares[]`** (percentage split) — the first non-payer participant's share absorbs rounding remainder
 
 **Consequences:**
 - Reordering these arrays changes the financial outcome
@@ -353,8 +361,9 @@ The order of arrays in the domain is not arbitrary — it has financial conseque
 ```
 src/domain/
 ├── balance/
-│   ├── balance.schema.ts        # MemberBalanceSchema, SimplifiedDebtSchema
-│   └── compute-balances.ts      # computeBalances()
+│   ├── balance.schema.ts        # MemberBalanceSchema, DirectDebtSchema, SimplifiedDebtSchem
+│   ├── compute-balances.ts      # computeBalances()
+│   └── compute-direct-debts.ts  # computeDirectDebts()
 ├── common/
 │   ├── constants.ts             # BPS_TOTAL, BPS_MIN...
 │   ├── create-id.ts             # createIdGenerator()
