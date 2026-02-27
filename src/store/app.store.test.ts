@@ -234,10 +234,19 @@ describe("addSettlement", () => {
         useAppStore.getState().addGroup("Dinner", [1, 2]);
 
         const group = setupGroupWithTwoMembers();
+        const expense: Omit<EqualExpense, "id"> = {
+            title: "Hotel",
+            total: 10000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2],
+        };
 
-        useAppStore.getState().addSettlement(group.id, {
-            fromMemberId: 1,
-            toMemberId: 2,
+        useAppStore.getState().addExpense(group.id, expense);
+
+        const result = useAppStore.getState().addSettlement(group.id, {
+            fromMemberId: 2,
+            toMemberId: 1,
             amount: 5000,
         });
 
@@ -245,9 +254,10 @@ describe("addSettlement", () => {
             .getState()
             .global.groups.find((g) => g.id === group.id);
 
+        expect(result.valid).toBe(true);
         expect(updated?.settlements).toHaveLength(1);
-        expect(updated?.settlements[0].fromMemberId).toBe(1);
-        expect(updated?.settlements[0].toMemberId).toBe(2);
+        expect(updated?.settlements[0].fromMemberId).toBe(2);
+        expect(updated?.settlements[0].toMemberId).toBe(1);
     });
 
     test("does not affect other groups", () => {
@@ -256,10 +266,19 @@ describe("addSettlement", () => {
         useAppStore.getState().addGroup("Dinner", [1, 2]);
 
         const dinnerGroup = useAppStore.getState().global.groups[1];
+        const expense: Omit<EqualExpense, "id"> = {
+            title: "Hotel",
+            total: 10000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2],
+        };
 
-        useAppStore.getState().addSettlement(group.id, {
-            fromMemberId: 1,
-            toMemberId: 2,
+        useAppStore.getState().addExpense(group.id, expense);
+
+        const result = useAppStore.getState().addSettlement(group.id, {
+            fromMemberId: 2,
+            toMemberId: 1,
             amount: 5000,
         });
 
@@ -267,29 +286,85 @@ describe("addSettlement", () => {
             .getState()
             .global.groups.find((g) => g.id === dinnerGroup.id);
 
+        expect(result.valid).toBe(true);
         expect(updated?.settlements).toHaveLength(0);
     });
 
     test("assigns sequential IDs", () => {
         const group = setupGroupWithTwoMembers();
+        const expense: Omit<EqualExpense, "id"> = {
+            title: "Hotel",
+            total: 10000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2],
+        };
 
-        useAppStore.getState().addSettlement(group.id, {
-            fromMemberId: 1,
-            toMemberId: 2,
-            amount: 5000,
+        useAppStore.getState().addExpense(group.id, expense);
+
+        const result = useAppStore.getState().addSettlement(group.id, {
+            fromMemberId: 2,
+            toMemberId: 1,
+            amount: 3000,
         });
 
         useAppStore.getState().addSettlement(group.id, {
             fromMemberId: 2,
             toMemberId: 1,
-            amount: 3000,
+            amount: 2000,
         });
 
         const updated = useAppStore
             .getState()
             .global.groups.find((g) => g.id === group.id);
 
+        expect(result.valid).toBe(true);
         expect(updated?.settlements[0].id).toBe(1);
         expect(updated?.settlements[1].id).toBe(2);
+    });
+
+    test("tries to add settlement to invalid group", () => {
+        useAppStore.getState().addGroup("Dinner", [1, 2]);
+
+        const result = useAppStore.getState().addSettlement(2, {
+            fromMemberId: 2,
+            toMemberId: 1,
+            amount: 5000,
+        });
+
+        expect(result.valid).toBe(false);
+        if (!result.valid) {
+            expect(result.reason).toBe("group not found");
+        }
+    });
+
+    test("tries to add settlement between members without direct debt", () => {
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Dinner", [1, 2, 3]);
+
+        const expense: Omit<EqualExpense, "id"> = {
+            title: "Hotel",
+            total: 10000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2],
+        };
+
+        useAppStore.getState().addExpense(1, expense);
+
+        const result = useAppStore.getState().addSettlement(1, {
+            fromMemberId: 2,
+            toMemberId: 3,
+            amount: 5000,
+        });
+
+        expect(result.valid).toBe(false);
+
+        if (!result.valid) {
+            expect(result.reason).toBe(
+                "no direct debt from fromMember to toMember",
+            );
+        }
     });
 });
