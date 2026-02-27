@@ -25,8 +25,12 @@
         "noUncheckedSideEffectImports": true,
         "baseUrl": ".",
         "paths": {
-            "@App": ["src/App.tsx"],
+            "@app": ["src/App.tsx"],
+            "@components/*": ["src/components/*"],
             "@domain/*": ["src/domain/*"],
+            "@hooks/*": ["src/hooks/*"],
+            "@lib/*": ["src/lib/*"],
+            "@screens/*": ["src/screens/*"],
             "@store": ["src/store/index.ts"]
         }
     },

@@ -7,8 +7,12 @@ export const userConfig: UserConfig = {
     plugins: [react(), tailwindcss()],
     resolve: {
         alias: {
-            "@App": path.resolve(__dirname, "./src/App.tsx"),
+            "@app": path.resolve(__dirname, "./src/App.tsx"),
+            "@components": path.resolve(__dirname, "./src/components"),
             "@domain": path.resolve(__dirname, "./src/domain"),
+            "@hooks": path.resolve(__dirname, "./src/hooks"),
+            "@lib": path.resolve(__dirname, "./src/lib"),
+            "@screens": path.resolve(__dirname, "./src/screens"),
             "@store": path.resolve(__dirname, "./src/store/index.ts"),
         },
     },
