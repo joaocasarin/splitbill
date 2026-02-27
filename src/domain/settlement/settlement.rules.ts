@@ -1,7 +1,9 @@
 import type { DirectDebt } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 
-type ValidationResult = { valid: true } | { valid: false; reason: string };
+export type ValidationResult =
+    | { valid: true }
+    | { valid: false; reason: string };
 
 export function validateSettlementCreation(
     directDebts: DirectDebt[],
