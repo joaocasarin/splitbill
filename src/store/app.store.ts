@@ -10,6 +10,7 @@ import {
     validateSettlementCreation,
 } from "@domain/settlement";
 import type { User } from "@domain/user";
+import lzstring from "lz-string";
 import { create } from "zustand";
 
 type AppStatus = "empty" | "loaded" | "error";
@@ -55,7 +56,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         }
 
         try {
-            const parsed = JSON.parse(decodeURIComponent(raw));
+            const decompressedState =
+                lzstring.decompressFromEncodedURIComponent(raw);
+
+            if (!decompressedState) {
+                throw new Error("decompression failed");
+            }
+
+            const parsed = JSON.parse(decompressedState);
             const result = GlobalSchema.parse(parsed);
             set({
                 status: "loaded",
@@ -75,9 +83,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     syncToUrl: () => {
         const { global } = get();
-        const encoded = encodeURIComponent(JSON.stringify(global));
+        const compressedState = lzstring.compressToEncodedURIComponent(
+            JSON.stringify(global),
+        );
         const url = new URL(window.location.href);
-        url.searchParams.set("state", encoded);
+        url.searchParams.set("state", compressedState);
         window.history.replaceState(null, "", url.toString());
     },
     addUser: (name: string) => {

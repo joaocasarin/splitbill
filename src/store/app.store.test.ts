@@ -2,6 +2,7 @@ import type { EqualExpense } from "@domain/expense";
 import type { Global } from "@domain/global";
 import type { Group } from "@domain/group";
 import { useAppStore } from "@store";
+import lzstring from "lz-string";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const validGlobal: Global = {
@@ -10,7 +11,9 @@ const validGlobal: Global = {
     groups: [],
 };
 
-const validGlobalEncoded = encodeURIComponent(JSON.stringify(validGlobal));
+const validGlobalEncoded = lzstring.compressToEncodedURIComponent(
+    JSON.stringify(validGlobal),
+);
 
 beforeEach(() => {
     useAppStore.getState().initEmpty();
