@@ -34,7 +34,7 @@ A **100% client-side** expense sharing web app (Splitwise-style) with no backend
 | Framework | React + Vite |
 | Testing | Vitest |
 | Schema & Validation | Zod v4 |
-| State persistence | URL (JSON → LZ compression → URI encode) |
+| State persistence | URL (JSON → LZString compression → URI encode) |
 | Backend | None |
 | Database | None |
 | Currency | BRL only (single currency) |
@@ -88,14 +88,13 @@ The entire `Global` state is serialized and stored in the URL as a query paramet
 
 **On save:**
 1. `JSON.stringify(globalState)`
-2. LZ-based compression
-3. URI-safe encoding
-4. Written to `?state=...` in the URL
+2. `LZString.compressToEncodedURIComponent` (compress + URI-safe encode in one step)
+3. Written to `?state=...` in the URL via `window.history.replaceState`
 
 **On load:**
 1. Read `?state=...` from URL
-2. URI decode
-3. LZ decompress
+2. `LZString.decompressFromEncodedURIComponent` — returns `null` on failure
+3. If `null` → throw (caught as invalid state)
 4. `JSON.parse`
 5. `GlobalSchema.parse(data)` — Zod validates the full state
 6. Hydrate application
