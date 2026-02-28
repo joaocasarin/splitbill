@@ -24,6 +24,7 @@ export default defineConfig({
                 "vite.config.ts",
                 "vitest.config.ts",
                 "tests/**/*.setup.{ts,tsx}",
+                "src/components/ui/**",
                 "src/screens/ErrorScreen/**",
                 "src/screens/GroupScreen/**",
             ],
