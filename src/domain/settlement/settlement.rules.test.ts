@@ -1,4 +1,4 @@
-import { directDebts } from "@tests/mocks/balance";
+import { directDebts } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
 import { validateSettlementCreation } from "./settlement.rules";
 

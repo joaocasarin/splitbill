@@ -2,7 +2,7 @@ import { App } from "@app";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupStoreAndWindow } from "@tests/setup/store-and-window";
+import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test } from "vitest";
 
 beforeEach(() => {

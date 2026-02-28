@@ -1,4 +1,4 @@
-import { baseGroup } from "@tests/mocks/group";
+import { baseGroup } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
 import { computeDirectDebts } from "./compute-direct-debts";
 

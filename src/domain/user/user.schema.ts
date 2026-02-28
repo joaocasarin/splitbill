@@ -1,5 +1,5 @@
-import { EntityIdSchema, USER_NAME_MAX, USER_NAME_MIN } from "@domain/common";
 import z from "zod";
+import { EntityIdSchema, USER_NAME_MAX, USER_NAME_MIN } from "../common";
 
 export const UserSchema = z.object({
     id: EntityIdSchema,

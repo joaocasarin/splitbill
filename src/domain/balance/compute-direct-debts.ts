@@ -1,6 +1,6 @@
-import type { DirectDebt } from "@domain/balance";
-import { BPS_TOTAL } from "@domain/common";
-import type { Group } from "@domain/group";
+import { BPS_TOTAL } from "../common";
+import type { Group } from "../group";
+import type { DirectDebt } from "./balance.schema";
 
 export function computeDirectDebts(group: Group): DirectDebt[] {
     const debts = new Map<string, number>();

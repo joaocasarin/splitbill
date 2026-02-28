@@ -1,7 +1,8 @@
-import { BPS_TOTAL, type EntityId } from "@domain/common";
-import type { Expense } from "@domain/expense";
-import type { Group } from "@domain/group";
-import type { Settlement } from "@domain/settlement";
+import type { EntityId } from "../common";
+import { BPS_TOTAL } from "../common";
+import type { Expense } from "../expense";
+import type { Group } from "../group";
+import type { Settlement } from "../settlement";
 import type { MemberBalance } from "./balance.schema";
 
 function initializeBalances(memberIds: EntityId[]): Map<EntityId, number> {

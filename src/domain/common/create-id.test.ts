@@ -1,8 +1,8 @@
-import { createIdGenerator } from "@domain/common/create-id";
 import type { Expense } from "@domain/expense";
 import type { Settlement } from "@domain/settlement";
-import { emptyGlobal } from "@tests/mocks/global";
+import { emptyGlobal } from "@tests/mocks";
 import { beforeEach, describe, expect, test } from "vitest";
+import { createIdGenerator } from "./create-id";
 
 describe("createIdGenerator", () => {
     describe("empty state", () => {

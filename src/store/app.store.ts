@@ -1,6 +1,5 @@
 import { computeDirectDebts } from "@domain/balance";
-import type { EntityId } from "@domain/common";
-import { createIdGenerator } from "@domain/common/create-id";
+import { createIdGenerator, type EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";

@@ -1,6 +1,6 @@
-import { computeBalances } from "@domain/balance/compute-balances";
-import { baseGroup } from "@tests/mocks/group";
+import { baseGroup } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
+import { computeBalances } from "../balance";
 
 describe("computeBalances", () => {
     describe("equal split", () => {

@@ -1,1 +1,1 @@
-export * from "./GroupScreen";
+export { GroupScreen } from "./GroupScreen";

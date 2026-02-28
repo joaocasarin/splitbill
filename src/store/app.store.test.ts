@@ -1,8 +1,7 @@
 import { useAppStore } from "@store";
-import { setupGroupWithTwoMembers } from "@tests/helpers/store-helpers";
-import { defaultEqualExpense } from "@tests/mocks/expense";
-import { validGlobalEncoded } from "@tests/mocks/global";
-import { setupStoreAndWindow } from "@tests/setup/store-and-window";
+import { setupGroupWithTwoMembers } from "@tests/helpers";
+import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
+import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test } from "vitest";
 
 beforeEach(() => {
