@@ -14,6 +14,7 @@ export const userConfig: UserConfig = {
             "@lib": path.resolve(__dirname, "./src/lib"),
             "@screens": path.resolve(__dirname, "./src/screens"),
             "@store": path.resolve(__dirname, "./src/store/index.ts"),
+            "@tests": path.resolve(__dirname, "./tests"),
         },
     },
 };
