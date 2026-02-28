@@ -2,10 +2,11 @@ import { HomeScreen } from "@screens/HomeScreen/HomeScreen";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setupStoreOnly } from "@tests/setup/store-and-window";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 beforeEach(() => {
-    useAppStore.getState().initEmpty();
+    setupStoreOnly();
 });
 
 describe("HomeScreen", () => {

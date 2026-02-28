@@ -1,11 +1,6 @@
-import type { DirectDebt } from "@domain/balance";
+import { directDebts } from "@tests/mocks/balance";
 import { describe, expect, test } from "vitest";
 import { validateSettlementCreation } from "./settlement.rules";
-
-const directDebts: DirectDebt[] = [
-    { fromMemberId: 1, toMemberId: 2, amount: 5000 },
-    { fromMemberId: 3, toMemberId: 2, amount: 2000 },
-];
 
 describe("validateSettlementCreation", () => {
     test("returns valid when direct debt exists and amount is within debt", () => {

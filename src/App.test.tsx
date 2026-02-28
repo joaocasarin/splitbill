@@ -2,15 +2,11 @@ import { App } from "@app";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { setupStoreAndWindow } from "@tests/setup/store-and-window";
+import { beforeEach, describe, expect, test } from "vitest";
 
 beforeEach(() => {
-    useAppStore.getState().initEmpty();
-    vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
-    Object.defineProperty(window, "location", {
-        value: { search: "", href: "http://localhost/" },
-        writable: true,
-    });
+    setupStoreAndWindow();
 });
 
 describe("App", () => {

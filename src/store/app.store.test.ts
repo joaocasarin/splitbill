@@ -1,36 +1,13 @@
-import type { EqualExpense } from "@domain/expense";
-import type { Global } from "@domain/global";
-import type { Group } from "@domain/group";
 import { useAppStore } from "@store";
-import lzstring from "lz-string";
-import { beforeEach, describe, expect, test, vi } from "vitest";
-
-const validGlobal: Global = {
-    version: 1,
-    users: [{ id: 1, name: "Alice" }],
-    groups: [],
-};
-
-const validGlobalEncoded = lzstring.compressToEncodedURIComponent(
-    JSON.stringify(validGlobal),
-);
+import { setupGroupWithTwoMembers } from "@tests/helpers/store-helpers";
+import { defaultEqualExpense } from "@tests/mocks/expense";
+import { validGlobalEncoded } from "@tests/mocks/global";
+import { setupStoreAndWindow } from "@tests/setup/store-and-window";
+import { beforeEach, describe, expect, test } from "vitest";
 
 beforeEach(() => {
-    useAppStore.getState().initEmpty();
-    vi.restoreAllMocks();
-    Object.defineProperty(window, "location", {
-        value: { search: "", href: "http://localhost/" },
-        writable: true,
-    });
-    vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+    setupStoreAndWindow({ restoreMocks: true });
 });
-
-function setupGroupWithTwoMembers(): Group {
-    useAppStore.getState().addUser("Alice");
-    useAppStore.getState().addUser("Bob");
-    useAppStore.getState().addGroup("Trip", [1, 2]);
-    return useAppStore.getState().global.groups[0];
-}
 
 describe("hydrateFromUrl", () => {
     test("sets status to empty when no ?state= param", () => {
@@ -158,15 +135,7 @@ describe("addExpense", () => {
 
         const group = setupGroupWithTwoMembers();
 
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
-
-        useAppStore.getState().addExpense(group.id, expense);
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
         const updated = useAppStore
             .getState()
@@ -183,15 +152,7 @@ describe("addExpense", () => {
 
         const dinnerGroup = useAppStore.getState().global.groups[1];
 
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
-
-        useAppStore.getState().addExpense(group.id, expense);
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
         const updated = useAppStore
             .getState()
@@ -203,25 +164,14 @@ describe("addExpense", () => {
     test("assigns sequential IDs", () => {
         const group = setupGroupWithTwoMembers();
 
-        const expense1: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
-        const expense2: Omit<EqualExpense, "id"> = {
+        useAppStore.getState().addExpense(group.id, {
+            ...defaultEqualExpense,
             title: "Food",
             total: 5000,
             payerId: 2,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
-
-        useAppStore.getState().addExpense(group.id, expense1);
-
-        useAppStore.getState().addExpense(group.id, expense2);
+        });
 
         const updated = useAppStore
             .getState()
@@ -237,15 +187,8 @@ describe("addSettlement", () => {
         useAppStore.getState().addGroup("Dinner", [1, 2]);
 
         const group = setupGroupWithTwoMembers();
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
 
-        useAppStore.getState().addExpense(group.id, expense);
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
         const result = useAppStore.getState().addSettlement(group.id, {
             fromMemberId: 2,
@@ -269,15 +212,8 @@ describe("addSettlement", () => {
         useAppStore.getState().addGroup("Dinner", [1, 2]);
 
         const dinnerGroup = useAppStore.getState().global.groups[1];
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
 
-        useAppStore.getState().addExpense(group.id, expense);
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
         const result = useAppStore.getState().addSettlement(group.id, {
             fromMemberId: 2,
@@ -295,15 +231,8 @@ describe("addSettlement", () => {
 
     test("assigns sequential IDs", () => {
         const group = setupGroupWithTwoMembers();
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
 
-        useAppStore.getState().addExpense(group.id, expense);
+        useAppStore.getState().addExpense(group.id, defaultEqualExpense);
 
         const result = useAppStore.getState().addSettlement(group.id, {
             fromMemberId: 2,
@@ -346,15 +275,7 @@ describe("addSettlement", () => {
         useAppStore.getState().addUser("Carol");
         useAppStore.getState().addGroup("Dinner", [1, 2, 3]);
 
-        const expense: Omit<EqualExpense, "id"> = {
-            title: "Hotel",
-            total: 10000,
-            payerId: 1,
-            splitMode: "equal",
-            memberIds: [1, 2],
-        };
-
-        useAppStore.getState().addExpense(1, expense);
+        useAppStore.getState().addExpense(1, defaultEqualExpense);
 
         const result = useAppStore.getState().addSettlement(1, {
             fromMemberId: 2,

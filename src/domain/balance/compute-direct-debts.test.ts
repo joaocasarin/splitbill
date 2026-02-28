@@ -1,14 +1,6 @@
-import type { Group } from "@domain/group";
+import { baseGroup } from "@tests/mocks/group";
 import { describe, expect, test } from "vitest";
 import { computeDirectDebts } from "./compute-direct-debts";
-
-const baseGroup: Group = {
-    id: 1,
-    name: "Test Group",
-    memberIds: [1, 2, 3],
-    expenses: [],
-    settlements: [],
-};
 
 describe("computeDirectDebts", () => {
     describe("equal split", () => {
