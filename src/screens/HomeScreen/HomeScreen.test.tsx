@@ -60,6 +60,29 @@ describe("HomeScreen", () => {
                 screen.getByRole("button", { name: /add group/i }),
             ).toBeEnabled();
         });
+
+        test("opens AddGroupModal when Add group is clicked", async () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            render(<HomeScreen onNavigate={vi.fn()} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add group/i }),
+            );
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
+        });
+
+        test("closes AddGroupModal when cancel is clicked", async () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            render(<HomeScreen onNavigate={vi.fn()} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add group/i }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
     });
 
     describe("users list", () => {
