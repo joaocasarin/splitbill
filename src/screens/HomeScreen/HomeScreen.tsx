@@ -1,8 +1,10 @@
 import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
 import { GROUP_MEMBERS_MIN } from "@domain/common";
+import { AddUsersModal } from "@screens/HomeScreen/AddUsersModal";
 import { useAppStore } from "@store";
 import { FolderOpen, Plus, Users } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
     onNavigate: (view: AppView) => void;
@@ -13,6 +15,8 @@ export function HomeScreen({ onNavigate }: Props) {
     const users = global.users;
     const groups = global.groups;
     const canCreateGroup = users.length >= GROUP_MEMBERS_MIN;
+
+    const [isAddUsersOpen, setIsAddUsersOpen] = useState(false);
 
     return (
         <div className="max-w-lg mx-auto px-4 py-10 flex flex-col gap-10">
@@ -32,7 +36,11 @@ export function HomeScreen({ onNavigate }: Props) {
                     <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
                         Users
                     </h2>
-                    <Button size="sm" variant="outline">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsAddUsersOpen(true)}
+                    >
                         <Plus className="w-4 h-4 mr-1" />
                         Add user
                     </Button>
@@ -111,6 +119,11 @@ export function HomeScreen({ onNavigate }: Props) {
                     </ul>
                 )}
             </section>
+
+            <AddUsersModal
+                open={isAddUsersOpen}
+                onClose={() => setIsAddUsersOpen(false)}
+            />
         </div>
     );
 }
