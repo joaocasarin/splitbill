@@ -33,6 +33,16 @@ describe("HomeScreen", () => {
         });
     });
 
+    describe("Add users button", () => {
+        test("opens AddUsersModal when Add user is clicked", async () => {
+            render(<HomeScreen onNavigate={vi.fn()} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add user/i }),
+            );
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
+        });
+    });
+
     describe("Add group button", () => {
         test("is disabled when fewer than 2 users exist", () => {
             useAppStore.getState().addUser("Alice");
@@ -90,6 +100,19 @@ describe("HomeScreen", () => {
             useAppStore.getState().addGroup("Trip", [1, 2]);
             render(<HomeScreen onNavigate={vi.fn()} />);
             expect(screen.getByText("2 members")).toBeInTheDocument();
+        });
+    });
+
+    describe("close button", () => {
+        test("closes AddUsersModal when cancel is clicked", async () => {
+            render(<HomeScreen onNavigate={vi.fn()} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add user/i }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         });
     });
 });
