@@ -1,5 +1,5 @@
-import type { EntityId } from "@domain/common";
-import type { Global } from "@domain/global";
+import type { Global } from "../global";
+import type { EntityId } from "./entity-id.schema";
 
 type EntityType = "user" | "group" | "expense" | "settlement";
 

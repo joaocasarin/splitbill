@@ -1,5 +1,5 @@
-import { BPS_MIN, BPS_TOTAL } from "@domain/common";
 import z from "zod";
+import { BPS_MIN, BPS_TOTAL } from "../common";
 
 export const PercentageBasePointSchema = z
     .int({ error: "Percentage must be an integer" })

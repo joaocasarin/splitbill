@@ -1,14 +1,6 @@
-import { computeBalances } from "@domain/balance/compute-balances";
-import type { Group } from "@domain/group";
+import { baseGroup } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
-
-const baseGroup: Group = {
-    id: 1,
-    name: "Test Group",
-    memberIds: [1, 2, 3],
-    expenses: [],
-    settlements: [],
-};
+import { computeBalances } from "../balance";
 
 describe("computeBalances", () => {
     describe("equal split", () => {

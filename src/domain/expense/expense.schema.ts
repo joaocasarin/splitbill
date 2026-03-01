@@ -1,3 +1,4 @@
+import z from "zod";
 import {
     BPS_TOTAL,
     EntityIdSchema,
@@ -5,9 +6,8 @@ import {
     EXPENSE_SHARES_MIN,
     EXPENSE_TITLE_MAX,
     EXPENSE_TITLE_MIN,
-} from "@domain/common";
-import { ExpenseTotalSchema } from "@domain/money";
-import z from "zod";
+} from "../common";
+import { ExpenseTotalSchema } from "../money";
 import {
     MoneyShareSchema,
     PercentageShareSchema,

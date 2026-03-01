@@ -1,6 +1,6 @@
-import { EntityIdSchema } from "@domain/common";
-import { BalanceAmountSchema, ShareAmountSchema } from "@domain/money";
 import { z } from "zod";
+import { EntityIdSchema } from "../common";
+import { BalanceAmountSchema, ShareAmountSchema } from "../money";
 
 export const MemberBalanceSchema = z.object({
     memberId: EntityIdSchema,
@@ -18,6 +18,11 @@ export const DirectDebtSchema = z
         path: ["toMemberId"],
     });
 
+/**
+ * @future Debt simplification feature (planned).
+ * Represents a simplified debt after running the debt minimization algorithm.
+ * Not yet used — kept here to document the intended shape.
+ */
 export const SimplifiedDebtSchema = z
     .object({
         fromMemberId: EntityIdSchema,

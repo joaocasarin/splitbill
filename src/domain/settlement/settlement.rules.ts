@@ -1,5 +1,5 @@
-import type { DirectDebt } from "@domain/balance";
-import type { EntityId } from "@domain/common";
+import type { DirectDebt } from "../balance";
+import type { EntityId } from "../common";
 
 export type ValidationResult =
     | { valid: true }
