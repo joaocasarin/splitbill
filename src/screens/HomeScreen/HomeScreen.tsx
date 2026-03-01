@@ -5,6 +5,7 @@ import { AddUsersModal } from "@screens/HomeScreen/AddUsersModal";
 import { useAppStore } from "@store";
 import { FolderOpen, Plus, Users } from "lucide-react";
 import { useState } from "react";
+import { AddGroupModal } from "./AddGroupModal";
 
 type Props = {
     onNavigate: (view: AppView) => void;
@@ -17,6 +18,7 @@ export function HomeScreen({ onNavigate }: Props) {
     const canCreateGroup = users.length >= GROUP_MEMBERS_MIN;
 
     const [isAddUsersOpen, setIsAddUsersOpen] = useState(false);
+    const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
 
     return (
         <div className="max-w-lg mx-auto px-4 py-10 flex flex-col gap-10">
@@ -81,6 +83,7 @@ export function HomeScreen({ onNavigate }: Props) {
                         size="sm"
                         variant="outline"
                         disabled={!canCreateGroup}
+                        onClick={() => setIsAddGroupOpen(true)}
                     >
                         <Plus className="w-4 h-4 mr-1" />
                         Add group
@@ -123,6 +126,11 @@ export function HomeScreen({ onNavigate }: Props) {
             <AddUsersModal
                 open={isAddUsersOpen}
                 onClose={() => setIsAddUsersOpen(false)}
+            />
+
+            <AddGroupModal
+                open={isAddGroupOpen}
+                onClose={() => setIsAddGroupOpen(false)}
             />
         </div>
     );
