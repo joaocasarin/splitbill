@@ -8,7 +8,6 @@
             "@hooks/*": ["src/hooks/*"],
             "@lib/*": ["src/lib/*"],
             "@screens/*": ["src/screens/*"],
-            "@shadcn-utils": ["src/lib/utils.ts"],
             "@store": ["src/store/index.ts"],
             "@tests/*": ["tests/*"]
         }
