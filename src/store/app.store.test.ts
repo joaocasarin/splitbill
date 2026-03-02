@@ -1,3 +1,4 @@
+import type { EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
@@ -289,5 +290,94 @@ describe("addSettlement", () => {
                 "no direct debt from fromMember to toMember",
             );
         }
+    });
+});
+
+describe("addMemberToGroup", () => {
+    test("adds user to group memberIds", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2]);
+
+        useAppStore.getState().addMemberToGroup(1, 3);
+
+        const group = useAppStore.getState().global.groups[0];
+        expect(group.memberIds).toContain(3);
+    });
+
+    test("does not add duplicate member", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addGroup("Trip", [1, 2]);
+
+        useAppStore.getState().addMemberToGroup(1, 1);
+
+        const group = useAppStore.getState().global.groups[0];
+        expect(group.memberIds.filter((id) => id === 1)).toHaveLength(1);
+    });
+});
+
+describe("removeMemberFromGroup", () => {
+    test("removes member with zero balance from group with 3+ members", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+
+        const result = useAppStore.getState().removeMemberFromGroup(1, 3);
+
+        expect(result.valid).toBe(true);
+        const group = useAppStore.getState().global.groups[0];
+        expect(group.memberIds).not.toContain(3);
+    });
+
+    test("returns invalid when group not found", () => {
+        const result = useAppStore.getState().removeMemberFromGroup(99, 1);
+        expect(result.valid).toBe(false);
+        if (!result.valid) expect(result.reason).toBe("group not found");
+    });
+
+    test("returns invalid when member not in group", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2]);
+
+        const result = useAppStore.getState().removeMemberFromGroup(1, 3);
+        expect(result.valid).toBe(false);
+        if (!result.valid)
+            expect(result.reason).toBe("member not found in group");
+    });
+
+    test("returns invalid when group would drop below 2 members", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addGroup("Trip", [1, 2]);
+
+        const result = useAppStore.getState().removeMemberFromGroup(1, 1);
+        expect(result.valid).toBe(false);
+        if (!result.valid)
+            expect(result.reason).toBe("group must have at least 2 members");
+    });
+
+    test("returns invalid when member has non-zero balance", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+
+        useAppStore.getState().addExpense(1, {
+            title: "Dinner",
+            total: 30000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2, 3],
+        } as unknown as Omit<EqualExpense, "id">);
+
+        const result = useAppStore.getState().removeMemberFromGroup(1, 1);
+        expect(result.valid).toBe(false);
+        if (!result.valid)
+            expect(result.reason).toBe("member has non-zero balance");
     });
 });
