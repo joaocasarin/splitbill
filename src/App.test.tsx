@@ -25,7 +25,9 @@ describe("App", () => {
             },
             writable: true,
         });
+
         render(<App />);
+
         expect(
             screen.getByText(/invalid or corrupted state/i),
         ).toBeInTheDocument();
@@ -35,8 +37,13 @@ describe("App", () => {
         useAppStore.getState().addUser("Alice");
         useAppStore.getState().addUser("Bob");
         useAppStore.getState().addGroup("Trip", [1, 2]);
+
         render(<App />);
+
         await userEvent.click(screen.getByText("Trip"));
-        expect(screen.getByText(/group 1/i)).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("heading", { name: "Trip" }),
+        ).toBeInTheDocument();
     });
 });

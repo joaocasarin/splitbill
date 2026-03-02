@@ -1,5 +1,9 @@
-import { computeDirectDebts } from "@domain/balance";
-import { createIdGenerator, type EntityId } from "@domain/common";
+import { computeBalances, computeDirectDebts } from "@domain/balance";
+import {
+    createIdGenerator,
+    type EntityId,
+    GROUP_MEMBERS_MIN,
+} from "@domain/common";
 import type { Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
@@ -26,6 +30,11 @@ type AppActions = {
     syncToUrl: () => void;
     addUser: (name: string) => void;
     addGroup: (name: string, memberIds: EntityId[]) => void;
+    addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
+    removeMemberFromGroup: (
+        groupId: EntityId,
+        userId: EntityId,
+    ) => ValidationResult;
     addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => void;
     addSettlement: (
         groupId: EntityId,
@@ -118,6 +127,69 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             global: { ...global, groups: [...global.groups, newGroup] },
         });
         syncToUrl();
+    },
+    addMemberToGroup: (groupId: EntityId, userId: EntityId) => {
+        const { global, syncToUrl } = get();
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId && !g.memberIds.includes(userId)
+                        ? { ...g, memberIds: [...g.memberIds, userId] }
+                        : g,
+                ),
+            },
+        });
+        syncToUrl();
+    },
+    removeMemberFromGroup: (
+        groupId: EntityId,
+        userId: EntityId,
+    ): ValidationResult => {
+        const { global, syncToUrl } = get();
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        if (!group.memberIds.includes(userId)) {
+            return { valid: false, reason: "member not found in group" };
+        }
+
+        if (group.memberIds.length <= GROUP_MEMBERS_MIN) {
+            return {
+                valid: false,
+                reason: "group must have at least 2 members",
+            };
+        }
+
+        const balances = computeBalances(group);
+        const memberBalance = balances.find((b) => b.memberId === userId);
+
+        if (memberBalance && memberBalance.amount !== 0) {
+            return { valid: false, reason: "member has non-zero balance" };
+        }
+
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              memberIds: g.memberIds.filter(
+                                  (id) => id !== userId,
+                              ),
+                          }
+                        : /* c8 ignore next */ g,
+                ),
+            },
+        });
+        syncToUrl();
+        return { valid: true };
     },
     addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => {
         const { global, createId, syncToUrl } = get();
