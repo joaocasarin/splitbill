@@ -18,11 +18,7 @@ function updateBalance(
     memberId: EntityId,
     delta: number,
 ): void {
-    balances.set(
-        memberId,
-        /* c8 ignore next */
-        (balances.get(memberId) ?? 0) + delta,
-    );
+    balances.set(memberId, (balances.get(memberId) ?? 0) + delta);
 }
 
 function applyExpensePayment(
@@ -50,7 +46,6 @@ function applyEqualSplit(
     if (remainder !== 0) {
         const firstNonPayer = memberIds.find((id) => id !== payerId);
 
-        /* c8 ignore next */
         if (firstNonPayer !== undefined) {
             updateBalance(balances, firstNonPayer, -remainder);
         }
@@ -89,7 +84,6 @@ function applyPercentageSplit(
             (s) => s.memberId !== payerId,
         );
 
-        /* c8 ignore next */
         if (firstNonPayer !== undefined) {
             updateBalance(balances, firstNonPayer.memberId, -remainder);
         }

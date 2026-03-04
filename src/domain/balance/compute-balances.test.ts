@@ -99,6 +99,27 @@ describe("computeBalances", () => {
                 ]),
             );
         });
+
+        test("skips remainder when all memberIds equal payerId", () => {
+            const balances = computeBalances({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 3,
+                        payerId: 1,
+                        splitMode: "equal",
+                        // Invalid data by design: duplicates make firstNonPayer = undefined,
+                        // covering the unreachable branch of the defensive guard.
+                        memberIds: [1, 1],
+                    },
+                ],
+            });
+
+            const member1 = balances.find((b) => b.memberId === 1);
+            expect(member1?.amount).toBe(1);
+        });
     });
 
     describe("fixed split", () => {
@@ -239,6 +260,31 @@ describe("computeBalances", () => {
                     { memberId: 3, amount: -100 },
                 ]),
             );
+        });
+
+        test("skips remainder when all shares belong to payerId", () => {
+            const balances = computeBalances({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 100,
+                        payerId: 1,
+                        splitMode: "percentage",
+                        // Invalid data by design: duplicates make firstNonPayer = undefined,
+                        // covering the unreachable branch of the defensive guard.
+                        shares: [
+                            { memberId: 1, value: 3334 },
+                            { memberId: 1, value: 3333 },
+                            { memberId: 1, value: 3333 },
+                        ],
+                    },
+                ],
+            });
+
+            const member1 = balances.find((b) => b.memberId === 1);
+            expect(member1?.amount).toBe(1);
         });
     });
 
