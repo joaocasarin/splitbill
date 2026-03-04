@@ -5,6 +5,8 @@ import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddGroupModal } from "./AddGroupModal";
 
+vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
+
 beforeEach(() => {
     setupStoreOnly();
 });
@@ -193,6 +195,16 @@ describe("AddGroupModal", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(useAppStore.getState().global.groups).toHaveLength(0);
+        });
+    });
+
+    describe("handleOpenChange", () => {
+        test("calling with true is a no-op", async () => {
+            setupTwoUsers();
+            const onClose = vi.fn();
+            renderModal(true, onClose);
+            await userEvent.click(screen.getByTestId("__dialog_open__"));
+            expect(onClose).not.toHaveBeenCalled();
         });
     });
 });
