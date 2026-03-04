@@ -1,9 +1,18 @@
+import { computeBalances } from "@domain/balance";
 import type { EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
 import { setupStoreAndWindow } from "@tests/setup";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+
+vi.mock("@domain/balance", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@domain/balance")>();
+    return {
+        ...actual,
+        computeBalances: vi.fn(actual.computeBalances),
+    };
+});
 
 beforeEach(() => {
     setupStoreAndWindow({ restoreMocks: true });
@@ -255,7 +264,7 @@ describe("addSettlement", () => {
         expect(updated?.settlements[1].id).toBe(2);
     });
 
-    test("tries to add settlement to invalid group", () => {
+    test("returns invalid when group not found", () => {
         useAppStore.getState().addGroup("Dinner", [1, 2]);
 
         const result = useAppStore.getState().addSettlement(2, {
@@ -270,7 +279,7 @@ describe("addSettlement", () => {
         }
     });
 
-    test("tries to add settlement between members without direct debt", () => {
+    test("returns invalid when there is no direct debt between members", () => {
         useAppStore.getState().addUser("Bob");
         useAppStore.getState().addUser("Carol");
         useAppStore.getState().addGroup("Dinner", [1, 2, 3]);
@@ -379,5 +388,32 @@ describe("removeMemberFromGroup", () => {
         expect(result.valid).toBe(false);
         if (!result.valid)
             expect(result.reason).toBe("member has non-zero balance");
+    });
+
+    test("removes member when balance entry is absent for that member", () => {
+        vi.mocked(computeBalances).mockReturnValueOnce([]);
+
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+
+        const result = useAppStore.getState().removeMemberFromGroup(1, 3);
+        expect(result.valid).toBe(true);
+        const group = useAppStore.getState().global.groups[0];
+        expect(group.memberIds).not.toContain(3);
+    });
+
+    test("does not affect other groups when removing a member", () => {
+        useAppStore.getState().addUser("Alice");
+        useAppStore.getState().addUser("Bob");
+        useAppStore.getState().addUser("Carol");
+        useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+        useAppStore.getState().addGroup("Dinn", [1, 2, 3]);
+
+        useAppStore.getState().removeMemberFromGroup(1, 3);
+
+        const dinner = useAppStore.getState().global.groups[1];
+        expect(dinner.memberIds).toContain(3);
     });
 });

@@ -184,7 +184,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                                   (id) => id !== userId,
                               ),
                           }
-                        : /* c8 ignore next */ g,
+                        : g,
                 ),
             },
         });
