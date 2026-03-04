@@ -1,9 +1,10 @@
+import * as balanceDomain from "@domain/balance";
 import type { EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupStoreOnly } from "@tests/setup";
-import { assert, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
 
 beforeEach(() => {
@@ -76,15 +77,13 @@ describe("GroupScreen", () => {
                 memberIds: [1, 2],
             } as unknown as Omit<EqualExpense, "id">);
             renderScreen(group.id);
-            // expect(screen.getByText("R$\u00a0100,00")).toBeInTheDocument();
-            // "shows positive balance for payer"
+
             const aliceItem = screen.getByText("Alice").closest("li");
 
-            if (!aliceItem) {
-                assert.fail("Alice item not available.");
-            }
-
-            expect(within(aliceItem).getByText(/100,00/)).toBeInTheDocument();
+            expect(aliceItem).not.toBeNull();
+            expect(
+                within(aliceItem as HTMLElement).getByText(/100,00/),
+            ).toBeInTheDocument();
         });
 
         test("shows negative balance for debtor", () => {
@@ -191,6 +190,22 @@ describe("GroupScreen", () => {
             );
             expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
+
+        test("closes AddMemberModal when onClose is called", async () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addUser("Carol");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+            const group = useAppStore.getState().global.groups[0];
+            renderScreen(group.id);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add member/i }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
     });
 
     describe("expenses", () => {
@@ -268,6 +283,86 @@ describe("GroupScreen", () => {
             expect(
                 screen.getByRole("button", { name: /add settlement/i }),
             ).toBeInTheDocument();
+        });
+    });
+
+    describe("fallback display", () => {
+        test("shows User {id} when member has no matching user", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+            useAppStore.getState().addMemberToGroup(1, 999);
+            const group = useAppStore.getState().global.groups[0];
+            renderScreen(group.id);
+            expect(screen.getByText("User 999")).toBeInTheDocument();
+        });
+
+        test("shows R$ 0,00 when computeBalances returns no entry for member", () => {
+            vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce([]);
+            const group = setupGroup();
+            renderScreen(group.id);
+            const zeros = screen.getAllByText(/R\$\s*0,00/);
+            expect(zeros.length).toBeGreaterThanOrEqual(2);
+        });
+
+        test("shows User {id} as payer when payerId has no matching user", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.setState((state) => ({
+                global: {
+                    ...state.global,
+                    groups: state.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  expenses: [
+                                      {
+                                          id: 1,
+                                          title: "Test",
+                                          total: 10000,
+                                          payerId: 999,
+                                          splitMode: "equal" as const,
+                                          memberIds: [1, 2],
+                                      },
+                                  ],
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            renderScreen(group.id);
+            expect(screen.getByText(/user 999/i)).toBeInTheDocument();
+        });
+
+        test("shows User {id} as from/to when settlement member has no matching user", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.setState((state) => ({
+                global: {
+                    ...state.global,
+                    groups: state.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  settlements: [
+                                      {
+                                          id: 1,
+                                          fromMemberId: 998,
+                                          toMemberId: 999,
+                                          amount: 5000,
+                                      },
+                                  ],
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            renderScreen(group.id);
+            expect(screen.getByText("User 998 → User 999")).toBeInTheDocument();
         });
     });
 });
