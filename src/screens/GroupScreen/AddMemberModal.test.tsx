@@ -1,9 +1,37 @@
 import { useAppStore } from "@store";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddMemberModal } from "./AddMemberModal";
+
+vi.mock("@components/ui/button", () => ({
+    Button: ({
+        children,
+        disabled,
+        onClick,
+        variant: _v,
+        size: _s,
+        ...props
+    }: {
+        children?: import("react").ReactNode;
+        disabled?: boolean;
+        onClick?: import("react").MouseEventHandler<HTMLButtonElement>;
+        variant?: string;
+        size?: string;
+    }) => (
+        <button
+            aria-disabled={disabled ? "true" : undefined}
+            onClick={onClick}
+            {...props}
+        >
+            {children}
+        </button>
+    ),
+    buttonVariants: () => "",
+}));
+
+vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
 beforeEach(() => {
     setupStoreOnly();
@@ -47,7 +75,7 @@ describe("AddMemberModal", () => {
             renderModal(group.id);
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
-            ).toBeDisabled();
+            ).toHaveAttribute("aria-disabled", "true");
         });
     });
 
@@ -58,7 +86,7 @@ describe("AddMemberModal", () => {
             await userEvent.selectOptions(screen.getByRole("combobox"), "3");
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
-            ).toBeEnabled();
+            ).not.toHaveAttribute("aria-disabled");
         });
 
         test("adds member to group on confirm", async () => {
@@ -81,6 +109,14 @@ describe("AddMemberModal", () => {
             );
             expect(onClose).toHaveBeenCalledOnce();
         });
+
+        test("does nothing when Add is clicked without selecting a user", () => {
+            const group = setupGroupWithNonMember();
+            renderModal(group.id);
+            fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
+            const updated = useAppStore.getState().global.groups[0];
+            expect(updated.memberIds).not.toContain(3);
+        });
     });
 
     describe("cancelling", () => {
@@ -102,6 +138,26 @@ describe("AddMemberModal", () => {
             );
             const updated = useAppStore.getState().global.groups[0];
             expect(updated.memberIds).not.toContain(3);
+        });
+
+        test("deselecting option re-disables Add button", async () => {
+            const group = setupGroupWithNonMember();
+            renderModal(group.id);
+            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
+            await userEvent.selectOptions(screen.getByRole("combobox"), "");
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toHaveAttribute("aria-disabled", "true");
+        });
+    });
+
+    describe("handleOpenChange", () => {
+        test("calling with true is a no-op", async () => {
+            const group = setupGroupWithNonMember();
+            const onClose = vi.fn();
+            renderModal(group.id, true, onClose);
+            await userEvent.click(screen.getByTestId("__dialog_open__"));
+            expect(onClose).not.toHaveBeenCalled();
         });
     });
 });
