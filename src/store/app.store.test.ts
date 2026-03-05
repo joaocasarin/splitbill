@@ -97,6 +97,18 @@ describe("initEmpty", () => {
     });
 });
 
+describe("syncToUrl", () => {
+    test("sets state param in URL passed to history.replaceState", () => {
+        useAppStore.getState().addUser("Alice");
+
+        const lastCall = vi
+            .mocked(window.history.replaceState)
+            .mock.calls.at(-1);
+
+        expect(lastCall?.[2]).toContain("state=");
+    });
+});
+
 describe("addUser", () => {
     test("adds user to global.users", () => {
         useAppStore.getState().addUser("Alice");
