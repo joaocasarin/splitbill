@@ -1,3 +1,4 @@
+import { GROUP_NAME_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -103,6 +104,24 @@ describe("AddGroupModal", () => {
             expect(
                 screen.getByRole("button", { name: /create/i }),
             ).toBeEnabled();
+        });
+
+        test("Create is disabled when name is too long", async () => {
+            setupTwoUsers();
+            renderModal();
+            await userEvent.type(
+                screen.getByPlaceholderText(/e.g./i),
+                "A".repeat(GROUP_NAME_MAX + 1),
+            );
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Alice" }),
+            );
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Bob" }),
+            );
+            expect(
+                screen.getByRole("button", { name: /create/i }),
+            ).toBeDisabled();
         });
     });
 
