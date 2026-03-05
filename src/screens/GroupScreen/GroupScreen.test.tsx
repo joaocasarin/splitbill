@@ -297,14 +297,6 @@ describe("GroupScreen", () => {
             expect(screen.getByText("User 999")).toBeInTheDocument();
         });
 
-        test("shows R$ 0,00 when computeBalances returns no entry for member", () => {
-            vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce([]);
-            const group = setupGroup();
-            renderScreen(group.id);
-            const zeros = screen.getAllByText(/R\$\s*0,00/);
-            expect(zeros.length).toBeGreaterThanOrEqual(2);
-        });
-
         test("shows User {id} as payer when payerId has no matching user", () => {
             useAppStore.getState().addUser("Alice");
             useAppStore.getState().addUser("Bob");
@@ -363,6 +355,18 @@ describe("GroupScreen", () => {
             }));
             renderScreen(group.id);
             expect(screen.getByText("User 998 → User 999")).toBeInTheDocument();
+        });
+
+        describe("defensive guards (unreachable in valid usage)", () => {
+            test("shows R$ 0,00 when computeBalances returns no entry for member", () => {
+                vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce(
+                    [],
+                );
+                const group = setupGroup();
+                renderScreen(group.id);
+                const zeros = screen.getAllByText(/R\$\s*0,00/);
+                expect(zeros.length).toBeGreaterThanOrEqual(2);
+            });
         });
     });
 });

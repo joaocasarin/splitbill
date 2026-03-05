@@ -109,6 +109,7 @@ describe("AddGroupModal", () => {
         test("Create is disabled when name is too long", async () => {
             setupTwoUsers();
             renderModal();
+
             await userEvent.type(
                 screen.getByPlaceholderText(/e.g./i),
                 "A".repeat(GROUP_NAME_MAX + 1),
@@ -119,6 +120,7 @@ describe("AddGroupModal", () => {
             await userEvent.click(
                 screen.getByRole("checkbox", { name: "Bob" }),
             );
+
             expect(
                 screen.getByRole("button", { name: /create/i }),
             ).toBeDisabled();
