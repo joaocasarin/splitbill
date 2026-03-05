@@ -383,4 +383,7 @@ src/domain/
 │   └── settlement.schema.ts     # SettlementSchema
 └── user/
     └── user.schema.ts           # UserSchema
+src/lib/
+└── format.ts                    # Presentation utilities (formatCurrency — BRL, integer cents)
+
 ```
