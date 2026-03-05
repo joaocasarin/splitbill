@@ -239,13 +239,15 @@ Users are never permanently removed. Instead, `deletedAt` is set on the `User` e
 
 Removing a user from a group does not delete them from the app, and vice versa. Each has its own set of rules.
 
-**Removing a member from a group** follows separate rules from soft deleting a user:
+**Removing a member from a group** follows separate rules from soft deleting a user: ✅ Implemented
 
 | Rule | Detail |
 |---|---|
 | Minimum members | Group must still have at least 2 members after removal |
 | Balance | Member's balance in the group must be 0 before removal |
 | History | Member's past expenses and settlements remain in the group unchanged |
+
+**Implementation:** `removeMemberFromGroup(groupId, memberId)` in the store. Returns `ValidationResult`.
 
 ### Referential integrity conflict
 
@@ -315,6 +317,8 @@ The application state is managed by a single Zustand store located at `src/store
 | `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
 | `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
+| `addMemberToGroup(groupId, userId)` | Adds a user to a group's memberIds. Idempotent — no-op if already a member. |
+| `removeMemberFromGroup(groupId, memberId)` | Validates balance, minimum members, and membership, then removes. Returns `ValidationResult`. |
 
 ### Notes
 - `syncToUrl` is called automatically at the end of every mutating action
