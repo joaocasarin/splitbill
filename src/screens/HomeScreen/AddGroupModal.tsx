@@ -57,7 +57,6 @@ export function AddGroupModal({ open, onClose }: Props) {
         setSelectedIds(new Set());
     }
 
-    // c8 ignore next 3
     function handleOpenChange(next: boolean) {
         if (!next) {
             reset();

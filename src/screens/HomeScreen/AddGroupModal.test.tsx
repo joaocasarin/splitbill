@@ -1,9 +1,12 @@
+import { GROUP_NAME_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddGroupModal } from "./AddGroupModal";
+
+vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
 beforeEach(() => {
     setupStoreOnly();
@@ -102,6 +105,26 @@ describe("AddGroupModal", () => {
                 screen.getByRole("button", { name: /create/i }),
             ).toBeEnabled();
         });
+
+        test("Create is disabled when name is too long", async () => {
+            setupTwoUsers();
+            renderModal();
+
+            await userEvent.type(
+                screen.getByPlaceholderText(/e.g./i),
+                "A".repeat(GROUP_NAME_MAX + 1),
+            );
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Alice" }),
+            );
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Bob" }),
+            );
+
+            expect(
+                screen.getByRole("button", { name: /create/i }),
+            ).toBeDisabled();
+        });
     });
 
     describe("member selection", () => {
@@ -193,6 +216,16 @@ describe("AddGroupModal", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(useAppStore.getState().global.groups).toHaveLength(0);
+        });
+    });
+
+    describe("handleOpenChange", () => {
+        test("calling with true is a no-op", async () => {
+            setupTwoUsers();
+            const onClose = vi.fn();
+            renderModal(true, onClose);
+            await userEvent.click(screen.getByTestId("__dialog_open__"));
+            expect(onClose).not.toHaveBeenCalled();
         });
     });
 });

@@ -5,6 +5,8 @@ import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddUsersModal } from "./AddUsersModal";
 
+vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
+
 beforeEach(() => {
     setupStoreOnly();
 });
@@ -151,6 +153,15 @@ describe("AddUsersModal", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(onClose).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("handleOpenChange", () => {
+        test("calling with true is a no-op", async () => {
+            const onClose = vi.fn();
+            renderModal(true, onClose);
+            await userEvent.click(screen.getByTestId("__dialog_open__"));
+            expect(onClose).not.toHaveBeenCalled();
         });
     });
 });

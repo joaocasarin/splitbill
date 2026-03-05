@@ -58,7 +58,6 @@ export function AddUsersModal({ open, onClose }: Props) {
         setEntries([makeEntry()]);
     }
 
-    /* c8 ignore next */
     function handleOpenChange(next: boolean) {
         if (!next) {
             reset();

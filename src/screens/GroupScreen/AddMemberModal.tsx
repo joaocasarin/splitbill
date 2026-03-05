@@ -37,7 +37,6 @@ export function AddMemberModal({ groupId, open, onClose }: Props) {
         setSelectedId(null);
     }
 
-    // c8 ignore next 3
     function handleOpenChange(next: boolean) {
         if (!next) {
             reset();

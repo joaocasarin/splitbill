@@ -124,7 +124,6 @@ The system guarantees:
 
 - Timestamps (`createdAt`, `updatedAt`) on all entities
 - Soft delete for users (`deletedAt`)
-- Member removal from groups
 - Debt simplification algorithm
 - Editing expenses and settlements
 - Migration system for version upgrades
