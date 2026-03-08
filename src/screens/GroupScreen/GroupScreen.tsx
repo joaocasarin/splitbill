@@ -55,7 +55,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 >
                     <ArrowLeft />
                 </Button>
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-2xl font-bold tracking-tight">
                     {group.name}
                 </h1>
             </div>
