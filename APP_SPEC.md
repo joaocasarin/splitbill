@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-24  
+> **Last updated:** 2026-03-08  
 > **Status:** Draft
 
 ---
@@ -79,6 +79,19 @@ The domain layer (`src/domain/`) is framework-agnostic by design. If a backend i
 | Client state | Zustand + URL | Zustand + API calls |
 
 Business rules are isolated in pure `*.rules.ts` functions today precisely to make this migration a file move, not a refactor.
+
+### UI Layout
+```
+src/
+├── App.tsx              # root — owns view state and isSidebarOpen state
+├── AppLayout.tsx        # shell — header, desktop aside, mobile drawer overlay
+└── components/
+    └── Sidebar.tsx      # navigation — users list, groups list, modals
+```
+
+**Desktop:** sidebar always visible via `hidden md:block` on the `<aside>`.  
+**Mobile:** sidebar hidden by default. Burger button in the header toggles a drawer overlay. Backdrop is a `<button>` (not `<div>`) for keyboard and screen reader accessibility.  
+**State:** `isSidebarOpen` lives in `App` and is passed to `AppLayout` (`isSidebarOpen`, `onToggleSidebar`, `onCloseSidebar`) and to `Sidebar` (`onClose`). `onClose` is optional — `Sidebar` works standalone on desktop without it.
 
 ---
 
@@ -323,4 +336,4 @@ The application state is managed by a single Zustand store located at `src/store
 ### Notes
 - `syncToUrl` is called automatically at the end of every mutating action
 - `createId` is re-initialized from the loaded state on `hydrateFromUrl` to prevent ID collisions
-- `syncToUrl` currently uses `JSON.stringify` + `encodeURIComponent` — LZ compression will be added in the URL Serialization context
+- `syncToUrl` uses `lzstring.compressToEncodedURIComponent(JSON.stringify(global))` for compression and encoding

@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-02-24  
+> **Last updated:** 2026-03-08  
 > **Status:** Draft
 
 ---
@@ -361,7 +361,7 @@ The order of arrays in the domain is not arbitrary — it has financial conseque
 ```
 src/domain/
 ├── balance/
-│   ├── balance.schema.ts        # MemberBalanceSchema, DirectDebtSchema, SimplifiedDebtSchem
+│   ├── balance.schema.ts        # MemberBalanceSchema, DirectDebtSchema, SimplifiedDebtSchema
 │   ├── compute-balances.ts      # computeBalances()
 │   └── compute-direct-debts.ts  # computeDirectDebts()
 ├── common/

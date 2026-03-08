@@ -1,4 +1,4 @@
-# Expense Sharing Web App
+# Splitbill
 
 A fully client-side deterministic expense splitting application built with React and Vite.
 
@@ -45,6 +45,7 @@ The system is designed with strong domain consistency and financial determinism.
 - Deterministic balance computation
 - Full state sharing via compressed URL
 - Direct-debt validation on settlement creation
+- Sidebar navigation with mobile drawer support
 
 ---
 
