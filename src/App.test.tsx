@@ -51,4 +51,27 @@ describe("App", () => {
             screen.getByText(/select a group from the sidebar to get started/i),
         ).toBeInTheDocument();
     });
+
+    test("opens mobile sidebar when burger button is clicked", async () => {
+        render(<App />);
+        await userEvent.click(
+            screen.getByRole("button", { name: /toggle sidebar/i }),
+        );
+        expect(
+            screen.getByRole("button", { name: /close sidebar/i }),
+        ).toBeInTheDocument();
+    });
+
+    test("closes mobile sidebar when backdrop is clicked", async () => {
+        render(<App />);
+        await userEvent.click(
+            screen.getByRole("button", { name: /toggle sidebar/i }),
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: /close sidebar/i }),
+        );
+        expect(
+            screen.queryByRole("button", { name: /close sidebar/i }),
+        ).not.toBeInTheDocument();
+    });
 });
