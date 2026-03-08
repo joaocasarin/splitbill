@@ -104,7 +104,7 @@ export function AddGroupModal({ open, onClose }: Props) {
                                             onChange={() =>
                                                 toggleMember(user.id)
                                             }
-                                            className="rounded border-border accent-primary"
+                                            className="cursor-pointer rounded border-border accent-primary"
                                         />
                                         {user.name}
                                     </label>

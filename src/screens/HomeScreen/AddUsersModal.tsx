@@ -101,7 +101,7 @@ export function AddUsersModal({ open, onClose }: Props) {
                     <button
                         type="button"
                         onClick={handleAddAnother}
-                        className="self-start flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+                        className="self-start cursor-pointer active:opacity-70 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Add another

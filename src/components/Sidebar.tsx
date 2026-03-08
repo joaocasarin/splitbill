@@ -109,7 +109,7 @@ export function Sidebar({ onNavigate, view }: Props) {
                                             aria-current={
                                                 isActive ? "page" : undefined
                                             }
-                                            className={`w-full text-left px-3 py-2 rounded-md transition-colors ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted/60 text-foreground"}`}
+                                            className={`w-full cursor-pointer text-left px-3 py-2 rounded-md transition-colors ${isActive ? "bg-primary/10 text-primary active:bg-primary/20" : "hover:bg-muted/60 text-foreground active:bg-muted/80"}`}
                                             onClick={() => {
                                                 onNavigate({
                                                     screen: "group",
