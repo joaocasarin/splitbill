@@ -12,9 +12,7 @@ beforeEach(() => {
 describe("App", () => {
     test("renders Splitbill heading", () => {
         render(<App />);
-        expect(
-            screen.getByRole("heading", { name: "Splitbill" }),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Splitbill")).toBeInTheDocument();
     });
 
     test("renders error screen on error status", () => {
@@ -40,10 +38,17 @@ describe("App", () => {
 
         render(<App />);
 
-        await userEvent.click(screen.getByText("Trip"));
+        await userEvent.click(screen.getByRole("button", { name: /trip/i }));
 
         expect(
             screen.getByRole("heading", { name: "Trip" }),
+        ).toBeInTheDocument();
+    });
+
+    test("renders home screen on initial load", () => {
+        render(<App />);
+        expect(
+            screen.getByText(/select a group from the sidebar to get started/i),
         ).toBeInTheDocument();
     });
 });

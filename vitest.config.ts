@@ -9,6 +9,8 @@ export default defineConfig({
         exclude: ["**/node_modules/**", "**/dist/**", "public/**"],
         coverage: {
             provider: "v8",
+            enabled: true,
+            reportOnFailure: true,
             reporter: ["text", "html"],
             include: ["src/**/*.{ts,tsx}"],
             exclude: [
