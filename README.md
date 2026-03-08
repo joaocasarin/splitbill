@@ -136,3 +136,4 @@ The system guarantees:
 |---|---|
 | [`APP_SPEC.md`](./APP_SPEC.md) | Tech stack, architecture, persistence strategy, roadmap |
 | [`DOMAIN_SPEC.md`](./DOMAIN_SPEC.md) | Schemas, business rules, validation architecture, design decisions |
+| [`TEST_SPEC.md`](./TEST_SPEC.md) | Testing conventions, mock strategies, coverage configuration |
