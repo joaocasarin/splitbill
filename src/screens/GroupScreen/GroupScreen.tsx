@@ -21,7 +21,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
     if (!group) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="flex items-center justify-center h-full min-h-80">
                 <p className="text-muted-foreground text-sm">
                     Group not found.
                 </p>
@@ -44,7 +44,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
     const canAddMember = nonMembers.length > 0;
 
     return (
-        <div className="max-w-lg mx-auto px-4 py-10 flex flex-col gap-10">
+        <div className="px-6 py-8 flex flex-col gap-8 max-w-2xl">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <Button
