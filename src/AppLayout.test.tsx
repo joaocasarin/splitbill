@@ -19,9 +19,7 @@ describe("AppLayout", () => {
             </AppLayout>,
         );
         expect(
-            screen.getByText(
-                /split expenses with friends, no backend needed./i,
-            ),
+            screen.getByText(/split the bill, not the friendship./i),
         ).toBeInTheDocument();
     });
 
