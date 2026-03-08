@@ -126,7 +126,7 @@ export function Sidebar({ onNavigate, view, onClose }: Props) {
                                                 {group.name}
                                             </span>
 
-                                            <span className="text-sm text-muted-foreground">
+                                            <span className="text-xs text-muted-foreground">
                                                 {group.memberIds.length} members
                                             </span>
                                         </button>
