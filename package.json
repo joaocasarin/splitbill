@@ -7,7 +7,7 @@
         "dev": "vite",
         "build": "tsc -b && vite build",
         "lint:ci": "biome ci .",
-        "lint": "biome lint --write .",
+        "lint": "biome lint --write --unsafe .",
         "format": "biome format --write .",
         "test": "vitest run",
         "test:cov": "vitest run --coverage",
