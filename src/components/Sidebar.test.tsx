@@ -187,4 +187,24 @@ describe("Sidebar", () => {
             ).not.toHaveAttribute("aria-current");
         });
     });
+
+    describe("onClose", () => {
+        test("calls onClose when a group is clicked", async () => {
+            setupGroupWithTwoMembers();
+            const onClose = vi.fn();
+            render(<Sidebar {...defaultProps} onClose={onClose} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /trip/i }),
+            );
+            expect(onClose).toHaveBeenCalledOnce();
+        });
+
+        test("does not throw when onClose is not provided", async () => {
+            setupGroupWithTwoMembers();
+            render(<Sidebar {...defaultProps} />);
+            await expect(
+                userEvent.click(screen.getByRole("button", { name: /trip/i })),
+            ).resolves.not.toThrow();
+        });
+    });
 });

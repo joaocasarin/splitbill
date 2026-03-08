@@ -10,9 +10,10 @@ import { Button } from "./ui/button";
 type Props = {
     view: AppView;
     onNavigate: (view: AppView) => void;
+    onClose?: () => void;
 };
 
-export function Sidebar({ onNavigate, view }: Props) {
+export function Sidebar({ onNavigate, view, onClose }: Props) {
     const { global } = useAppStore();
     const { groups, users } = global;
     const canCreateGroup = users.length >= GROUP_MEMBERS_MIN;
@@ -115,6 +116,8 @@ export function Sidebar({ onNavigate, view }: Props) {
                                                     screen: "group",
                                                     groupId: group.id,
                                                 });
+
+                                                onClose?.();
                                             }}
                                         >
                                             <span

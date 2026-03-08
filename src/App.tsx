@@ -14,6 +14,7 @@ export type AppView =
 export function App() {
     const { status } = useAppStore();
     const [view, setView] = useState<AppView>({ screen: "home" });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         useAppStore.getState().hydrateFromUrl();
@@ -24,7 +25,18 @@ export function App() {
     }
 
     return (
-        <AppLayout sidebar={<Sidebar view={view} onNavigate={setView} />}>
+        <AppLayout
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+            onCloseSidebar={() => setIsSidebarOpen(false)}
+            sidebar={
+                <Sidebar
+                    view={view}
+                    onNavigate={setView}
+                    onClose={() => setIsSidebarOpen(false)}
+                />
+            }
+        >
             {view.screen === "home" && <HomeScreen onNavigate={setView} />}
             {view.screen === "group" && (
                 <GroupScreen groupId={view.groupId} onNavigate={setView} />
