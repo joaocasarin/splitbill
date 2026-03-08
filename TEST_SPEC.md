@@ -51,7 +51,9 @@ coverage: {
         "**/*.d.ts",
         "vite.config.ts",
         "vitest.config.ts",
-        "tests/**/*.setup.{ts,tsx}",
+        "tests/helpers/**/*.{ts,tsx}",
+        "tests/mocks/**/*.{ts,tsx}",
+        "tests/setup/**/*.{ts,tsx}",
     ],
 }
 ```
@@ -84,7 +86,7 @@ Resets the store with `initEmpty()`. Does not configure `window` nor `history`.
 
 In addition to `initEmpty()`, defines `window.location` with defaults (`search: ""`, `href: "http://localhost/"`) and spies on `window.history.replaceState`.
 
-**Use in:** tests that exercise `hydrateFromUrl` / `syncToUrl` — mainly `app.store.test.ts`.
+**Use in:** tests that exercise `hydrateFromUrl` / `syncToUrl` — `app.store.test.ts` and `App.test.tsx`.
 
 **Option `restoreMocks: true`:** calls `vi.restoreAllMocks()` before resetting state. Required in `app.store.test.ts` because the balance module is mocked with `vi.mock` and the spy needs to be restored between tests. The correct semantic order is: restore mocks → reset state.
 
@@ -118,6 +120,19 @@ function renderModal() {
 ```
 
 **Rule:** factories that appear in multiple test files go to `tests/helpers/`. Factories that appear in only one file stay local.
+
+For components with multiple props that rarely change between tests, declare a `defaultProps` object at the top of the file and spread it into each render call:
+```typescript
+const defaultProps = {
+    view: { screen: "home" as const },
+    onNavigate: vi.fn(),
+};
+
+render(<Sidebar {...defaultProps} />);
+render(<Sidebar {...defaultProps} view={{ screen: "group", groupId: 1 }} />);
+```
+
+**Rule:** use `defaultProps` when a component has 3 or more props and most tests only override one of them. Used in: `Sidebar.test.tsx`, `AppLayout.test.tsx`.
 
 ---
 
