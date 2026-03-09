@@ -183,7 +183,7 @@ describe("AddExpenseModal", () => {
             ).toBeDisabled();
         });
 
-        test("Add is disabled when fewer than 2 participants selected", async () => {
+        test("Add is disabled when only the payer is a participant", async () => {
             renderModal();
             await userEvent.type(
                 screen.getByPlaceholderText(/e\.g\./i),
@@ -192,12 +192,31 @@ describe("AddExpenseModal", () => {
             fireEvent.keyDown(screen.getByRole("textbox", { name: /total/i }), {
                 key: "1",
             });
-            await userEvent.click(
-                screen.getByRole("checkbox", { name: "Alice" }),
-            );
+            // Alice is pre-checked as payer and participant; Bob is not checked
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
             ).toBeDisabled();
+        });
+
+        test("Add is enabled with one non-payer participant", async () => {
+            renderModal();
+            await userEvent.type(
+                screen.getByPlaceholderText(/e\.g\./i),
+                "Hotel",
+            );
+            fireEvent.keyDown(screen.getByRole("textbox", { name: /total/i }), {
+                key: "1",
+            });
+            // Uncheck Alice (payer), check only Bob (non-payer)
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Alice" }),
+            );
+            await userEvent.click(
+                screen.getByRole("checkbox", { name: "Bob" }),
+            );
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toBeEnabled();
         });
 
         test("Add is disabled when title is too long", async () => {

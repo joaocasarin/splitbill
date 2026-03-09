@@ -10,7 +10,6 @@ import {
 import { Input } from "@components/ui/input";
 import {
     type EntityId,
-    EQUAL_SPLIT_MEMBERS_MIN,
     EXPENSE_TITLE_MAX,
     EXPENSE_TITLE_MIN,
 } from "@domain/common";
@@ -50,9 +49,10 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
         title.trim().length >= EXPENSE_TITLE_MIN &&
         title.trim().length <= EXPENSE_TITLE_MAX;
     const isTotalValid = total > 0;
-    const hasEnoughParticipants =
-        participantIds.size >= EQUAL_SPLIT_MEMBERS_MIN;
-    const canCreate = isTitleValid && isTotalValid && hasEnoughParticipants;
+    const hasNonPayerParticipant =
+        payerId !== null &&
+        Array.from(participantIds).some((id) => id !== payerId);
+    const canCreate = isTitleValid && isTotalValid && hasNonPayerParticipant;
 
     function toggleParticipant(id: EntityId) {
         setParticipantIds((prev) => {
