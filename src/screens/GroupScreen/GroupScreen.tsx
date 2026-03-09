@@ -6,6 +6,7 @@ import { formatCurrency } from "@lib/format";
 import { useAppStore } from "@store";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { AddExpenseModal } from "./AddExpenseModal";
 import { AddMemberModal } from "./AddMemberModal";
 
 type Props = {
@@ -18,6 +19,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
     const group = global.groups.find((g) => g.id === groupId);
     const users = global.users;
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+    const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
     if (!group) {
         return (
@@ -131,7 +133,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                     <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
                         Expenses
                     </h2>
-                    <Button size="sm" variant="outline">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsAddExpenseOpen(true)}
+                    >
                         <Plus className="w-4 h-4 mr-1" />
                         Add expense
                     </Button>
@@ -218,6 +224,12 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 groupId={groupId}
                 open={isAddMemberOpen}
                 onClose={() => setIsAddMemberOpen(false)}
+            />
+
+            <AddExpenseModal
+                groupId={groupId}
+                open={isAddExpenseOpen}
+                onClose={() => setIsAddExpenseOpen(false)}
             />
         </div>
     );

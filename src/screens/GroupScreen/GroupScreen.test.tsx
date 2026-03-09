@@ -249,6 +249,27 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /add expense/i }),
             ).toBeInTheDocument();
         });
+
+        test("opens AddExpenseModal when Add expense is clicked", async () => {
+            const group = setupGroup();
+            renderScreen(group.id);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add expense/i }),
+            );
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
+        });
+
+        test("closes AddExpenseModal when onClose is called", async () => {
+            const group = setupGroup();
+            renderScreen(group.id);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add expense/i }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
     });
 
     describe("settlements", () => {
