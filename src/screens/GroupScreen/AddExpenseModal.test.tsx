@@ -58,9 +58,7 @@ async function fillValidFormPercentage() {
     fireEvent.keyDown(screen.getByRole("textbox", { name: /total/i }), {
         key: "1",
     });
-    await userEvent.click(
-        screen.getByRole("button", { name: /percentage/i }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: /percentage/i }));
     // Set Alice 50% and Bob 50% (spinbuttons ordered by member)
     const spinbuttons = screen.getAllByRole("spinbutton");
     fireEvent.change(spinbuttons[0], { target: { value: "50" } });
@@ -396,9 +394,7 @@ describe("AddExpenseModal", () => {
             test("shows matches total confirmation when shares equal total", async () => {
                 renderModal();
                 await fillValidFormFixed();
-                expect(
-                    screen.getByText(/matches total/i),
-                ).toBeInTheDocument();
+                expect(screen.getByText(/matches total/i)).toBeInTheDocument();
             });
 
             test("Add is enabled when shares match total and non-payer has share", async () => {
