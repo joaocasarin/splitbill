@@ -6,12 +6,14 @@ export type {
     Expense,
     FixedExpense,
     PercentageExpense,
+    SplitMode,
 } from "./expense.schema";
 export {
     EqualExpenseSchema,
     ExpenseSchema,
     FixedExpenseSchema,
     PercentageExpenseSchema,
+    SplitModeSchema,
 } from "./expense.schema";
 export type { MoneyShare, PercentageShare } from "./expense-share.schema";
 export {

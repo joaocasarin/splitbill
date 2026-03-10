@@ -13,6 +13,8 @@ import {
     PercentageShareSchema,
 } from "./expense-share.schema";
 
+export const SplitModeSchema = z.enum(["equal", "fixed", "percentage"]);
+
 const BaseExpenseFields = {
     id: EntityIdSchema,
     title: z
@@ -29,7 +31,7 @@ const BaseExpenseFields = {
 
 export const EqualExpenseSchema = z.object({
     ...BaseExpenseFields,
-    splitMode: z.literal("equal"),
+    splitMode: z.literal(SplitModeSchema.enum.equal),
     memberIds: z
         .array(EntityIdSchema)
         .min(EQUAL_SPLIT_MEMBERS_MIN)
@@ -42,7 +44,7 @@ export const EqualExpenseSchema = z.object({
 export const FixedExpenseSchema = z
     .object({
         ...BaseExpenseFields,
-        splitMode: z.literal("fixed"),
+        splitMode: z.literal(SplitModeSchema.enum.fixed),
         shares: z
             .array(MoneyShareSchema)
             .min(EXPENSE_SHARES_MIN)
@@ -66,7 +68,7 @@ export const FixedExpenseSchema = z
 
 export const PercentageExpenseSchema = z.object({
     ...BaseExpenseFields,
-    splitMode: z.literal("percentage"),
+    splitMode: z.literal(SplitModeSchema.enum.percentage),
     shares: z
         .array(PercentageShareSchema)
         .min(EXPENSE_SHARES_MIN)
@@ -92,3 +94,4 @@ export type EqualExpense = z.infer<typeof EqualExpenseSchema>;
 export type FixedExpense = z.infer<typeof FixedExpenseSchema>;
 export type PercentageExpense = z.infer<typeof PercentageExpenseSchema>;
 export type Expense = z.infer<typeof ExpenseSchema>;
+export type SplitMode = z.infer<typeof SplitModeSchema>;
