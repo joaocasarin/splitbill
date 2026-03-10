@@ -1,15 +1,13 @@
 import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
-import { computeBalances } from "@domain/balance";
-import { type EntityId } from "@domain/common";
-import { useAppStore } from "@store";
+import type { EntityId } from "@domain/common";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
 import { AddExpenseModal } from "./AddExpenseModal";
 import { AddMemberModal } from "./AddMemberModal";
 import { ExpensesSection } from "./ExpensesSection";
 import { MembersSection } from "./MembersSection";
 import { SettlementsSection } from "./SettlementsSection";
+import { useGroupScreen } from "./useGroupScreen";
 
 type Props = {
     groupId: EntityId;
@@ -17,13 +15,9 @@ type Props = {
 };
 
 export function GroupScreen({ groupId, onNavigate }: Props) {
-    const { global, removeMemberFromGroup } = useAppStore();
-    const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
-    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-    const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+    const state = useGroupScreen(groupId);
 
-    if (!group) {
+    if (!state.group) {
         return (
             <div className="flex items-center justify-center h-full min-h-80">
                 <p className="text-muted-foreground text-sm">
@@ -33,19 +27,20 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         );
     }
 
-    const balances = computeBalances(group);
-    const members = group.memberIds.map((id) => {
-        const user = users.find((u) => u.id === id);
-        const balance = balances.find((b) => b.memberId === id);
-        return {
-            id,
-            name: user?.name ?? `User ${id}`,
-            amount: balance?.amount ?? 0,
-        };
-    });
-
-    const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
-    const canAddMember = nonMembers.length > 0;
+    const {
+        group,
+        users,
+        members,
+        memberCount,
+        canAddMember,
+        isAddMemberOpen,
+        isAddExpenseOpen,
+        openAddMember,
+        closeAddMember,
+        openAddExpense,
+        closeAddExpense,
+        removeMember,
+    } = state;
 
     return (
         <div className="px-6 py-8 flex flex-col gap-8 max-w-2xl">
@@ -66,16 +61,16 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <MembersSection
                 members={members}
-                memberCount={group.memberIds.length}
+                memberCount={memberCount}
                 canAddMember={canAddMember}
-                onAddMember={() => setIsAddMemberOpen(true)}
-                onRemoveMember={(id) => removeMemberFromGroup(groupId, id)}
+                onAddMember={openAddMember}
+                onRemoveMember={removeMember}
             />
 
             <ExpensesSection
                 expenses={group.expenses}
                 users={users}
-                onAddExpense={() => setIsAddExpenseOpen(true)}
+                onAddExpense={openAddExpense}
             />
 
             <SettlementsSection settlements={group.settlements} users={users} />
@@ -83,13 +78,13 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
             <AddMemberModal
                 groupId={groupId}
                 open={isAddMemberOpen}
-                onClose={() => setIsAddMemberOpen(false)}
+                onClose={closeAddMember}
             />
 
             <AddExpenseModal
                 groupId={groupId}
                 open={isAddExpenseOpen}
-                onClose={() => setIsAddExpenseOpen(false)}
+                onClose={closeAddExpense}
             />
         </div>
     );
