@@ -66,14 +66,18 @@ describe("SplitModeToggle", () => {
         test("calls onChange with equal when equal is clicked", async () => {
             const onChange = vi.fn();
             render(<SplitModeToggle splitMode="fixed" onChange={onChange} />);
-            await userEvent.click(screen.getByRole("button", { name: "equal" }));
+            await userEvent.click(
+                screen.getByRole("button", { name: "equal" }),
+            );
             expect(onChange).toHaveBeenCalledWith("equal");
         });
 
         test("calls onChange with fixed when fixed is clicked", async () => {
             const onChange = vi.fn();
             render(<SplitModeToggle splitMode="equal" onChange={onChange} />);
-            await userEvent.click(screen.getByRole("button", { name: "fixed" }));
+            await userEvent.click(
+                screen.getByRole("button", { name: "fixed" }),
+            );
             expect(onChange).toHaveBeenCalledWith("fixed");
         });
 

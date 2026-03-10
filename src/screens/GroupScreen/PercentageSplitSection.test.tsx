@@ -13,7 +13,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 0], [2, 0]])}
+                    shares={
+                        new Map([
+                            [1, 0],
+                            [2, 0],
+                        ])
+                    }
                     onShareChange={vi.fn()}
                 />,
             );
@@ -24,7 +29,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 0], [2, 0]])}
+                    shares={
+                        new Map([
+                            [1, 0],
+                            [2, 0],
+                        ])
+                    }
                     onShareChange={vi.fn()}
                 />,
             );
@@ -51,7 +61,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 0], [2, 0]])}
+                    shares={
+                        new Map([
+                            [1, 0],
+                            [2, 0],
+                        ])
+                    }
                     onShareChange={vi.fn()}
                 />,
             );
@@ -64,7 +79,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 3000], [2, 3000]])}
+                    shares={
+                        new Map([
+                            [1, 3000],
+                            [2, 3000],
+                        ])
+                    }
                     onShareChange={vi.fn()}
                 />,
             );
@@ -75,7 +95,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 6000], [2, 4000]])}
+                    shares={
+                        new Map([
+                            [1, 6000],
+                            [2, 4000],
+                        ])
+                    }
                     onShareChange={vi.fn()}
                 />,
             );
@@ -89,7 +114,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 0], [2, 0]])}
+                    shares={
+                        new Map([
+                            [1, 0],
+                            [2, 0],
+                        ])
+                    }
                     onShareChange={onShareChange}
                 />,
             );
@@ -104,7 +134,12 @@ describe("PercentageSplitSection", () => {
             render(
                 <PercentageSplitSection
                     members={members}
-                    shares={new Map([[1, 0], [2, 0]])}
+                    shares={
+                        new Map([
+                            [1, 0],
+                            [2, 0],
+                        ])
+                    }
                     onShareChange={onShareChange}
                 />,
             );
