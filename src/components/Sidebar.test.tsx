@@ -6,6 +6,23 @@ import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
+vi.mock("@components/UsersSection", () => ({
+    UsersSection: ({
+        users,
+        onAddUser,
+    }: {
+        users: unknown[];
+        onAddUser: () => void;
+    }) => (
+        <div data-testid="users-section">
+            <span data-testid="users-count">{(users as unknown[]).length}</span>
+            <button type="button" onClick={onAddUser}>
+                mock-add-user
+            </button>
+        </div>
+    ),
+}));
+
 const defaultProps = {
     view: { screen: "home" as const },
     onNavigate: vi.fn(),
@@ -18,30 +35,17 @@ beforeEach(() => {
 
 describe("Sidebar", () => {
     describe("users section", () => {
-        test("shows empty state when no users exist", () => {
-            render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByText(/start by adding at least two users/i),
-            ).toBeInTheDocument();
-        });
-
-        test("renders user names when users exist", () => {
+        test("renders UsersSection with users from store", () => {
             setupGroupWithTwoMembers();
             render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText("Alice")).toBeInTheDocument();
-            expect(screen.getByText("Bob")).toBeInTheDocument();
+            expect(screen.getByTestId("users-section")).toBeInTheDocument();
+            expect(screen.getByTestId("users-count")).toHaveTextContent("2");
         });
 
-        test("renders user initial avatar when user exists", () => {
-            useAppStore.getState().addUser("Alice");
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText("A")).toBeInTheDocument();
-        });
-
-        test("opens AddUsersModal when Add user is clicked", async () => {
+        test("opens AddUsersModal when UsersSection triggers onAddUser", async () => {
             render(<Sidebar {...defaultProps} />);
             await userEvent.click(
-                screen.getByRole("button", { name: /add user/i }),
+                screen.getByRole("button", { name: /mock-add-user/i }),
             );
             expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
@@ -49,7 +53,7 @@ describe("Sidebar", () => {
         test("closes AddUsersModal when cancel is clicked", async () => {
             render(<Sidebar {...defaultProps} />);
             await userEvent.click(
-                screen.getByRole("button", { name: /add user/i }),
+                screen.getByRole("button", { name: /mock-add-user/i }),
             );
             await userEvent.click(
                 screen.getByRole("button", { name: /cancel/i }),
