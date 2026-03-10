@@ -24,6 +24,7 @@ import { useAppStore } from "@store";
 import { useId, useState } from "react";
 import { EqualSplitSection } from "./EqualSplitSection";
 import { FixedSplitSection } from "./FixedSplitSection";
+import { PercentageSplitSection } from "./PercentageSplitSection";
 import { SplitModeToggle } from "./SplitModeToggle";
 
 type Props = {
@@ -238,62 +239,11 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                     )}
 
                     {splitMode === "percentage" && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                    Shares
-                                </span>
-                                <span
-                                    className={`text-xs ${
-                                        percentageSum === BPS_TOTAL
-                                            ? "text-green-600 dark:text-green-400"
-                                            : "text-muted-foreground"
-                                    }`}
-                                >
-                                    {percentageSum === BPS_TOTAL
-                                        ? "✓ 100%"
-                                        : `${(percentageSum / 100).toFixed(0)}%`}
-                                </span>
-                            </div>
-                            <ul className="flex flex-col gap-2">
-                                {members.map((m) => (
-                                    <li
-                                        key={m.id}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <label
-                                            htmlFor={`${checkboxBaseId}-pct-${m.id}`}
-                                            className="text-sm w-24 truncate"
-                                        >
-                                            {m.name}
-                                        </label>
-                                        <div className="flex items-center gap-1 flex-1">
-                                            <Input
-                                                id={`${checkboxBaseId}-pct-${m.id}`}
-                                                type="number"
-                                                min={0}
-                                                max={100}
-                                                step="any"
-                                                value={
-                                                    (percentageShares.get(
-                                                        m.id,
-                                                    ) ?? 0) / 100
-                                                }
-                                                onChange={(e) =>
-                                                    handlePercentageShareChange(
-                                                        m.id,
-                                                        Number(e.target.value),
-                                                    )
-                                                }
-                                            />
-                                            <span className="text-sm text-muted-foreground shrink-0">
-                                                %
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <PercentageSplitSection
+                            members={members}
+                            shares={percentageShares}
+                            onShareChange={handlePercentageShareChange}
+                        />
                     )}
                 </div>
 

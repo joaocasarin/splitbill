@@ -63,6 +63,33 @@ vi.mock("./FixedSplitSection", () => ({
         </div>
     ),
 }));
+vi.mock("./PercentageSplitSection", () => ({
+    PercentageSplitSection: ({
+        members,
+        shares,
+        onShareChange,
+    }: {
+        members: { id: number; name: string }[];
+        shares: Map<number, number>;
+        onShareChange: (id: number, percentage: number) => void;
+    }) => (
+        <div>
+            {members.map((m) => (
+                <div key={m.id}>
+                    <label htmlFor={`mock-pct-${m.id}`}>{m.name}</label>
+                    <input
+                        id={`mock-pct-${m.id}`}
+                        type="number"
+                        defaultValue={shares.get(m.id) ?? 0}
+                        onChange={(e) =>
+                            onShareChange(m.id, Number(e.target.value))
+                        }
+                    />
+                </div>
+            ))}
+        </div>
+    ),
+}));
 vi.mock("./SplitModeToggle", () => ({
     SplitModeToggle: ({
         splitMode,
@@ -487,33 +514,6 @@ describe("AddExpenseModal", () => {
                 ).toBeDisabled();
             });
 
-            test("shows percentage hint when not at 100%", async () => {
-                renderModal();
-                await userEvent.click(
-                    screen.getByRole("button", { name: /percentage/i }),
-                );
-                expect(screen.getByText(/^0%$/)).toBeInTheDocument();
-            });
-
-            test("shows 100% confirmation when percentages sum to 100", async () => {
-                renderModal();
-                await userEvent.type(
-                    screen.getByPlaceholderText(/e\.g\./i),
-                    "Hotel",
-                );
-                fireEvent.keyDown(
-                    screen.getByRole("textbox", { name: /total/i }),
-                    { key: "1" },
-                );
-                await userEvent.click(
-                    screen.getByRole("button", { name: /percentage/i }),
-                );
-                const spinbuttons = screen.getAllByRole("spinbutton");
-                fireEvent.change(spinbuttons[0], { target: { value: "50" } });
-                fireEvent.change(spinbuttons[1], { target: { value: "50" } });
-                expect(screen.getByText(/✓ 100%/)).toBeInTheDocument();
-            });
-
             test("Add is enabled when percentages sum to 100% and non-payer has share", async () => {
                 renderModal();
                 await fillValidFormPercentage();
@@ -718,18 +718,6 @@ describe("AddExpenseModal", () => {
                 screen.getByRole("button", { name: /^add$/i }),
             );
             expect(onClose).not.toHaveBeenCalled();
-        });
-
-        test("percentageShares falls back to 0 for member added after modal opened", async () => {
-            const { group } = renderModal();
-            await userEvent.click(
-                screen.getByRole("button", { name: /percentage/i }),
-            );
-            useAppStore.getState().addUser("Charlie");
-            useAppStore.getState().addMemberToGroup(group.id, 3);
-            expect(
-                await screen.findByRole("spinbutton", { name: "Charlie" }),
-            ).toHaveValue(0);
         });
     });
 });
