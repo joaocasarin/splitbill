@@ -18,10 +18,11 @@ import {
     buildEqualExpense,
     buildFixedExpense,
     buildPercentageExpense,
+    type SplitMode,
 } from "@domain/expense";
 import { useAppStore } from "@store";
 import { useId, useState } from "react";
-import { type SplitMode } from "@domain/expense";
+import { EqualSplitSection } from "./EqualSplitSection";
 import { SplitModeToggle } from "./SplitModeToggle";
 
 type Props = {
@@ -219,34 +220,11 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                     />
 
                     {splitMode === "equal" && (
-                        <div className="flex flex-col gap-1.5">
-                            <span className="text-sm font-medium">
-                                Participants
-                            </span>
-                            <ul className="flex flex-col gap-1">
-                                {members.map((m) => (
-                                    <li key={m.id}>
-                                        <label
-                                            htmlFor={`${checkboxBaseId}-participant-${m.id}`}
-                                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
-                                        >
-                                            <input
-                                                id={`${checkboxBaseId}-participant-${m.id}`}
-                                                type="checkbox"
-                                                checked={participantIds.has(
-                                                    m.id,
-                                                )}
-                                                onChange={() =>
-                                                    toggleParticipant(m.id)
-                                                }
-                                                className="cursor-pointer rounded border-border accent-primary"
-                                            />
-                                            {m.name}
-                                        </label>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <EqualSplitSection
+                            members={members}
+                            participantIds={participantIds}
+                            onToggle={toggleParticipant}
+                        />
                     )}
 
                     {splitMode === "fixed" && (

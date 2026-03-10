@@ -9,6 +9,33 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AddExpenseModal } from "./AddExpenseModal";
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
+vi.mock("./EqualSplitSection", () => ({
+    EqualSplitSection: ({
+        members,
+        participantIds,
+        onToggle,
+    }: {
+        members: { id: number; name: string }[];
+        participantIds: Set<number>;
+        onToggle: (id: number) => void;
+    }) => (
+        <ul>
+            {members.map((m) => (
+                <li key={m.id}>
+                    <label>
+                        <input
+                            type="checkbox"
+                            aria-label={m.name}
+                            checked={participantIds.has(m.id)}
+                            onChange={() => onToggle(m.id)}
+                        />
+                        {m.name}
+                    </label>
+                </li>
+            ))}
+        </ul>
+    ),
+}));
 vi.mock("./SplitModeToggle", () => ({
     SplitModeToggle: ({
         splitMode,
