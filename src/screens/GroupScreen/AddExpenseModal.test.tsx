@@ -36,6 +36,33 @@ vi.mock("./EqualSplitSection", () => ({
         </ul>
     ),
 }));
+vi.mock("./FixedSplitSection", () => ({
+    FixedSplitSection: ({
+        members,
+        shares,
+        onShareChange,
+    }: {
+        members: { id: number; name: string }[];
+        shares: Map<number, number>;
+        onShareChange: (id: number, value: number) => void;
+    }) => (
+        <div>
+            {members.map((m) => (
+                <div key={m.id}>
+                    <label htmlFor={`mock-fixed-${m.id}`}>{m.name}</label>
+                    <input
+                        id={`mock-fixed-${m.id}`}
+                        type="text"
+                        defaultValue={shares.get(m.id) ?? 0}
+                        onChange={(e) =>
+                            onShareChange(m.id, Number(e.target.value))
+                        }
+                    />
+                </div>
+            ))}
+        </div>
+    ),
+}));
 vi.mock("./SplitModeToggle", () => ({
     SplitModeToggle: ({
         splitMode,
@@ -96,9 +123,9 @@ async function fillValidFormFixed() {
         key: "1",
     });
     await userEvent.click(screen.getByRole("button", { name: /fixed/i }));
-    // Set Bob's share to 1 cent (total = 1 cent)
-    fireEvent.keyDown(screen.getByRole("textbox", { name: "Bob" }), {
-        key: "1",
+    // Set Bob's share to 1 cent (total = 1 cent) via mock input
+    fireEvent.change(screen.getByRole("textbox", { name: "Bob" }), {
+        target: { value: "1" },
     });
 }
 
@@ -402,35 +429,13 @@ describe("AddExpenseModal", () => {
                     screen.getByRole("button", { name: /fixed/i }),
                 );
                 // Only payer (Alice) gets share
-                fireEvent.keyDown(
+                fireEvent.change(
                     screen.getByRole("textbox", { name: "Alice" }),
-                    { key: "1" },
+                    { target: { value: "1" } },
                 );
                 expect(
                     screen.getByRole("button", { name: /^add$/i }),
                 ).toBeDisabled();
-            });
-
-            test("shows ratio hint when shares do not match total", async () => {
-                renderModal();
-                await userEvent.type(
-                    screen.getByPlaceholderText(/e\.g\./i),
-                    "Hotel",
-                );
-                fireEvent.keyDown(
-                    screen.getByRole("textbox", { name: /total/i }),
-                    { key: "5" },
-                );
-                await userEvent.click(
-                    screen.getByRole("button", { name: /fixed/i }),
-                );
-                expect(screen.getByText(/0,00 \/ 0,05/)).toBeInTheDocument();
-            });
-
-            test("shows matches total confirmation when shares equal total", async () => {
-                renderModal();
-                await fillValidFormFixed();
-                expect(screen.getByText(/matches total/i)).toBeInTheDocument();
             });
 
             test("Add is enabled when shares match total and non-payer has share", async () => {
@@ -713,18 +718,6 @@ describe("AddExpenseModal", () => {
                 screen.getByRole("button", { name: /^add$/i }),
             );
             expect(onClose).not.toHaveBeenCalled();
-        });
-
-        test("fixedShares falls back to 0 for member added after modal opened", async () => {
-            const { group } = renderModal();
-            await userEvent.click(
-                screen.getByRole("button", { name: /fixed/i }),
-            );
-            useAppStore.getState().addUser("Charlie");
-            useAppStore.getState().addMemberToGroup(group.id, 3);
-            expect(
-                await screen.findByRole("textbox", { name: "Charlie" }),
-            ).toHaveValue("0,00");
         });
 
         test("percentageShares falls back to 0 for member added after modal opened", async () => {

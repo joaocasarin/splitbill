@@ -23,6 +23,7 @@ import {
 import { useAppStore } from "@store";
 import { useId, useState } from "react";
 import { EqualSplitSection } from "./EqualSplitSection";
+import { FixedSplitSection } from "./FixedSplitSection";
 import { SplitModeToggle } from "./SplitModeToggle";
 
 type Props = {
@@ -228,40 +229,12 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                     )}
 
                     {splitMode === "fixed" && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                    Shares
-                                </span>
-                                <span
-                                    className={`text-xs ${
-                                        fixedSum === total
-                                            ? "text-green-600 dark:text-green-400"
-                                            : "text-muted-foreground"
-                                    }`}
-                                >
-                                    {fixedSum === total
-                                        ? "✓ matches total"
-                                        : `${(fixedSum / 100).toFixed(2).replace(".", ",")} / ${(total / 100).toFixed(2).replace(".", ",")}`}
-                                </span>
-                            </div>
-                            <ul className="flex flex-col gap-2">
-                                {members.map((m) => (
-                                    <li key={m.id}>
-                                        <CurrencyInput
-                                            label={m.name}
-                                            value={fixedShares.get(m.id) ?? 0}
-                                            onChange={(value) =>
-                                                handleFixedShareChange(
-                                                    m.id,
-                                                    value,
-                                                )
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <FixedSplitSection
+                            members={members}
+                            shares={fixedShares}
+                            total={total}
+                            onShareChange={handleFixedShareChange}
+                        />
                     )}
 
                     {splitMode === "percentage" && (
