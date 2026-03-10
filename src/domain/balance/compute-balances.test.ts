@@ -366,6 +366,17 @@ describe("computeBalances", () => {
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
+        test("falls back to 0 when memberId is not in initialized balances", () => {
+            const balances = computeBalances({
+                ...baseGroup,
+                settlements: [
+                    { id: 1, fromMemberId: 999, toMemberId: 1, amount: 50 },
+                ],
+            });
+            const member999 = balances.find((b) => b.memberId === 999);
+            expect(member999?.amount).toBe(50);
+        });
+
         describe("equal split", () => {
             test("skips remainder when all memberIds equal payerId", () => {
                 const balances = computeBalances({

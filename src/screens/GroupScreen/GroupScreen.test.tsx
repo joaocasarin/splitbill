@@ -1,50 +1,143 @@
-import * as balanceDomain from "@domain/balance";
-import type { EqualExpense } from "@domain/expense";
-import { useAppStore } from "@store";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupStoreOnly } from "@tests/setup";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
+import type { UseGroupScreenReturn } from "./useGroupScreen";
+import * as useGroupScreenModule from "./useGroupScreen";
 
-beforeEach(() => {
-    setupStoreOnly();
-});
+vi.mock("./MembersSection", () => ({
+    MembersSection: ({
+        onAddMember,
+        onRemoveMember,
+    }: {
+        onAddMember: () => void;
+        onRemoveMember: (id: number) => void;
+    }) => (
+        <>
+            <button type="button" onClick={onAddMember}>
+                Add member
+            </button>
+            <button type="button" onClick={() => onRemoveMember(1)}>
+                Remove Alice
+            </button>
+        </>
+    ),
+}));
 
-function setupGroup() {
-    useAppStore.getState().addUser("Alice");
-    useAppStore.getState().addUser("Bob");
-    useAppStore.getState().addGroup("Trip", [1, 2]);
-    return useAppStore.getState().global.groups[0];
+vi.mock("./ExpensesSection", () => ({
+    ExpensesSection: ({ onAddExpense }: { onAddExpense: () => void }) => (
+        <button type="button" onClick={onAddExpense}>
+            Add expense
+        </button>
+    ),
+}));
+
+vi.mock("./SettlementsSection", () => ({
+    SettlementsSection: () => <div data-testid="settlements-section" />,
+}));
+
+vi.mock("./AddMemberModal", () => ({
+    AddMemberModal: ({
+        open,
+        onClose,
+    }: {
+        open: boolean;
+        onClose: () => void;
+    }) =>
+        open ? (
+            <div role="dialog">
+                <button type="button" onClick={onClose}>
+                    Cancel
+                </button>
+            </div>
+        ) : null,
+}));
+
+vi.mock("./AddExpenseModal", () => ({
+    AddExpenseModal: ({
+        open,
+        onClose,
+    }: {
+        open: boolean;
+        onClose: () => void;
+    }) =>
+        open ? (
+            <div role="dialog">
+                <button type="button" onClick={onClose}>
+                    Cancel
+                </button>
+            </div>
+        ) : null,
+}));
+
+type FoundState = Extract<
+    UseGroupScreenReturn,
+    { group: NonNullable<UseGroupScreenReturn["group"]> }
+>;
+
+function makeHookReturn(overrides: Partial<FoundState> = {}) {
+    return {
+        group: {
+            id: 1,
+            name: "Trip",
+            memberIds: [1, 2],
+            expenses: [],
+            settlements: [],
+        },
+        users: [
+            { id: 1, name: "Alice" },
+            { id: 2, name: "Bob" },
+        ],
+        members: [
+            { id: 1, name: "Alice", amount: 0 },
+            { id: 2, name: "Bob", amount: 0 },
+        ],
+        memberCount: 2,
+        canAddMember: false,
+        isAddMemberOpen: false,
+        isAddExpenseOpen: false,
+        openAddMember: vi.fn(),
+        closeAddMember: vi.fn(),
+        openAddExpense: vi.fn(),
+        closeAddExpense: vi.fn(),
+        removeMember: vi.fn(),
+        ...overrides,
+    } as unknown as ReturnType<typeof useGroupScreenModule.useGroupScreen>;
 }
 
-function renderScreen(groupId: number, onNavigate = vi.fn()) {
+function renderScreen(
+    hookReturn: ReturnType<typeof useGroupScreenModule.useGroupScreen>,
+    onNavigate = vi.fn(),
+) {
+    vi.spyOn(useGroupScreenModule, "useGroupScreen").mockReturnValue(
+        hookReturn,
+    );
     return {
         onNavigate,
-        ...render(<GroupScreen groupId={groupId} onNavigate={onNavigate} />),
+        ...render(<GroupScreen groupId={1} onNavigate={onNavigate} />),
     };
 }
 
 describe("GroupScreen", () => {
     describe("group not found", () => {
-        test("shows not found message when group does not exist", () => {
-            renderScreen(999);
+        test("shows not found message when group is null", () => {
+            renderScreen({ group: null } as ReturnType<
+                typeof useGroupScreenModule.useGroupScreen
+            >);
             expect(screen.getByText(/group not found/i)).toBeInTheDocument();
         });
     });
 
     describe("header", () => {
         test("shows group name", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
+            renderScreen(makeHookReturn());
             expect(
                 screen.getByRole("heading", { name: "Trip" }),
             ).toBeInTheDocument();
         });
 
         test("back button navigates to home", async () => {
-            const group = setupGroup();
-            const { onNavigate } = renderScreen(group.id);
+            const { onNavigate } = renderScreen(makeHookReturn());
             await userEvent.click(
                 screen.getByRole("button", { name: /back/i }),
             );
@@ -52,342 +145,74 @@ describe("GroupScreen", () => {
         });
     });
 
-    describe("members", () => {
-        test("shows all group members", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText("Alice")).toBeInTheDocument();
-            expect(screen.getByText("Bob")).toBeInTheDocument();
+    describe("add member modal", () => {
+        test("calls openAddMember when Add member is clicked", async () => {
+            const openAddMember = vi.fn();
+            renderScreen(makeHookReturn({ openAddMember }));
+            await userEvent.click(
+                screen.getByRole("button", { name: /add member/i }),
+            );
+            expect(openAddMember).toHaveBeenCalledOnce();
         });
 
-        test("shows balance R$ 0,00 for each member in empty group", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            const zeros = screen.getAllByText(/R\$\s*0,00/);
-            expect(zeros).toHaveLength(2);
+        test("renders AddMemberModal when isAddMemberOpen is true", () => {
+            renderScreen(makeHookReturn({ isAddMemberOpen: true }));
+            expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
 
-        test("shows positive balance for payer", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-
-            const aliceItem = screen.getByText("Alice").closest("li");
-
-            expect(aliceItem).not.toBeNull();
-            expect(
-                within(aliceItem as HTMLElement).getByText(/100,00/),
-            ).toBeInTheDocument();
-        });
-
-        test("shows negative balance for debtor", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText(/-R\$\s*100,00/)).toBeInTheDocument();
+        test("calls closeAddMember when modal cancel is clicked", async () => {
+            const closeAddMember = vi.fn();
+            renderScreen(
+                makeHookReturn({
+                    isAddMemberOpen: true,
+                    closeAddMember,
+                }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(closeAddMember).toHaveBeenCalledOnce();
         });
     });
 
     describe("remove member", () => {
-        test("remove button is disabled when member has non-zero balance", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeDisabled();
-            expect(
-                screen.getByRole("button", { name: /remove bob/i }),
-            ).toBeDisabled();
-        });
-
-        test("remove button is disabled when only 2 members remain", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeDisabled();
-            expect(
-                screen.getByRole("button", { name: /remove bob/i }),
-            ).toBeDisabled();
-        });
-
-        test("remove button is enabled for member with zero balance when group has 3+ members", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeEnabled();
-        });
-
-        test("removes member when remove button is clicked", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
+        test("calls removeMember when onRemoveMember is invoked", async () => {
+            const removeMember = vi.fn();
+            renderScreen(makeHookReturn({ removeMember }));
             await userEvent.click(
                 screen.getByRole("button", { name: /remove alice/i }),
             );
-            const updatedGroup = useAppStore.getState().global.groups[0];
-            expect(updatedGroup.memberIds).not.toContain(1);
+            expect(removeMember).toHaveBeenCalledWith(1);
         });
     });
 
-    describe("add member", () => {
-        test("Add member button is disabled when no non-members exist", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add member/i }),
-            ).toBeDisabled();
-        });
-
-        test("Add member button is enabled when non-members exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add member/i }),
-            ).toBeEnabled();
-        });
-
-        test("opens AddMemberModal when Add member is clicked", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
+    describe("add expense modal", () => {
+        test("calls openAddExpense when Add expense is clicked", async () => {
+            const openAddExpense = vi.fn();
+            renderScreen(makeHookReturn({ openAddExpense }));
             await userEvent.click(
-                screen.getByRole("button", { name: /add member/i }),
+                screen.getByRole("button", { name: /add expense/i }),
             );
+            expect(openAddExpense).toHaveBeenCalledOnce();
+        });
+
+        test("renders AddExpenseModal when isAddExpenseOpen is true", () => {
+            renderScreen(makeHookReturn({ isAddExpenseOpen: true }));
             expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
 
-        test("closes AddMemberModal when onClose is called", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            await userEvent.click(
-                screen.getByRole("button", { name: /add member/i }),
+        test("calls closeAddExpense when modal cancel is clicked", async () => {
+            const closeAddExpense = vi.fn();
+            renderScreen(
+                makeHookReturn({
+                    isAddExpenseOpen: true,
+                    closeAddExpense,
+                }),
             );
             await userEvent.click(
                 screen.getByRole("button", { name: /cancel/i }),
             );
-            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        });
-    });
-
-    describe("expenses", () => {
-        test("shows empty state when no expenses", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText(/no expenses yet/i)).toBeInTheDocument();
-        });
-
-        test("shows expense title and total", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Hotel",
-                total: 30000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText("Hotel")).toBeInTheDocument();
-            expect(screen.getByText(/R\$\s*300,00/)).toBeInTheDocument();
-        });
-
-        test("shows payer name and split mode", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Hotel",
-                total: 30000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText(/paid by alice/i)).toBeInTheDocument();
-        });
-
-        test("Add expense button is present", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add expense/i }),
-            ).toBeInTheDocument();
-        });
-
-        test("opens AddExpenseModal when Add expense is clicked", async () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            await userEvent.click(
-                screen.getByRole("button", { name: /add expense/i }),
-            );
-            expect(screen.getByRole("dialog")).toBeInTheDocument();
-        });
-
-        test("closes AddExpenseModal when onClose is called", async () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            await userEvent.click(
-                screen.getByRole("button", { name: /add expense/i }),
-            );
-            await userEvent.click(
-                screen.getByRole("button", { name: /cancel/i }),
-            );
-            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        });
-    });
-
-    describe("settlements", () => {
-        test("shows empty state when no settlements", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText(/no settlements yet/i)).toBeInTheDocument();
-        });
-
-        test("shows settlement from/to names and amount", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            useAppStore.getState().addSettlement(group.id, {
-                fromMemberId: 2,
-                toMemberId: 1,
-                amount: 10000,
-            });
-            renderScreen(group.id);
-            expect(screen.getByText(/bob.*alice/i)).toBeInTheDocument();
-            expect(screen.getByText(/R\$\s*100,00/)).toBeInTheDocument();
-        });
-
-        test("Add settlement button is present", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add settlement/i }),
-            ).toBeInTheDocument();
-        });
-    });
-
-    describe("fallback display", () => {
-        test("shows User {id} when member has no matching user", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            useAppStore.getState().addMemberToGroup(1, 999);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            expect(screen.getByText("User 999")).toBeInTheDocument();
-        });
-
-        test("shows User {id} as payer when payerId has no matching user", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            useAppStore.setState((state) => ({
-                global: {
-                    ...state.global,
-                    groups: state.global.groups.map((g) =>
-                        g.id === group.id
-                            ? {
-                                  ...g,
-                                  expenses: [
-                                      {
-                                          id: 1,
-                                          title: "Test",
-                                          total: 10000,
-                                          payerId: 999,
-                                          splitMode: "equal" as const,
-                                          memberIds: [1, 2],
-                                      },
-                                  ],
-                              }
-                            : g,
-                    ),
-                },
-            }));
-            renderScreen(group.id);
-            expect(screen.getByText(/user 999/i)).toBeInTheDocument();
-        });
-
-        test("shows User {id} as from/to when settlement member has no matching user", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            useAppStore.setState((state) => ({
-                global: {
-                    ...state.global,
-                    groups: state.global.groups.map((g) =>
-                        g.id === group.id
-                            ? {
-                                  ...g,
-                                  settlements: [
-                                      {
-                                          id: 1,
-                                          fromMemberId: 998,
-                                          toMemberId: 999,
-                                          amount: 5000,
-                                      },
-                                  ],
-                              }
-                            : g,
-                    ),
-                },
-            }));
-            renderScreen(group.id);
-            expect(screen.getByText("User 998 → User 999")).toBeInTheDocument();
-        });
-
-        describe("defensive guards (unreachable in valid usage)", () => {
-            test("shows R$ 0,00 when computeBalances returns no entry for member", () => {
-                vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce(
-                    [],
-                );
-                const group = setupGroup();
-                renderScreen(group.id);
-                const zeros = screen.getAllByText(/R\$\s*0,00/);
-                expect(zeros.length).toBeGreaterThanOrEqual(2);
-            });
+            expect(closeAddExpense).toHaveBeenCalledOnce();
         });
     });
 });

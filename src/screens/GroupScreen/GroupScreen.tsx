@@ -1,13 +1,13 @@
 import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
-import { computeBalances } from "@domain/balance";
-import { type EntityId, GROUP_MEMBERS_MIN } from "@domain/common";
-import { formatCurrency } from "@lib/format";
-import { useAppStore } from "@store";
-import { ArrowLeft, Plus, X } from "lucide-react";
-import { useState } from "react";
+import type { EntityId } from "@domain/common";
+import { ArrowLeft } from "lucide-react";
 import { AddExpenseModal } from "./AddExpenseModal";
 import { AddMemberModal } from "./AddMemberModal";
+import { ExpensesSection } from "./ExpensesSection";
+import { MembersSection } from "./MembersSection";
+import { SettlementsSection } from "./SettlementsSection";
+import { useGroupScreen } from "./useGroupScreen";
 
 type Props = {
     groupId: EntityId;
@@ -15,13 +15,9 @@ type Props = {
 };
 
 export function GroupScreen({ groupId, onNavigate }: Props) {
-    const { global, removeMemberFromGroup } = useAppStore();
-    const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
-    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-    const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+    const state = useGroupScreen(groupId);
 
-    if (!group) {
+    if (!state.group) {
         return (
             <div className="flex items-center justify-center h-full min-h-80">
                 <p className="text-muted-foreground text-sm">
@@ -31,19 +27,20 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         );
     }
 
-    const balances = computeBalances(group);
-    const members = group.memberIds.map((id) => {
-        const user = users.find((u) => u.id === id);
-        const balance = balances.find((b) => b.memberId === id);
-        return {
-            id,
-            name: user?.name ?? `User ${id}`,
-            amount: balance?.amount ?? 0,
-        };
-    });
-
-    const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
-    const canAddMember = nonMembers.length > 0;
+    const {
+        group,
+        users,
+        members,
+        memberCount,
+        canAddMember,
+        isAddMemberOpen,
+        isAddExpenseOpen,
+        openAddMember,
+        closeAddMember,
+        openAddExpense,
+        closeAddExpense,
+        removeMember,
+    } = state;
 
     return (
         <div className="px-6 py-8 flex flex-col gap-8 max-w-2xl">
@@ -62,174 +59,32 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 </h1>
             </div>
 
-            {/* Members */}
-            <section className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                        Members
-                    </h2>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!canAddMember}
-                        onClick={() => setIsAddMemberOpen(true)}
-                    >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add member
-                    </Button>
-                </div>
-                <ul className="flex flex-col gap-2">
-                    {members.map((member) => {
-                        const canRemove =
-                            member.amount === 0 &&
-                            group.memberIds.length > GROUP_MEMBERS_MIN;
-                        return (
-                            <li
-                                key={member.id}
-                                className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                                        {member.name[0].toUpperCase()}
-                                    </span>
-                                    <span>{member.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span
-                                        className={
-                                            member.amount > 0
-                                                ? "text-green-600 dark:text-green-400"
-                                                : member.amount < 0
-                                                  ? "text-red-500"
-                                                  : "text-muted-foreground"
-                                        }
-                                    >
-                                        {formatCurrency(member.amount)}
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        disabled={!canRemove}
-                                        aria-label={`Remove ${member.name}`}
-                                        onClick={() =>
-                                            removeMemberFromGroup(
-                                                groupId,
-                                                member.id,
-                                            )
-                                        }
-                                    >
-                                        <X />
-                                    </Button>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </section>
+            <MembersSection
+                members={members}
+                memberCount={memberCount}
+                canAddMember={canAddMember}
+                onAddMember={openAddMember}
+                onRemoveMember={removeMember}
+            />
 
-            {/* Expenses */}
-            <section className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                        Expenses
-                    </h2>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsAddExpenseOpen(true)}
-                    >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add expense
-                    </Button>
-                </div>
-                {group.expenses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">
-                        No expenses yet.
-                    </p>
-                ) : (
-                    <ul className="flex flex-col gap-2">
-                        {group.expenses.map((expense) => {
-                            const payerName =
-                                users.find((u) => u.id === expense.payerId)
-                                    ?.name ?? `User ${expense.payerId}`;
-                            return (
-                                <li
-                                    key={expense.id}
-                                    className="rounded-lg border border-border px-4 py-3 text-sm"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">
-                                            {expense.title}
-                                        </span>
-                                        <span>
-                                            {formatCurrency(expense.total)}
-                                        </span>
-                                    </div>
-                                    <p className="text-muted-foreground text-xs mt-0.5">
-                                        Paid by {payerName} ·{" "}
-                                        {expense.splitMode}
-                                    </p>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </section>
+            <ExpensesSection
+                expenses={group.expenses}
+                users={users}
+                onAddExpense={openAddExpense}
+            />
 
-            {/* Settlements */}
-            <section className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                        Settlements
-                    </h2>
-                    <Button size="sm" variant="outline">
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add settlement
-                    </Button>
-                </div>
-                {group.settlements.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">
-                        No settlements yet.
-                    </p>
-                ) : (
-                    <ul className="flex flex-col gap-2">
-                        {group.settlements.map((settlement) => {
-                            const fromName =
-                                users.find(
-                                    (u) => u.id === settlement.fromMemberId,
-                                )?.name ?? `User ${settlement.fromMemberId}`;
-                            const toName =
-                                users.find(
-                                    (u) => u.id === settlement.toMemberId,
-                                )?.name ?? `User ${settlement.toMemberId}`;
-                            return (
-                                <li
-                                    key={settlement.id}
-                                    className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
-                                >
-                                    <span>
-                                        {fromName} → {toName}
-                                    </span>
-                                    <span>
-                                        {formatCurrency(settlement.amount)}
-                                    </span>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </section>
+            <SettlementsSection settlements={group.settlements} users={users} />
 
             <AddMemberModal
                 groupId={groupId}
                 open={isAddMemberOpen}
-                onClose={() => setIsAddMemberOpen(false)}
+                onClose={closeAddMember}
             />
 
             <AddExpenseModal
                 groupId={groupId}
                 open={isAddExpenseOpen}
-                onClose={() => setIsAddExpenseOpen(false)}
+                onClose={closeAddExpense}
             />
         </div>
     );
