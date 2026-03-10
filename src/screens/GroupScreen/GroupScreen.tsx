@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { AddExpenseModal } from "./AddExpenseModal";
 import { AddMemberModal } from "./AddMemberModal";
+import { ExpensesSection } from "./ExpensesSection";
 
 type Props = {
     groupId: EntityId;
@@ -127,54 +128,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 </ul>
             </section>
 
-            {/* Expenses */}
-            <section className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                        Expenses
-                    </h2>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsAddExpenseOpen(true)}
-                    >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add expense
-                    </Button>
-                </div>
-                {group.expenses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">
-                        No expenses yet.
-                    </p>
-                ) : (
-                    <ul className="flex flex-col gap-2">
-                        {group.expenses.map((expense) => {
-                            const payerName =
-                                users.find((u) => u.id === expense.payerId)
-                                    ?.name ?? `User ${expense.payerId}`;
-                            return (
-                                <li
-                                    key={expense.id}
-                                    className="rounded-lg border border-border px-4 py-3 text-sm"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">
-                                            {expense.title}
-                                        </span>
-                                        <span>
-                                            {formatCurrency(expense.total)}
-                                        </span>
-                                    </div>
-                                    <p className="text-muted-foreground text-xs mt-0.5">
-                                        Paid by {payerName} ·{" "}
-                                        {expense.splitMode}
-                                    </p>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </section>
+            <ExpensesSection
+                expenses={group.expenses}
+                users={users}
+                onAddExpense={() => setIsAddExpenseOpen(true)}
+            />
 
             {/* Settlements */}
             <section className="flex flex-col gap-4">

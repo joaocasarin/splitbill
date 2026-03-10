@@ -7,6 +7,14 @@ import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
 
+vi.mock("./ExpensesSection", () => ({
+    ExpensesSection: ({ onAddExpense }: { onAddExpense: () => void }) => (
+        <button type="button" onClick={onAddExpense}>
+            Add expense
+        </button>
+    ),
+}));
+
 beforeEach(() => {
     setupStoreOnly();
 });
@@ -209,47 +217,6 @@ describe("GroupScreen", () => {
     });
 
     describe("expenses", () => {
-        test("shows empty state when no expenses", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText(/no expenses yet/i)).toBeInTheDocument();
-        });
-
-        test("shows expense title and total", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Hotel",
-                total: 30000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText("Hotel")).toBeInTheDocument();
-            expect(screen.getByText(/R\$\s*300,00/)).toBeInTheDocument();
-        });
-
-        test("shows payer name and split mode", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Hotel",
-                total: 30000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText(/paid by alice/i)).toBeInTheDocument();
-        });
-
-        test("Add expense button is present", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add expense/i }),
-            ).toBeInTheDocument();
-        });
-
         test("opens AddExpenseModal when Add expense is clicked", async () => {
             const group = setupGroup();
             renderScreen(group.id);
@@ -316,37 +283,6 @@ describe("GroupScreen", () => {
             const group = useAppStore.getState().global.groups[0];
             renderScreen(group.id);
             expect(screen.getByText("User 999")).toBeInTheDocument();
-        });
-
-        test("shows User {id} as payer when payerId has no matching user", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            useAppStore.setState((state) => ({
-                global: {
-                    ...state.global,
-                    groups: state.global.groups.map((g) =>
-                        g.id === group.id
-                            ? {
-                                  ...g,
-                                  expenses: [
-                                      {
-                                          id: 1,
-                                          title: "Test",
-                                          total: 10000,
-                                          payerId: 999,
-                                          splitMode: "equal" as const,
-                                          memberIds: [1, 2],
-                                      },
-                                  ],
-                              }
-                            : g,
-                    ),
-                },
-            }));
-            renderScreen(group.id);
-            expect(screen.getByText(/user 999/i)).toBeInTheDocument();
         });
 
         test("shows User {id} as from/to when settlement member has no matching user", () => {
