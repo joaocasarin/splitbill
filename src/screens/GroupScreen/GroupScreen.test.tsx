@@ -15,6 +15,10 @@ vi.mock("./ExpensesSection", () => ({
     ),
 }));
 
+vi.mock("./SettlementsSection", () => ({
+    SettlementsSection: () => <div data-testid="settlements-section" />,
+}));
+
 beforeEach(() => {
     setupStoreOnly();
 });
@@ -239,41 +243,6 @@ describe("GroupScreen", () => {
         });
     });
 
-    describe("settlements", () => {
-        test("shows empty state when no settlements", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText(/no settlements yet/i)).toBeInTheDocument();
-        });
-
-        test("shows settlement from/to names and amount", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            useAppStore.getState().addSettlement(group.id, {
-                fromMemberId: 2,
-                toMemberId: 1,
-                amount: 10000,
-            });
-            renderScreen(group.id);
-            expect(screen.getByText(/bob.*alice/i)).toBeInTheDocument();
-            expect(screen.getByText(/R\$\s*100,00/)).toBeInTheDocument();
-        });
-
-        test("Add settlement button is present", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /add settlement/i }),
-            ).toBeInTheDocument();
-        });
-    });
-
     describe("fallback display", () => {
         test("shows User {id} when member has no matching user", () => {
             useAppStore.getState().addUser("Alice");
@@ -283,35 +252,6 @@ describe("GroupScreen", () => {
             const group = useAppStore.getState().global.groups[0];
             renderScreen(group.id);
             expect(screen.getByText("User 999")).toBeInTheDocument();
-        });
-
-        test("shows User {id} as from/to when settlement member has no matching user", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
-            useAppStore.setState((state) => ({
-                global: {
-                    ...state.global,
-                    groups: state.global.groups.map((g) =>
-                        g.id === group.id
-                            ? {
-                                  ...g,
-                                  settlements: [
-                                      {
-                                          id: 1,
-                                          fromMemberId: 998,
-                                          toMemberId: 999,
-                                          amount: 5000,
-                                      },
-                                  ],
-                              }
-                            : g,
-                    ),
-                },
-            }));
-            renderScreen(group.id);
-            expect(screen.getByText("User 998 → User 999")).toBeInTheDocument();
         });
 
         describe("defensive guards (unreachable in valid usage)", () => {
