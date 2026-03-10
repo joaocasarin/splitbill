@@ -8,21 +8,13 @@ import {
     DialogTitle,
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
-import {
-    BPS_TOTAL,
-    type EntityId,
-    EXPENSE_TITLE_MAX,
-    EXPENSE_TITLE_MIN,
-} from "@domain/common";
-import {
-    buildEqualExpense,
-    buildFixedExpense,
-    buildPercentageExpense,
-} from "@domain/expense";
-import { useAppStore } from "@store";
-import { useId, useState } from "react";
-
-type SplitMode = "equal" | "fixed" | "percentage";
+import type { EntityId } from "@domain/common";
+import { useId } from "react";
+import { EqualSplitSection } from "./EqualSplitSection";
+import { FixedSplitSection } from "./FixedSplitSection";
+import { PercentageSplitSection } from "./PercentageSplitSection";
+import { SplitModeToggle } from "./SplitModeToggle";
+import { useExpenseForm } from "./useExpenseForm";
 
 type Props = {
     groupId: EntityId;
@@ -31,142 +23,28 @@ type Props = {
 };
 
 export function AddExpenseModal({ groupId, onClose, open }: Props) {
-    const { global, addExpense } = useAppStore();
-    const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
-    const members = group
-        ? group.memberIds.map((id) => ({
-              id,
-              name: users.find((u) => u.id === id)?.name ?? `User ${id}`,
-          }))
-        : [];
-
-    const firstMemberId = members[0]?.id ?? null;
-
-    const [title, setTitle] = useState("");
-    const [total, setTotal] = useState(0);
-    const [payerId, setPayerId] = useState<EntityId | null>(firstMemberId);
-    const [splitMode, setSplitMode] = useState<SplitMode>("equal");
-    const [participantIds, setParticipantIds] = useState<Set<EntityId>>(
-        new Set(firstMemberId !== null ? [firstMemberId] : []),
-    );
-    const [fixedShares, setFixedShares] = useState<Map<EntityId, number>>(
-        () => new Map(members.map((m) => [m.id, 0])),
-    );
-    const [percentageShares, setPercentageShares] = useState<
-        Map<EntityId, number>
-    >(() => new Map(members.map((m) => [m.id, 0])));
+    const {
+        members,
+        title,
+        setTitle,
+        total,
+        setTotal,
+        payerId,
+        splitMode,
+        setSplitMode,
+        participantIds,
+        fixedShares,
+        percentageShares,
+        canCreate,
+        toggleParticipant,
+        handlePayerChange,
+        handleFixedShareChange,
+        handlePercentageShareChange,
+        handleCreate,
+        handleOpenChange,
+    } = useExpenseForm(groupId, onClose);
 
     const checkboxBaseId = useId();
-
-    const isTitleValid =
-        title.trim().length >= EXPENSE_TITLE_MIN &&
-        title.trim().length <= EXPENSE_TITLE_MAX;
-    const isTotalValid = total > 0;
-
-    const hasNonPayerParticipant =
-        payerId !== null &&
-        Array.from(participantIds).some((id) => id !== payerId);
-
-    const fixedSum = Array.from(fixedShares.values()).reduce(
-        (a, b) => a + b,
-        0,
-    );
-    const fixedHasNonPayerShare =
-        payerId !== null &&
-        Array.from(fixedShares.entries()).some(
-            ([id, value]) => id !== payerId && value > 0,
-        );
-    const isFixedValid = fixedSum === total && fixedHasNonPayerShare;
-
-    const percentageSum = Array.from(percentageShares.values()).reduce(
-        (a, b) => a + b,
-        0,
-    );
-    const percentageHasNonPayerShare =
-        payerId !== null &&
-        Array.from(percentageShares.entries()).some(
-            ([id, value]) => id !== payerId && value > 0,
-        );
-    const isPercentageValid =
-        percentageSum === BPS_TOTAL && percentageHasNonPayerShare;
-
-    const canCreate =
-        isTitleValid &&
-        isTotalValid &&
-        (splitMode === "equal"
-            ? hasNonPayerParticipant
-            : splitMode === "fixed"
-              ? isFixedValid
-              : isPercentageValid);
-
-    function toggleParticipant(id: EntityId) {
-        setParticipantIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
-    }
-
-    function handlePayerChange(id: EntityId) {
-        setPayerId(id);
-        setParticipantIds((prev) => new Set([...prev, id]));
-    }
-
-    function handleFixedShareChange(memberId: EntityId, value: number) {
-        setFixedShares((prev) => new Map(prev).set(memberId, value));
-    }
-
-    function handlePercentageShareChange(
-        memberId: EntityId,
-        percentage: number,
-    ) {
-        setPercentageShares((prev) =>
-            new Map(prev).set(memberId, Math.round(percentage * 100)),
-        );
-    }
-
-    function handleCreate() {
-        const expense =
-            splitMode === "equal"
-                ? buildEqualExpense(title, total, payerId, participantIds)
-                : splitMode === "fixed"
-                  ? buildFixedExpense(title, total, payerId, fixedShares)
-                  : buildPercentageExpense(
-                        title,
-                        total,
-                        payerId,
-                        percentageShares,
-                    );
-
-        if (expense === null) return;
-        addExpense(groupId, expense);
-        reset();
-        onClose();
-    }
-
-    function reset() {
-        setTitle("");
-        setTotal(0);
-        setPayerId(firstMemberId);
-        setSplitMode("equal");
-        setParticipantIds(
-            new Set(firstMemberId !== null ? [firstMemberId] : []),
-        );
-        setFixedShares(new Map(members.map((m) => [m.id, 0])));
-        setPercentageShares(new Map(members.map((m) => [m.id, 0])));
-    }
-
-    function handleOpenChange(next: boolean) {
-        if (!next) {
-            reset();
-            onClose();
-        }
-    }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -213,154 +91,34 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                         </select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-sm font-medium">Split</span>
-                        <div className="flex rounded-md border border-input overflow-hidden">
-                            {(
-                                ["equal", "fixed", "percentage"] as SplitMode[]
-                            ).map((mode) => (
-                                <button
-                                    key={mode}
-                                    type="button"
-                                    aria-pressed={splitMode === mode}
-                                    className={`flex-1 py-1.5 text-sm capitalize transition-colors ${
-                                        splitMode === mode
-                                            ? "bg-primary text-primary-foreground"
-                                            : "hover:bg-muted/60"
-                                    }`}
-                                    onClick={() => setSplitMode(mode)}
-                                >
-                                    {mode}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    <SplitModeToggle
+                        splitMode={splitMode}
+                        onChange={setSplitMode}
+                    />
 
                     {splitMode === "equal" && (
-                        <div className="flex flex-col gap-1.5">
-                            <span className="text-sm font-medium">
-                                Participants
-                            </span>
-                            <ul className="flex flex-col gap-1">
-                                {members.map((m) => (
-                                    <li key={m.id}>
-                                        <label
-                                            htmlFor={`${checkboxBaseId}-participant-${m.id}`}
-                                            className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
-                                        >
-                                            <input
-                                                id={`${checkboxBaseId}-participant-${m.id}`}
-                                                type="checkbox"
-                                                checked={participantIds.has(
-                                                    m.id,
-                                                )}
-                                                onChange={() =>
-                                                    toggleParticipant(m.id)
-                                                }
-                                                className="cursor-pointer rounded border-border accent-primary"
-                                            />
-                                            {m.name}
-                                        </label>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <EqualSplitSection
+                            members={members}
+                            participantIds={participantIds}
+                            onToggle={toggleParticipant}
+                        />
                     )}
 
                     {splitMode === "fixed" && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                    Shares
-                                </span>
-                                <span
-                                    className={`text-xs ${
-                                        fixedSum === total
-                                            ? "text-green-600 dark:text-green-400"
-                                            : "text-muted-foreground"
-                                    }`}
-                                >
-                                    {fixedSum === total
-                                        ? "✓ matches total"
-                                        : `${(fixedSum / 100).toFixed(2).replace(".", ",")} / ${(total / 100).toFixed(2).replace(".", ",")}`}
-                                </span>
-                            </div>
-                            <ul className="flex flex-col gap-2">
-                                {members.map((m) => (
-                                    <li key={m.id}>
-                                        <CurrencyInput
-                                            label={m.name}
-                                            value={fixedShares.get(m.id) ?? 0}
-                                            onChange={(value) =>
-                                                handleFixedShareChange(
-                                                    m.id,
-                                                    value,
-                                                )
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <FixedSplitSection
+                            members={members}
+                            shares={fixedShares}
+                            total={total}
+                            onShareChange={handleFixedShareChange}
+                        />
                     )}
 
                     {splitMode === "percentage" && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                    Shares
-                                </span>
-                                <span
-                                    className={`text-xs ${
-                                        percentageSum === BPS_TOTAL
-                                            ? "text-green-600 dark:text-green-400"
-                                            : "text-muted-foreground"
-                                    }`}
-                                >
-                                    {percentageSum === BPS_TOTAL
-                                        ? "✓ 100%"
-                                        : `${(percentageSum / 100).toFixed(0)}%`}
-                                </span>
-                            </div>
-                            <ul className="flex flex-col gap-2">
-                                {members.map((m) => (
-                                    <li
-                                        key={m.id}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <label
-                                            htmlFor={`${checkboxBaseId}-pct-${m.id}`}
-                                            className="text-sm w-24 truncate"
-                                        >
-                                            {m.name}
-                                        </label>
-                                        <div className="flex items-center gap-1 flex-1">
-                                            <Input
-                                                id={`${checkboxBaseId}-pct-${m.id}`}
-                                                type="number"
-                                                min={0}
-                                                max={100}
-                                                step="any"
-                                                value={
-                                                    (percentageShares.get(
-                                                        m.id,
-                                                    ) ?? 0) / 100
-                                                }
-                                                onChange={(e) =>
-                                                    handlePercentageShareChange(
-                                                        m.id,
-                                                        Number(e.target.value),
-                                                    )
-                                                }
-                                            />
-                                            <span className="text-sm text-muted-foreground shrink-0">
-                                                %
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <PercentageSplitSection
+                            members={members}
+                            shares={percentageShares}
+                            onShareChange={handlePercentageShareChange}
+                        />
                     )}
                 </div>
 
