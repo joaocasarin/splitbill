@@ -10,6 +10,7 @@ import {
     buildPercentageExpense,
     type SplitMode,
 } from "@domain/expense";
+import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
 
@@ -17,7 +18,7 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
     const { global, addExpense } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
     const users = global.users;
-    const members = group
+    const members: User[] = group
         ? group.memberIds.map((id) => ({
               id,
               name: users.find((u) => u.id === id)?.name ?? `User ${id}`,

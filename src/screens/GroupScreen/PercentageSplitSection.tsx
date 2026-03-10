@@ -1,14 +1,10 @@
 import { Input } from "@components/ui/input";
 import { BPS_TOTAL, type EntityId } from "@domain/common";
+import type { User } from "@domain/user";
 import { useId } from "react";
 
-type Member = {
-    id: EntityId;
-    name: string;
-};
-
 type Props = {
-    members: Member[];
+    members: User[];
     shares: Map<EntityId, number>;
     onShareChange: (id: EntityId, percentage: number) => void;
 };

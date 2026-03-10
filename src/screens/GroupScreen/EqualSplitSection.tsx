@@ -1,13 +1,9 @@
 import type { EntityId } from "@domain/common";
+import type { User } from "@domain/user";
 import { useId } from "react";
 
-type Member = {
-    id: EntityId;
-    name: string;
-};
-
 type Props = {
-    members: Member[];
+    members: User[];
     participantIds: Set<EntityId>;
     onToggle: (id: EntityId) => void;
 };
