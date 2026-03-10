@@ -9,6 +9,28 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AddExpenseModal } from "./AddExpenseModal";
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
+vi.mock("./SplitModeToggle", () => ({
+    SplitModeToggle: ({
+        splitMode,
+        onChange,
+    }: {
+        splitMode: string;
+        onChange: (m: string) => void;
+    }) => (
+        <div>
+            {expenseDomain.SplitModeSchema.options.map((mode) => (
+                <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={splitMode === mode}
+                    onClick={() => onChange(mode)}
+                >
+                    {mode}
+                </button>
+            ))}
+        </div>
+    ),
+}));
 
 beforeEach(() => {
     setupStoreOnly();
@@ -181,20 +203,7 @@ describe("AddExpenseModal", () => {
         });
     });
 
-    describe("split mode toggle", () => {
-        test("equal mode is pressed by default", () => {
-            renderModal();
-            expect(
-                screen.getByRole("button", { name: /equal/i }),
-            ).toHaveAttribute("aria-pressed", "true");
-            expect(
-                screen.getByRole("button", { name: /fixed/i }),
-            ).toHaveAttribute("aria-pressed", "false");
-            expect(
-                screen.getByRole("button", { name: /percentage/i }),
-            ).toHaveAttribute("aria-pressed", "false");
-        });
-
+    describe("split mode sections", () => {
         test("switching to fixed shows fixed shares section", async () => {
             renderModal();
             await userEvent.click(

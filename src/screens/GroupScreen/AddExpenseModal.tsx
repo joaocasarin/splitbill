@@ -21,8 +21,8 @@ import {
 } from "@domain/expense";
 import { useAppStore } from "@store";
 import { useId, useState } from "react";
-
-type SplitMode = "equal" | "fixed" | "percentage";
+import { type SplitMode } from "@domain/expense";
+import { SplitModeToggle } from "./SplitModeToggle";
 
 type Props = {
     groupId: EntityId;
@@ -213,28 +213,10 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                         </select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-sm font-medium">Split</span>
-                        <div className="flex rounded-md border border-input overflow-hidden">
-                            {(
-                                ["equal", "fixed", "percentage"] as SplitMode[]
-                            ).map((mode) => (
-                                <button
-                                    key={mode}
-                                    type="button"
-                                    aria-pressed={splitMode === mode}
-                                    className={`flex-1 py-1.5 text-sm capitalize transition-colors ${
-                                        splitMode === mode
-                                            ? "bg-primary text-primary-foreground"
-                                            : "hover:bg-muted/60"
-                                    }`}
-                                    onClick={() => setSplitMode(mode)}
-                                >
-                                    {mode}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    <SplitModeToggle
+                        splitMode={splitMode}
+                        onChange={setSplitMode}
+                    />
 
                     {splitMode === "equal" && (
                         <div className="flex flex-col gap-1.5">
