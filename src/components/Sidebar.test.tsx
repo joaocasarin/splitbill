@@ -1,3 +1,5 @@
+import type { AppView } from "@app";
+import type { Group } from "@domain/group";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -5,6 +7,13 @@ import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
+
+let capturedGroupsProps: {
+    groups: Group[];
+    view: AppView;
+    canCreateGroup: boolean;
+    onClose?: () => void;
+} | null = null;
 
 vi.mock("@components/UsersSection", () => ({
     UsersSection: ({
@@ -23,6 +32,43 @@ vi.mock("@components/UsersSection", () => ({
     ),
 }));
 
+vi.mock("@components/GroupsSection", () => ({
+    GroupsSection: ({
+        groups,
+        view,
+        canCreateGroup,
+        onAddGroup,
+        onNavigate,
+        onClose,
+    }: {
+        groups: Group[];
+        view: AppView;
+        canCreateGroup: boolean;
+        onAddGroup: () => void;
+        onNavigate: (view: AppView) => void;
+        onClose?: () => void;
+    }) => {
+        capturedGroupsProps = { groups, view, canCreateGroup, onClose };
+        return (
+            <div data-testid="groups-section">
+                <span data-testid="groups-count">{groups.length}</span>
+                <span data-testid="can-create-group">
+                    {String(canCreateGroup)}
+                </span>
+                <button type="button" onClick={onAddGroup}>
+                    mock-add-group
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onNavigate({ screen: "group", groupId: 1 })}
+                >
+                    mock-navigate
+                </button>
+            </div>
+        );
+    },
+}));
+
 const defaultProps = {
     view: { screen: "home" as const },
     onNavigate: vi.fn(),
@@ -31,6 +77,7 @@ const defaultProps = {
 beforeEach(() => {
     setupStoreOnly();
     vi.clearAllMocks();
+    capturedGroupsProps = null;
 });
 
 describe("Sidebar", () => {
@@ -63,60 +110,49 @@ describe("Sidebar", () => {
     });
 
     describe("groups section", () => {
-        test("shows empty state prompting to add users when fewer than 2 users exist", () => {
+        test("renders GroupsSection with groups from store", () => {
+            setupGroupWithTwoMembers();
             render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByText(/add at least two users to unlock/i),
-            ).toBeInTheDocument();
+            expect(screen.getByTestId("groups-section")).toBeInTheDocument();
+            expect(screen.getByTestId("groups-count")).toHaveTextContent("1");
         });
 
-        test("shows empty state prompting to create a group when users are sufficient", () => {
+        test("passes canCreateGroup as false when fewer than 2 users", () => {
+            render(<Sidebar {...defaultProps} />);
+            expect(screen.getByTestId("can-create-group")).toHaveTextContent(
+                "false",
+            );
+        });
+
+        test("passes canCreateGroup as true when 2 or more users exist", () => {
             useAppStore.getState().addUser("Alice");
             useAppStore.getState().addUser("Bob");
             render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText(/now create a group/i)).toBeInTheDocument();
+            expect(screen.getByTestId("can-create-group")).toHaveTextContent(
+                "true",
+            );
         });
 
-        test("Add group button is disabled when no users exist", () => {
-            render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByRole("button", { name: /add group/i }),
-            ).toBeDisabled();
+        test("passes view and onClose to GroupsSection", () => {
+            const onClose = vi.fn();
+            const view: AppView = { screen: "group", groupId: 1 };
+            render(<Sidebar {...defaultProps} view={view} onClose={onClose} />);
+            expect(capturedGroupsProps?.view).toEqual(view);
+            expect(capturedGroupsProps?.onClose).toBe(onClose);
         });
 
-        test("Add group button is disabled when fewer than 2 users exist", () => {
-            useAppStore.getState().addUser("Alice");
-            render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByRole("button", { name: /add group/i }),
-            ).toBeDisabled();
-        });
-
-        test("Add group button is enabled when 2 or more users exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByRole("button", { name: /add group/i }),
-            ).toBeEnabled();
-        });
-
-        test("opens AddGroupModal when Add group is clicked", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
+        test("opens AddGroupModal when GroupsSection triggers onAddGroup", async () => {
             render(<Sidebar {...defaultProps} />);
             await userEvent.click(
-                screen.getByRole("button", { name: /add group/i }),
+                screen.getByRole("button", { name: /mock-add-group/i }),
             );
             expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
 
         test("closes AddGroupModal when cancel is clicked", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
             render(<Sidebar {...defaultProps} />);
             await userEvent.click(
-                screen.getByRole("button", { name: /add group/i }),
+                screen.getByRole("button", { name: /mock-add-group/i }),
             );
             await userEvent.click(
                 screen.getByRole("button", { name: /cancel/i }),
@@ -124,91 +160,16 @@ describe("Sidebar", () => {
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         });
 
-        test("renders group names when groups exist", () => {
-            setupGroupWithTwoMembers();
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText("Trip")).toBeInTheDocument();
-        });
-
-        test("renders all groups when multiple exist", () => {
-            setupGroupWithTwoMembers();
-            useAppStore.getState().addGroup("Dinn", [1, 2]);
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText("Trip")).toBeInTheDocument();
-            expect(screen.getByText("Dinn")).toBeInTheDocument();
-        });
-
-        test("shows member count for each group", () => {
-            setupGroupWithTwoMembers();
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByText("2 members")).toBeInTheDocument();
-        });
-
-        test("calls onNavigate with correct groupId when group is clicked", async () => {
-            setupGroupWithTwoMembers();
+        test("passes onNavigate to GroupsSection", async () => {
             const onNavigate = vi.fn();
             render(<Sidebar {...defaultProps} onNavigate={onNavigate} />);
             await userEvent.click(
-                screen.getByRole("button", { name: /trip/i }),
+                screen.getByRole("button", { name: /mock-navigate/i }),
             );
             expect(onNavigate).toHaveBeenCalledWith({
                 screen: "group",
                 groupId: 1,
             });
-        });
-
-        test("marks active group with aria-current", () => {
-            setupGroupWithTwoMembers();
-            render(
-                <Sidebar
-                    {...defaultProps}
-                    view={{ screen: "group", groupId: 1 }}
-                />,
-            );
-            expect(
-                screen.getByRole("button", { name: /trip/i }),
-            ).toHaveAttribute("aria-current", "page");
-        });
-
-        test("does not mark inactive group with aria-current", () => {
-            setupGroupWithTwoMembers();
-            render(<Sidebar {...defaultProps} />);
-            expect(
-                screen.getByRole("button", { name: /trip/i }),
-            ).not.toHaveAttribute("aria-current");
-        });
-
-        test("does not mark group with aria-current when a different group is active", () => {
-            setupGroupWithTwoMembers();
-            render(
-                <Sidebar
-                    {...defaultProps}
-                    view={{ screen: "group", groupId: 999 }}
-                />,
-            );
-            expect(
-                screen.getByRole("button", { name: /trip/i }),
-            ).not.toHaveAttribute("aria-current");
-        });
-    });
-
-    describe("onClose", () => {
-        test("calls onClose when a group is clicked", async () => {
-            setupGroupWithTwoMembers();
-            const onClose = vi.fn();
-            render(<Sidebar {...defaultProps} onClose={onClose} />);
-            await userEvent.click(
-                screen.getByRole("button", { name: /trip/i }),
-            );
-            expect(onClose).toHaveBeenCalledOnce();
-        });
-
-        test("does not throw when onClose is not provided", async () => {
-            setupGroupWithTwoMembers();
-            render(<Sidebar {...defaultProps} />);
-            await expect(
-                userEvent.click(screen.getByRole("button", { name: /trip/i })),
-            ).resolves.not.toThrow();
         });
     });
 });
