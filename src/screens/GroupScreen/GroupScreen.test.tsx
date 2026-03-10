@@ -1,11 +1,51 @@
 import * as balanceDomain from "@domain/balance";
-import type { EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
+import type { MemberRow } from "./MembersSection";
+
+let capturedMembers: MemberRow[] = [];
+
+vi.mock("./MembersSection", () => ({
+    MembersSection: ({
+        members,
+        canAddMember,
+        onAddMember,
+        onRemoveMember,
+    }: {
+        members: MemberRow[];
+        canAddMember: boolean;
+        onAddMember: () => void;
+        onRemoveMember: (id: number) => void;
+    }) => {
+        capturedMembers = members;
+        return (
+            <>
+                <button
+                    type="button"
+                    disabled={!canAddMember}
+                    onClick={onAddMember}
+                >
+                    Add member
+                </button>
+                {members.map((m) => (
+                    <div key={m.id}>
+                        <span>{m.name}</span>
+                        <button
+                            type="button"
+                            onClick={() => onRemoveMember(m.id)}
+                        >
+                            Remove {m.name}
+                        </button>
+                    </div>
+                ))}
+            </>
+        );
+    },
+}));
 
 vi.mock("./ExpensesSection", () => ({
     ExpensesSection: ({ onAddExpense }: { onAddExpense: () => void }) => (
@@ -21,6 +61,7 @@ vi.mock("./SettlementsSection", () => ({
 
 beforeEach(() => {
     setupStoreOnly();
+    capturedMembers = [];
 });
 
 function setupGroup() {
@@ -61,111 +102,6 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /back/i }),
             );
             expect(onNavigate).toHaveBeenCalledWith({ screen: "home" });
-        });
-    });
-
-    describe("members", () => {
-        test("shows all group members", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(screen.getByText("Alice")).toBeInTheDocument();
-            expect(screen.getByText("Bob")).toBeInTheDocument();
-        });
-
-        test("shows balance R$ 0,00 for each member in empty group", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            const zeros = screen.getAllByText(/R\$\s*0,00/);
-            expect(zeros).toHaveLength(2);
-        });
-
-        test("shows positive balance for payer", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-
-            const aliceItem = screen.getByText("Alice").closest("li");
-
-            expect(aliceItem).not.toBeNull();
-            expect(
-                within(aliceItem as HTMLElement).getByText(/100,00/),
-            ).toBeInTheDocument();
-        });
-
-        test("shows negative balance for debtor", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(screen.getByText(/-R\$\s*100,00/)).toBeInTheDocument();
-        });
-    });
-
-    describe("remove member", () => {
-        test("remove button is disabled when member has non-zero balance", () => {
-            const group = setupGroup();
-            useAppStore.getState().addExpense(group.id, {
-                title: "Dinner",
-                total: 20000,
-                payerId: 1,
-                splitMode: "equal",
-                memberIds: [1, 2],
-            } as unknown as Omit<EqualExpense, "id">);
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeDisabled();
-            expect(
-                screen.getByRole("button", { name: /remove bob/i }),
-            ).toBeDisabled();
-        });
-
-        test("remove button is disabled when only 2 members remain", () => {
-            const group = setupGroup();
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeDisabled();
-            expect(
-                screen.getByRole("button", { name: /remove bob/i }),
-            ).toBeDisabled();
-        });
-
-        test("remove button is enabled for member with zero balance when group has 3+ members", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            expect(
-                screen.getByRole("button", { name: /remove alice/i }),
-            ).toBeEnabled();
-        });
-
-        test("removes member when remove button is clicked", async () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
-            const group = useAppStore.getState().global.groups[0];
-            renderScreen(group.id);
-            await userEvent.click(
-                screen.getByRole("button", { name: /remove alice/i }),
-            );
-            const updatedGroup = useAppStore.getState().global.groups[0];
-            expect(updatedGroup.memberIds).not.toContain(1);
         });
     });
 
@@ -218,6 +154,20 @@ describe("GroupScreen", () => {
             );
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         });
+
+        test("calls removeMemberFromGroup when onRemoveMember is invoked", async () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addUser("Carol");
+            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+            const group = useAppStore.getState().global.groups[0];
+            renderScreen(group.id);
+            await userEvent.click(
+                screen.getByRole("button", { name: /remove alice/i }),
+            );
+            const updatedGroup = useAppStore.getState().global.groups[0];
+            expect(updatedGroup.memberIds).not.toContain(1);
+        });
     });
 
     describe("expenses", () => {
@@ -244,7 +194,7 @@ describe("GroupScreen", () => {
     });
 
     describe("fallback display", () => {
-        test("shows User {id} when member has no matching user", () => {
+        test("passes User {id} name when member has no matching user", () => {
             useAppStore.getState().addUser("Alice");
             useAppStore.getState().addUser("Bob");
             useAppStore.getState().addGroup("Trip", [1, 2]);
@@ -255,14 +205,13 @@ describe("GroupScreen", () => {
         });
 
         describe("defensive guards (unreachable in valid usage)", () => {
-            test("shows R$ 0,00 when computeBalances returns no entry for member", () => {
+            test("passes amount 0 when computeBalances returns no entry for member", () => {
                 vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce(
                     [],
                 );
                 const group = setupGroup();
                 renderScreen(group.id);
-                const zeros = screen.getAllByText(/R\$\s*0,00/);
-                expect(zeros.length).toBeGreaterThanOrEqual(2);
+                expect(capturedMembers.every((m) => m.amount === 0)).toBe(true);
             });
         });
     });
