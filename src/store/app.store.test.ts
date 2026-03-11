@@ -275,6 +275,43 @@ describe("AppStore", () => {
                 expect(result.reason).toBe("group not found");
             }
         });
+
+        test("returns invalid when deleting would invalidate existing settlements", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+
+            const expenseId =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)?.expenses[0]
+                    .id ?? -1;
+
+            // Bob owes Alice 5000 — settle 3000
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 3000,
+            });
+
+            // Deleting the only expense would remove the debt,
+            // making the settlement invalid
+            const result = useAppStore
+                .getState()
+                .deleteExpense(group.id, expenseId);
+
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.reason).toBe(
+                    "existing settlements would become invalid",
+                );
+            }
+
+            // Expense should still exist
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+            expect(updated?.expenses).toHaveLength(1);
+        });
     });
 
     describe("updateExpense", () => {
@@ -367,6 +404,44 @@ describe("AppStore", () => {
             if (!result.valid) {
                 expect(result.reason).toBe("group not found");
             }
+        });
+
+        test("returns invalid when updating would invalidate existing settlements", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+
+            // Bob owes Alice 5000 — settle 5000
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            });
+
+            const expenses =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)?.expenses ??
+                [];
+
+            // Lowering total from 10000 to 2000 → debt becomes 1000
+            // but settlement is 5000, so it should be rejected
+            const result = useAppStore.getState().updateExpense(group.id, {
+                ...expenses[0],
+                total: 2000,
+            });
+
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.reason).toBe(
+                    "existing settlements would become invalid",
+                );
+            }
+
+            // Expense should remain unchanged
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+            expect(updated?.expenses[0].total).toBe(10000);
         });
     });
 

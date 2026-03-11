@@ -11,6 +11,7 @@ import {
     type Settlement,
     type ValidationResult,
     validateSettlementCreation,
+    validateSettlementsStillValid,
 } from "@domain/settlement";
 import type { User } from "@domain/user";
 import lzstring from "lz-string";
@@ -235,19 +236,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
+        const groupWithoutExpense: Group = {
+            ...group,
+            expenses: group.expenses.filter((e) => e.id !== expenseId),
+        };
+
+        const directDebts = computeDirectDebts(groupWithoutExpense);
+        const settlementCheck = validateSettlementsStillValid(
+            directDebts,
+            group.settlements,
+        );
+
+        if (!settlementCheck.valid) {
+            return settlementCheck;
+        }
+
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId
-                        ? {
-                              ...g,
-                              expenses: g.expenses.filter(
-                                  (e) => e.id !== expenseId,
-                              ),
-                          }
-                        : g,
+                    g.id === groupId ? groupWithoutExpense : g,
                 ),
             },
         });
@@ -264,19 +273,29 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
+        const groupWithUpdatedExpense: Group = {
+            ...group,
+            expenses: group.expenses.map((e) =>
+                e.id === expense.id ? expense : e,
+            ),
+        };
+
+        const directDebts = computeDirectDebts(groupWithUpdatedExpense);
+        const settlementCheck = validateSettlementsStillValid(
+            directDebts,
+            group.settlements,
+        );
+
+        if (!settlementCheck.valid) {
+            return settlementCheck;
+        }
+
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId
-                        ? {
-                              ...g,
-                              expenses: g.expenses.map((e) =>
-                                  e.id === expense.id ? expense : e,
-                              ),
-                          }
-                        : g,
+                    g.id === groupId ? groupWithUpdatedExpense : g,
                 ),
             },
         });
