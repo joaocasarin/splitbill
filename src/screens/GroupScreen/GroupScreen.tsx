@@ -2,7 +2,7 @@ import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import { ArrowLeft } from "lucide-react";
-import { AddExpenseModal } from "./expenses/AddExpenseModal";
+import { ExpenseModal } from "./expenses/ExpenseModal";
 import { ExpensesSection } from "./expenses/ExpensesSection";
 import { AddMemberModal } from "./members/AddMemberModal";
 import { MembersSection } from "./members/MembersSection";
@@ -95,7 +95,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 onClose={closeAddMember}
             />
 
-            <AddExpenseModal
+            <ExpenseModal
                 groupId={groupId}
                 open={isAddExpenseOpen}
                 onClose={closeAddExpense}

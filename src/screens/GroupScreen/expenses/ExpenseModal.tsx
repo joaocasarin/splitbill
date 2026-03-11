@@ -9,6 +9,7 @@ import {
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
 import type { EntityId } from "@domain/common";
+import type { Expense } from "@domain/expense";
 import { useId } from "react";
 import { EqualSplitSection } from "./EqualSplitSection";
 import { FixedSplitSection } from "./FixedSplitSection";
@@ -20,11 +21,20 @@ type Props = {
     groupId: EntityId;
     open: boolean;
     onClose: () => void;
+    expense?: Expense;
+    onDelete?: (expenseId: EntityId) => void;
 };
 
-export function AddExpenseModal({ groupId, onClose, open }: Props) {
+export function ExpenseModal({
+    groupId,
+    onClose,
+    open,
+    expense,
+    onDelete,
+}: Props) {
     const {
         members,
+        isEditing,
         title,
         setTitle,
         total,
@@ -42,15 +52,24 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
         handlePercentageShareChange,
         handleSubmit,
         handleOpenChange,
-    } = useExpenseForm(groupId, onClose);
+    } = useExpenseForm(groupId, onClose, expense);
 
     const checkboxBaseId = useId();
+
+    function handleDelete() {
+        if (expense && onDelete) {
+            onDelete(expense.id);
+            onClose();
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Add expense</DialogTitle>
+                    <DialogTitle>
+                        {isEditing ? "Edit expense" : "Add expense"}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-2">
@@ -123,6 +142,15 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                 </div>
 
                 <DialogFooter>
+                    {isEditing && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDelete}
+                        >
+                            Delete
+                        </Button>
+                    )}
                     <Button
                         variant="outline"
                         size="sm"
@@ -135,7 +163,7 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                         disabled={!canSubmit}
                         onClick={handleSubmit}
                     >
-                        Add
+                        {isEditing ? "Save" : "Add"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
