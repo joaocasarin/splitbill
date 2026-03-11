@@ -1,5 +1,5 @@
-import * as balanceDomain from "@domain/balance";
 import type { DirectDebt } from "@domain/balance";
+import * as balanceDomain from "@domain/balance";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
