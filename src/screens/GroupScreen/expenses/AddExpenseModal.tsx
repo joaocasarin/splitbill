@@ -35,12 +35,12 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
         participantIds,
         fixedShares,
         percentageShares,
-        canCreate,
+        canSubmit,
         toggleParticipant,
         handlePayerChange,
         handleFixedShareChange,
         handlePercentageShareChange,
-        handleCreate,
+        handleSubmit,
         handleOpenChange,
     } = useExpenseForm(groupId, onClose);
 
@@ -132,8 +132,8 @@ export function AddExpenseModal({ groupId, onClose, open }: Props) {
                     </Button>
                     <Button
                         size="sm"
-                        disabled={!canCreate}
-                        onClick={handleCreate}
+                        disabled={!canSubmit}
+                        onClick={handleSubmit}
                     >
                         Add
                     </Button>

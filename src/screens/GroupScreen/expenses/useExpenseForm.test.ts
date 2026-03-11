@@ -3,6 +3,7 @@ import {
     EXPENSE_TITLE_MAX,
     EXPENSE_TITLE_MIN,
 } from "@domain/common";
+import type { Expense } from "@domain/expense";
 import * as expenseDomain from "@domain/expense";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
@@ -15,9 +16,9 @@ beforeEach(() => {
     setupStoreOnly();
 });
 
-function setup(onClose = vi.fn()) {
+function setup(onClose = vi.fn(), expense?: Expense) {
     const group = setupGroupWithTwoMembers();
-    const hook = renderHook(() => useExpenseForm(group.id, onClose));
+    const hook = renderHook(() => useExpenseForm(group.id, onClose, expense));
     return { group, onClose, hook };
 }
 
@@ -76,9 +77,14 @@ describe("useExpenseForm", () => {
             );
         });
 
-        test("canCreate is false", () => {
+        test("canSubmit is false", () => {
             const { hook } = setup();
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
+        });
+
+        test("isEditing is false when no expense is provided", () => {
+            const { hook } = setup();
+            expect(hook.result.current.isEditing).toBe(false);
         });
 
         test("members is empty when group does not exist", () => {
@@ -179,7 +185,7 @@ describe("useExpenseForm", () => {
         });
     });
 
-    describe("canCreate — equal split", () => {
+    describe("canSubmit — equal split", () => {
         test("false when title is too short", () => {
             const { hook } = setup();
             act(() => {
@@ -187,7 +193,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when title is too long", () => {
@@ -197,7 +203,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when total is 0", () => {
@@ -206,7 +212,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTitle("Hotel");
                 hook.result.current.toggleParticipant(2);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when only payer is participant", () => {
@@ -215,7 +221,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTitle("Hotel");
                 hook.result.current.setTotal(100);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test(`true when title has exactly ${EXPENSE_TITLE_MIN} chars, total > 0, and non-payer participant`, () => {
@@ -225,11 +231,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            expect(hook.result.current.canCreate).toBe(true);
+            expect(hook.result.current.canSubmit).toBe(true);
         });
     });
 
-    describe("canCreate — fixed split", () => {
+    describe("canSubmit — fixed split", () => {
         test("false when shares do not sum to total", () => {
             const { hook } = setup();
             act(() => {
@@ -238,7 +244,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setSplitMode("fixed");
                 hook.result.current.handleFixedShareChange(2, 500);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when no non-payer has a share", () => {
@@ -249,7 +255,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setSplitMode("fixed");
                 hook.result.current.handleFixedShareChange(1, 1000);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("true when shares sum to total and non-payer has share", () => {
@@ -261,11 +267,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.handleFixedShareChange(1, 600);
                 hook.result.current.handleFixedShareChange(2, 400);
             });
-            expect(hook.result.current.canCreate).toBe(true);
+            expect(hook.result.current.canSubmit).toBe(true);
         });
     });
 
-    describe("canCreate — percentage split", () => {
+    describe("canSubmit — percentage split", () => {
         test("false when percentages do not sum to 100%", () => {
             const { hook } = setup();
             act(() => {
@@ -274,7 +280,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setSplitMode("percentage");
                 hook.result.current.handlePercentageShareChange(2, 50);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when no non-payer has a percentage", () => {
@@ -285,7 +291,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setSplitMode("percentage");
                 hook.result.current.handlePercentageShareChange(1, 100);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("true when percentages sum to 100% and non-payer has share", () => {
@@ -297,11 +303,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.handlePercentageShareChange(1, 50);
                 hook.result.current.handlePercentageShareChange(2, 50);
             });
-            expect(hook.result.current.canCreate).toBe(true);
+            expect(hook.result.current.canSubmit).toBe(true);
         });
     });
 
-    describe("handleCreate", () => {
+    describe("handleSubmit", () => {
         test("calls addExpense and onClose for equal split", () => {
             const { group, onClose, hook } = setup();
             act(() => {
@@ -309,7 +315,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             const expenses = useAppStore
                 .getState()
                 .global.groups.find((g) => g.id === group.id)?.expenses;
@@ -330,7 +336,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.handleFixedShareChange(1, 600);
                 hook.result.current.handleFixedShareChange(2, 400);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             const expenses = useAppStore
                 .getState()
                 .global.groups.find((g) => g.id === group.id)?.expenses;
@@ -346,7 +352,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.handlePercentageShareChange(1, 50);
                 hook.result.current.handlePercentageShareChange(2, 50);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             const expenses = useAppStore
                 .getState()
                 .global.groups.find((g) => g.id === group.id)?.expenses;
@@ -360,7 +366,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(hook.result.current.title).toBe("");
             expect(hook.result.current.total).toBe(0);
             expect(hook.result.current.splitMode).toBe("equal");
@@ -373,11 +379,171 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             const expense = useAppStore
                 .getState()
                 .global.groups.find((g) => g.id === group.id)?.expenses[0];
             expect(expense?.title).toBe("Hotel");
+        });
+    });
+
+    describe("edit mode — equal expense", () => {
+        function setupWithEqualExpense(onClose = vi.fn()) {
+            const group = setupGroupWithTwoMembers();
+            const built = expenseDomain.buildEqualExpense(
+                "Hotel",
+                10000,
+                1,
+                new Set([1, 2]),
+            );
+            if (!built) throw new Error("buildEqualExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, onClose, storedExpense),
+            );
+            return { group, onClose, hook, storedExpense };
+        }
+
+        test("isEditing is true when expense is provided", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.isEditing).toBe(true);
+        });
+
+        test("pre-fills title from expense", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.title).toBe("Hotel");
+        });
+
+        test("pre-fills total from expense", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.total).toBe(10000);
+        });
+
+        test("pre-fills payerId from expense", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.payerId).toBe(1);
+        });
+
+        test("pre-fills splitMode from expense", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.splitMode).toBe("equal");
+        });
+
+        test("pre-fills participantIds from expense memberIds", () => {
+            const { hook } = setupWithEqualExpense();
+            expect(hook.result.current.participantIds).toEqual(new Set([1, 2]));
+        });
+
+        test("handleSubmit updates the expense in the store", () => {
+            const onClose = vi.fn();
+            const { group, hook, storedExpense } =
+                setupWithEqualExpense(onClose);
+            act(() => hook.result.current.setTitle("Updated Hotel"));
+            act(() => hook.result.current.handleSubmit());
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id)?.expenses[0];
+            expect(updated?.id).toBe(storedExpense.id);
+            expect(updated?.title).toBe("Updated Hotel");
+            expect(onClose).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("edit mode — fixed expense", () => {
+        function setupWithFixedExpense(onClose = vi.fn()) {
+            const group = setupGroupWithTwoMembers();
+            const built = expenseDomain.buildFixedExpense(
+                "Dinner",
+                5000,
+                1,
+                new Map([
+                    [1, 3000],
+                    [2, 2000],
+                ]),
+            );
+            if (!built) throw new Error("buildFixedExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, onClose, storedExpense),
+            );
+            return { group, onClose, hook, storedExpense };
+        }
+
+        test("pre-fills fixedShares from expense shares", () => {
+            const { hook } = setupWithFixedExpense();
+            expect(hook.result.current.fixedShares).toEqual(
+                new Map([
+                    [1, 3000],
+                    [2, 2000],
+                ]),
+            );
+        });
+
+        test("pre-fills splitMode as fixed", () => {
+            const { hook } = setupWithFixedExpense();
+            expect(hook.result.current.splitMode).toBe("fixed");
+        });
+
+        test("handleSubmit updates the fixed expense in the store", () => {
+            const { group, hook, storedExpense } = setupWithFixedExpense();
+            act(() => hook.result.current.handleSubmit());
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id)?.expenses[0];
+            expect(updated?.id).toBe(storedExpense.id);
+            expect(updated?.splitMode).toBe("fixed");
+        });
+    });
+
+    describe("edit mode — percentage expense", () => {
+        function setupWithPercentageExpense(onClose = vi.fn()) {
+            const group = setupGroupWithTwoMembers();
+            const built = expenseDomain.buildPercentageExpense(
+                "Taxi",
+                2000,
+                2,
+                new Map([
+                    [1, 6000],
+                    [2, 4000],
+                ]),
+            );
+            if (!built) throw new Error("buildPercentageExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, onClose, storedExpense),
+            );
+            return { group, onClose, hook, storedExpense };
+        }
+
+        test("pre-fills percentageShares from expense shares", () => {
+            const { hook } = setupWithPercentageExpense();
+            expect(hook.result.current.percentageShares).toEqual(
+                new Map([
+                    [1, 6000],
+                    [2, 4000],
+                ]),
+            );
+        });
+
+        test("pre-fills splitMode as percentage", () => {
+            const { hook } = setupWithPercentageExpense();
+            expect(hook.result.current.splitMode).toBe("percentage");
+        });
+
+        test("handleSubmit updates the percentage expense in the store", () => {
+            const { group, hook, storedExpense } = setupWithPercentageExpense();
+            act(() => hook.result.current.handleSubmit());
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id)?.expenses[0];
+            expect(updated?.id).toBe(storedExpense.id);
+            expect(updated?.splitMode).toBe("percentage");
         });
     });
 
@@ -407,7 +573,7 @@ describe("useExpenseForm", () => {
             expect(hook.result.current.participantIds).toEqual(new Set());
         });
 
-        test("handleCreate returns early when buildEqualExpense returns null", () => {
+        test("handleSubmit returns early when buildEqualExpense returns null", () => {
             const { onClose, hook } = setup();
             vi.spyOn(expenseDomain, "buildEqualExpense").mockReturnValueOnce(
                 null,
@@ -417,11 +583,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.setTotal(100);
                 hook.result.current.toggleParticipant(2);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onClose).not.toHaveBeenCalled();
         });
 
-        test("handleCreate returns early when buildFixedExpense returns null", () => {
+        test("handleSubmit returns early when buildFixedExpense returns null", () => {
             const { onClose, hook } = setup();
             vi.spyOn(expenseDomain, "buildFixedExpense").mockReturnValueOnce(
                 null,
@@ -433,11 +599,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.handleFixedShareChange(1, 600);
                 hook.result.current.handleFixedShareChange(2, 400);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onClose).not.toHaveBeenCalled();
         });
 
-        test("handleCreate returns early when buildPercentageExpense returns null", () => {
+        test("handleSubmit returns early when buildPercentageExpense returns null", () => {
             const { onClose, hook } = setup();
             vi.spyOn(
                 expenseDomain,
@@ -450,11 +616,11 @@ describe("useExpenseForm", () => {
                 hook.result.current.handlePercentageShareChange(1, 50);
                 hook.result.current.handlePercentageShareChange(2, 50);
             });
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onClose).not.toHaveBeenCalled();
         });
 
-        test(`canCreate uses BPS_TOTAL (${BPS_TOTAL}) as percentage threshold`, () => {
+        test(`canSubmit uses BPS_TOTAL (${BPS_TOTAL}) as percentage threshold`, () => {
             const { hook } = setup();
             act(() => {
                 hook.result.current.setTitle("Hotel");
@@ -464,7 +630,7 @@ describe("useExpenseForm", () => {
                 hook.result.current.handlePercentageShareChange(1, 49.99);
                 hook.result.current.handlePercentageShareChange(2, 50);
             });
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
     });
 });

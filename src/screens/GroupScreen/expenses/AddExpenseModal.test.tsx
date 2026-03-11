@@ -121,6 +121,7 @@ function makeHookReturn(
 ): ReturnType<typeof useExpenseFormModule.useExpenseForm> {
     return {
         members,
+        isEditing: false,
         title: "",
         setTitle: vi.fn(),
         total: 0,
@@ -137,12 +138,12 @@ function makeHookReturn(
             [1, 0],
             [2, 0],
         ]),
-        canCreate: false,
+        canSubmit: false,
         toggleParticipant: vi.fn(),
         handlePayerChange: vi.fn(),
         handleFixedShareChange: vi.fn(),
         handlePercentageShareChange: vi.fn(),
-        handleCreate: vi.fn(),
+        handleSubmit: vi.fn(),
         handleOpenChange: vi.fn(),
         ...overrides,
     };
@@ -192,15 +193,15 @@ describe("AddExpenseModal", () => {
             ).toBeInTheDocument();
         });
 
-        test("Add button is disabled when canCreate is false", () => {
-            renderModal(makeHookReturn({ canCreate: false }));
+        test("Add button is disabled when canSubmit is false", () => {
+            renderModal(makeHookReturn({ canSubmit: false }));
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
             ).toBeDisabled();
         });
 
-        test("Add button is enabled when canCreate is true", () => {
-            renderModal(makeHookReturn({ canCreate: true }));
+        test("Add button is enabled when canSubmit is true", () => {
+            renderModal(makeHookReturn({ canSubmit: true }));
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
             ).toBeEnabled();
@@ -301,13 +302,13 @@ describe("AddExpenseModal", () => {
             );
         });
 
-        test("Add button click calls handleCreate", async () => {
-            const hookReturn = makeHookReturn({ canCreate: true });
+        test("Add button click calls handleSubmit", async () => {
+            const hookReturn = makeHookReturn({ canSubmit: true });
             renderModal(hookReturn);
             await userEvent.click(
                 screen.getByRole("button", { name: /^add$/i }),
             );
-            expect(hookReturn.handleCreate).toHaveBeenCalledOnce();
+            expect(hookReturn.handleSubmit).toHaveBeenCalledOnce();
         });
 
         test("Cancel button click calls handleOpenChange(false)", async () => {
