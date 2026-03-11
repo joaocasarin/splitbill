@@ -9,6 +9,9 @@ export default defineConfig({
         exclude: ["**/node_modules/**", "**/dist/**", "public/**"],
         coverage: {
             provider: "v8",
+            thresholds: {
+                "100": true,
+            },
             enabled: true,
             reportOnFailure: true,
             reporter: ["text", "html"],
