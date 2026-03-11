@@ -39,6 +39,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         isAddMemberOpen,
         isAddExpenseOpen,
         isAddSettlementOpen,
+        editingSettlement,
         openAddMember,
         closeAddMember,
         openAddExpense,
@@ -47,8 +48,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         closeEditExpense,
         openAddSettlement,
         closeAddSettlement,
+        openEditSettlement,
+        closeEditSettlement,
         removeMember,
         addSettlement,
+        updateSettlement,
         deleteExpense,
         deleteSettlement,
     } = state;
@@ -90,6 +94,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 settlements={group.settlements}
                 users={users}
                 onAddSettlement={openAddSettlement}
+                onEditSettlement={openEditSettlement}
                 onDeleteSettlement={deleteSettlement}
             />
 
@@ -122,6 +127,20 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 onSubmit={addSettlement}
                 onClose={closeAddSettlement}
             />
+
+            {editingSettlement !== null && (
+                <SettlementModal
+                    open
+                    members={members}
+                    directDebts={directDebts}
+                    settlement={editingSettlement}
+                    onSubmit={(data) =>
+                        updateSettlement({ ...data, id: editingSettlement.id })
+                    }
+                    onClose={closeEditSettlement}
+                    onDelete={deleteSettlement}
+                />
+            )}
         </div>
     );
 }

@@ -11,6 +11,7 @@ type Props = {
     settlements: Settlement[];
     users: User[];
     onAddSettlement: () => void;
+    onEditSettlement: (settlement: Settlement) => void;
     onDeleteSettlement: (settlementId: EntityId) => void;
 };
 
@@ -18,6 +19,7 @@ export function SettlementsSection({
     settlements,
     users,
     onAddSettlement,
+    onEditSettlement,
     onDeleteSettlement,
 }: Props) {
     const [deletingId, setDeletingId] = useState<EntityId | null>(null);
@@ -60,9 +62,14 @@ export function SettlementsSection({
                                 key={settlement.id}
                                 className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
                             >
-                                <span>
+                                <button
+                                    type="button"
+                                    className="flex-1 text-left cursor-pointer"
+                                    onClick={() => onEditSettlement(settlement)}
+                                    aria-label={`Edit settlement ${fromName} to ${toName}`}
+                                >
                                     {fromName} → {toName}
-                                </span>
+                                </button>
                                 <div className="flex items-center gap-2">
                                     <span>
                                         {formatCurrency(settlement.amount)}

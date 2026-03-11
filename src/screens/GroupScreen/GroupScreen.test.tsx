@@ -36,12 +36,19 @@ vi.mock("./expenses/ExpensesSection", () => ({
 vi.mock("./settlements/SettlementsSection", () => ({
     SettlementsSection: ({
         onAddSettlement,
+        onEditSettlement,
     }: {
         onAddSettlement: () => void;
+        onEditSettlement: (settlement: { id: number }) => void;
     }) => (
-        <button type="button" onClick={onAddSettlement}>
-            Add settlement
-        </button>
+        <>
+            <button type="button" onClick={onAddSettlement}>
+                Add settlement
+            </button>
+            <button type="button" onClick={() => onEditSettlement({ id: 1 })}>
+                Edit settlement
+            </button>
+        </>
     ),
 }));
 
@@ -119,6 +126,7 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         isAddMemberOpen: false,
         isAddExpenseOpen: false,
         isAddSettlementOpen: false,
+        editingSettlement: null,
         openAddMember: vi.fn(),
         closeAddMember: vi.fn(),
         openAddExpense: vi.fn(),
@@ -127,8 +135,11 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         closeEditExpense: vi.fn(),
         openAddSettlement: vi.fn(),
         closeAddSettlement: vi.fn(),
+        openEditSettlement: vi.fn(),
+        closeEditSettlement: vi.fn(),
         removeMember: vi.fn(),
         addSettlement: vi.fn(),
+        updateSettlement: vi.fn(),
         deleteExpense: vi.fn(),
         deleteSettlement: vi.fn(),
         ...overrides,
@@ -302,6 +313,38 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(closeAddSettlement).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("edit settlement modal", () => {
+        test("calls openEditSettlement when Edit settlement is clicked", async () => {
+            const openEditSettlement = vi.fn();
+            renderScreen(makeHookReturn({ openEditSettlement }));
+            await userEvent.click(
+                screen.getByRole("button", { name: /edit settlement/i }),
+            );
+            expect(openEditSettlement).toHaveBeenCalledOnce();
+        });
+
+        test("renders edit SettlementModal when editingSettlement is set", () => {
+            const editingSettlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 3000,
+            };
+            renderScreen(makeHookReturn({ editingSettlement }));
+            const dialogs = screen.getAllByRole("dialog", {
+                name: /settlement-modal/i,
+            });
+            expect(dialogs).toHaveLength(1);
+        });
+
+        test("does not render edit SettlementModal when editingSettlement is null", () => {
+            renderScreen(makeHookReturn({ editingSettlement: null }));
+            expect(
+                screen.queryByRole("dialog", { name: /settlement-modal/i }),
+            ).not.toBeInTheDocument();
         });
     });
 });

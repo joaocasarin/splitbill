@@ -21,19 +21,23 @@ function renderSection(
     settlements: Settlement[] = [],
     overrides: {
         onAddSettlement?: () => void;
+        onEditSettlement?: (settlement: Settlement) => void;
         onDeleteSettlement?: (id: number) => void;
     } = {},
 ) {
     const onAddSettlement = overrides.onAddSettlement ?? vi.fn();
+    const onEditSettlement = overrides.onEditSettlement ?? vi.fn();
     const onDeleteSettlement = overrides.onDeleteSettlement ?? vi.fn();
     return {
         onAddSettlement,
+        onEditSettlement,
         onDeleteSettlement,
         ...render(
             <SettlementsSection
                 settlements={settlements}
                 users={users}
                 onAddSettlement={onAddSettlement}
+                onEditSettlement={onEditSettlement}
                 onDeleteSettlement={onDeleteSettlement}
             />,
         ),
@@ -101,6 +105,15 @@ describe("SettlementsSection", () => {
             expect(items).toHaveLength(2);
         });
 
+        test("renders edit button for each settlement", () => {
+            renderSection([settlement]);
+            expect(
+                screen.getByRole("button", {
+                    name: /edit settlement bob to alice/i,
+                }),
+            ).toBeInTheDocument();
+        });
+
         test("renders delete button for each settlement", () => {
             renderSection([settlement]);
             expect(
@@ -108,6 +121,19 @@ describe("SettlementsSection", () => {
                     name: /delete settlement bob to alice/i,
                 }),
             ).toBeInTheDocument();
+        });
+    });
+
+    describe("editing", () => {
+        test("clicking settlement calls onEditSettlement with settlement", async () => {
+            const onEditSettlement = vi.fn();
+            renderSection([settlement], { onEditSettlement });
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: /edit settlement bob to alice/i,
+                }),
+            );
+            expect(onEditSettlement).toHaveBeenCalledWith(settlement);
         });
     });
 

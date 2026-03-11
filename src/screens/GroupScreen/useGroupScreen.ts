@@ -22,6 +22,7 @@ type GroupFound = {
     editingExpense: Expense | null;
     isAddExpenseOpen: boolean;
     isAddSettlementOpen: boolean;
+    editingSettlement: Settlement | null;
     openAddMember: () => void;
     closeAddMember: () => void;
     openAddExpense: () => void;
@@ -30,8 +31,11 @@ type GroupFound = {
     closeEditExpense: () => void;
     openAddSettlement: () => void;
     closeAddSettlement: () => void;
+    openEditSettlement: (settlement: Settlement) => void;
+    closeEditSettlement: () => void;
     removeMember: (id: EntityId) => void;
     addSettlement: (settlement: Omit<Settlement, "id">) => void;
+    updateSettlement: (settlement: Settlement) => void;
     deleteExpense: (expenseId: EntityId) => void;
     deleteSettlement: (settlementId: EntityId) => void;
 };
@@ -43,6 +47,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         global,
         removeMemberFromGroup,
         addSettlement: storeAddSettlement,
+        updateSettlement: storeUpdateSettlement,
         deleteExpense: storeDeleteExpense,
         deleteSettlement: storeDeleteSettlement,
     } = useAppStore();
@@ -52,6 +57,8 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [isAddSettlementOpen, setIsAddSettlementOpen] = useState(false);
+    const [editingSettlement, setEditingSettlement] =
+        useState<Settlement | null>(null);
 
     if (!group) {
         return { group: null };
@@ -83,6 +90,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         editingExpense,
         isAddExpenseOpen,
         isAddSettlementOpen,
+        editingSettlement,
         openAddMember: () => setIsAddMemberOpen(true),
         closeAddMember: () => setIsAddMemberOpen(false),
         openAddExpense: () => setIsAddExpenseOpen(true),
@@ -91,9 +99,14 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         closeEditExpense: () => setEditingExpense(null),
         openAddSettlement: () => setIsAddSettlementOpen(true),
         closeAddSettlement: () => setIsAddSettlementOpen(false),
+        openEditSettlement: (settlement: Settlement) =>
+            setEditingSettlement(settlement),
+        closeEditSettlement: () => setEditingSettlement(null),
         removeMember: (id: EntityId) => removeMemberFromGroup(groupId, id),
         addSettlement: (settlement: Omit<Settlement, "id">) =>
             storeAddSettlement(groupId, settlement),
+        updateSettlement: (settlement: Settlement) =>
+            storeUpdateSettlement(groupId, settlement),
         deleteExpense: (expenseId: EntityId) =>
             storeDeleteExpense(groupId, expenseId),
         deleteSettlement: (settlementId: EntityId) =>
