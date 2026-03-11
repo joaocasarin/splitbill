@@ -162,14 +162,12 @@ The system guarantees:
 
 ## 10. Future Roadmap
 
-- Add settlement UI (modal for recording payments)
+- Edit/delete expenses and settlements
 - Timestamps (`createdAt`, `updatedAt`) on all entities
-- Soft delete for users (`deletedAt`)
-- Debt simplification algorithm
-- Editing expenses and settlements
-- Migration system for version upgrades
 - Free payments (settlement between any two members without debt constraint)
-- Simplified debts toggle (suggested optimized payment paths)
+- Debt simplification algorithm (suggested optimized payment paths)
+- Soft delete for users (`deletedAt`)
+- Migration system for version upgrades
 
 ---
 
