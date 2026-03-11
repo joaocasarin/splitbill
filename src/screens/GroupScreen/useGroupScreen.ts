@@ -1,5 +1,5 @@
-import { computeBalances, computeDirectDebts } from "@domain/balance";
 import type { DirectDebt } from "@domain/balance";
+import { computeBalances, computeDirectDebts } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 import type { Group } from "@domain/group";
 import type { Settlement } from "@domain/settlement";
