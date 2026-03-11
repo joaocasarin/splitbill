@@ -1,12 +1,10 @@
 import type { User } from "@domain/user";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { FixedSplitSection } from "./FixedSplitSection";
 
-const members: User[] = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-];
+const members: User[] = testUsers;
 
 describe("FixedSplitSection", () => {
     describe("initial state", () => {

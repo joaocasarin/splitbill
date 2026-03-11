@@ -1,6 +1,8 @@
 import type { Global } from "@domain/global";
 import lzstring from "lz-string";
 
+import { testAlice } from "./users";
+
 export const emptyGlobal: Global = {
     version: 1,
     users: [],
@@ -9,7 +11,7 @@ export const emptyGlobal: Global = {
 
 export const validGlobal: Global = {
     version: 1,
-    users: [{ id: 1, name: "Alice" }],
+    users: [testAlice],
     groups: [],
 };
 

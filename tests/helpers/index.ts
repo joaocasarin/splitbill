@@ -1,1 +1,5 @@
-export { setupGroupWithTwoMembers } from "./store-helpers";
+export {
+    setupGroupWithNonMember,
+    setupGroupWithTwoMembers,
+    setupTwoUsers,
+} from "./store-helpers";

@@ -1,11 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { PercentageSplitSection } from "./PercentageSplitSection";
 
-const members = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-];
+const members = testUsers;
 
 describe("PercentageSplitSection", () => {
     describe("initial state", () => {

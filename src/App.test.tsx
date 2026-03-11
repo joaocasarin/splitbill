@@ -1,7 +1,7 @@
 import { App } from "@app";
-import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test } from "vitest";
 
@@ -32,9 +32,7 @@ describe("App", () => {
     });
 
     test("renders group screen when view is group", async () => {
-        useAppStore.getState().addUser("Alice");
-        useAppStore.getState().addUser("Bob");
-        useAppStore.getState().addGroup("Trip", [1, 2]);
+        setupGroupWithTwoMembers();
 
         render(<App />);
 

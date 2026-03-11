@@ -2,6 +2,7 @@ import { GROUP_NAME_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setupTwoUsers } from "@tests/helpers";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddGroupModal } from "./AddGroupModal";
@@ -17,11 +18,6 @@ function renderModal(open = true, onClose = vi.fn()) {
         onClose,
         ...render(<AddGroupModal open={open} onClose={onClose} />),
     };
-}
-
-function setupTwoUsers() {
-    useAppStore.getState().addUser("Alice");
-    useAppStore.getState().addUser("Bob");
 }
 
 describe("AddGroupModal", () => {
