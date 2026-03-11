@@ -2,13 +2,11 @@ import type { EqualExpense } from "@domain/expense";
 import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { ExpensesSection } from "./ExpensesSection";
 
-const users: User[] = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-];
+const users: User[] = testUsers;
 
 const expense: EqualExpense = {
     id: 1,

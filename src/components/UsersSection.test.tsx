@@ -1,13 +1,11 @@
 import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { UsersSection } from "./UsersSection";
 
-const users: User[] = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-];
+const users: User[] = testUsers;
 
 function renderSection(usersArg: User[] = users, onAddUser = vi.fn()) {
     return render(<UsersSection users={usersArg} onAddUser={onAddUser} />);

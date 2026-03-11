@@ -1,13 +1,11 @@
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
+import { testUsers } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
 import { SettlementsSection } from "./SettlementsSection";
 
-const users: User[] = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-];
+const users: User[] = testUsers;
 
 const settlement: Settlement = {
     id: 1,
