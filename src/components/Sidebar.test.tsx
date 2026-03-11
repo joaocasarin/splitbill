@@ -3,7 +3,7 @@ import type { Group } from "@domain/group";
 import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupGroupWithTwoMembers } from "@tests/helpers";
+import { setupGroupWithTwoMembers, setupTwoUsers } from "@tests/helpers";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
@@ -125,8 +125,7 @@ describe("Sidebar", () => {
         });
 
         test("passes canCreateGroup as true when 2 or more users exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
+            setupTwoUsers();
             render(<Sidebar {...defaultProps} />);
             expect(screen.getByTestId("can-create-group")).toHaveTextContent(
                 "true",

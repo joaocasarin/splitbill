@@ -1,6 +1,7 @@
 import { useAppStore } from "@store";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setupGroupWithNonMember } from "@tests/helpers";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddMemberModal } from "./AddMemberModal";
@@ -36,14 +37,6 @@ vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 beforeEach(() => {
     setupStoreOnly();
 });
-
-function setupGroupWithNonMember() {
-    useAppStore.getState().addUser("Alice");
-    useAppStore.getState().addUser("Bob");
-    useAppStore.getState().addUser("Carol");
-    useAppStore.getState().addGroup("Trip", [1, 2]);
-    return useAppStore.getState().global.groups[0];
-}
 
 function renderModal(groupId: number, open = true, onClose = vi.fn()) {
     return {
