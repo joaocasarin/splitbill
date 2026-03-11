@@ -45,8 +45,8 @@ vi.mock("./settlements/SettlementsSection", () => ({
     ),
 }));
 
-vi.mock("./settlements/AddSettlementModal", () => ({
-    AddSettlementModal: ({
+vi.mock("./settlements/SettlementModal", () => ({
+    SettlementModal: ({
         open,
         onClose,
     }: {

@@ -6,7 +6,7 @@ import { ExpenseModal } from "./expenses/ExpenseModal";
 import { ExpensesSection } from "./expenses/ExpensesSection";
 import { AddMemberModal } from "./members/AddMemberModal";
 import { MembersSection } from "./members/MembersSection";
-import { AddSettlementModal } from "./settlements/AddSettlementModal";
+import { SettlementModal } from "./settlements/SettlementModal";
 import { SettlementsSection } from "./settlements/SettlementsSection";
 import { useGroupScreen } from "./useGroupScreen";
 
@@ -115,7 +115,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 />
             )}
 
-            <AddSettlementModal
+            <SettlementModal
                 open={isAddSettlementOpen}
                 members={members}
                 directDebts={directDebts}
