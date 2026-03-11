@@ -9,7 +9,7 @@ Conventions and architecture decisions for the test suite. Serves as a reference
 ```
 tests/
 ├── helpers/
-│   ├── index.ts              # barrel: exports setupGroupWithTwoMembers
+│   ├── index.ts              # barrel: exports setupTwoUsers, setupGroupWithTwoMembers, setupGroupWithNonMember
 │   └── store-helpers.ts      # factory functions that manipulate the store
 ├── mocks/
 │   ├── index.ts              # barrel: exports all data mocks
@@ -17,6 +17,7 @@ tests/
 │   ├── expense.ts            # defaultEqualExpense (without id)
 │   ├── global.ts             # emptyGlobal, validGlobal, validGlobalEncoded
 │   ├── group.ts              # baseGroup for domain tests
+│   ├── users.ts              # testAlice, testBob, testUsers
 │   └── ui/
 │       └── dialog.tsx        # centralized mock of @components/ui/dialog
 ├── setup/
@@ -98,16 +99,37 @@ beforeEach(() => {
 
 ---
 
-## 4. Inline factories
+## 4. Shared test data and inline factories
+
+### 4.1 Test user constants
+
+`tests/mocks/users.ts` exports `testAlice`, `testBob`, and `testUsers` — typed `User` objects with fixed IDs (`1` and `2`). Use these instead of defining inline user arrays in component tests that take user props directly.
+
+```typescript
+import { testUsers } from "@tests/mocks";
+
+const users: User[] = testUsers;
+```
+
+### 4.2 Store setup helpers
+
+| Helper | Location | Purpose |
+|---|---|---|
+| `setupTwoUsers()` | `tests/helpers/store-helpers.ts` | Adds Alice (id:1) and Bob (id:2) to the store |
+| `setupGroupWithTwoMembers()` | `tests/helpers/store-helpers.ts` | Calls `setupTwoUsers()` + creates group "Trip" with both |
+| `setupGroupWithNonMember()` | `tests/helpers/store-helpers.ts` | Calls `setupTwoUsers()` + adds Carol (id:3) + creates group with Alice and Bob only |
+
+### 4.3 Inline factories
 
 Do not use `beforeEach` to build state or render — use factories declared in the scope of the test file.
 
 ```typescript
-function setupGroup() {
-    useAppStore.getState().addUser("Alice");
-    useAppStore.getState().addUser("Bob");
-    useAppStore.getState().addGroup("Trip", [1, 2]);
-    return useAppStore.getState().global.groups[0];
+import { setupGroupWithTwoMembers } from "@tests/helpers";
+
+function setup(onClose = vi.fn()) {
+    const group = setupGroupWithTwoMembers();
+    const hook = renderHook(() => useExpenseForm(group.id, onClose));
+    return { group, onClose, hook };
 }
 
 function renderScreen(groupId: number, onNavigate = vi.fn()) {
@@ -142,7 +164,7 @@ render(<Sidebar {...defaultProps} view={{ screen: "group", groupId: 1 }} />);
 
 `vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"))`
 
-Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `AddUsersModal.test.tsx`.
+Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `AddUsersModal.test.tsx`, `AddExpenseModal.test.tsx`.
 
 Centralized because it is identical in all three files. Replaces the library’s headless component with a minimal implementation that: conditionally renders children, exposes a trigger button to open the dialog, and provides passthrough for header/title/footer.
 
@@ -172,15 +194,15 @@ vi.mock("@domain/balance", async (importOriginal) => {
 
 Wraps `computeBalances` in a `vi.fn()` that, by default, delegates to the real implementation. Individual tests can override the return value to simulate edge cases (e.g., member without a balance entry). The `beforeEach` with `restoreMocks: true` restores the spy to the real implementation before each test.
 
-### 5.4 Balance spy — `vi.spyOn` in `GroupScreen.test.tsx`
+### 5.4 Balance spy — `vi.spyOn` in `useGroupScreen.test.ts`
 
 ```typescript
 import * as balanceDomain from "@domain/balance";
 // inside the test:
-vi.spyOn(balanceDomain, "computeBalances").mockReturnValue([]);
+vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce([]);
 ```
 
-Different from `app.store.test.ts`, GroupScreen uses `vi.spyOn` directly on the imported module. Suitable for small targeted tests that need to control the return value without affecting others.
+Different from `app.store.test.ts`, `useGroupScreen.test.ts` uses `vi.spyOn` directly on the imported module. Suitable for small targeted tests that need to control the return value without affecting others.
 
 ---
 
@@ -202,11 +224,16 @@ The label is inline documentation: any reader understands the block exists for c
 
 | File | Position of the describe |
 |---|---|
-| `compute-balances.test.ts` | Top-level, at the end of the file (there is no natural parent describe) |
-| `GroupScreen.test.tsx` | Nested inside `describe("fallback display")` |
-| `app.store.test.ts` | Nested inside `describe("removeMemberFromGroup")` |
+| `compute-balances.test.ts` | L2 inside the top-level describe |
+| `app.store.test.ts` | L3 nested inside `describe("removeMemberFromGroup")` |
+| `useGroupScreen.test.ts` | L2 inside the top-level describe |
+| `useExpenseForm.test.ts` | L2 inside the top-level describe |
+| `ExpensesSection.test.tsx` | L2 inside the top-level describe |
+| `SettlementsSection.test.tsx` | L2 inside the top-level describe |
+| `AddExpenseModal.test.tsx` | L2 inside the top-level describe |
+| `MembersSection.test.tsx` | L2 inside the top-level describe |
 
-**Rule:** if the guard semantically belongs to an existing describe, nest it inside. If there is no natural parent describe, put it at top-level at the end of the file.
+**Rule:** defensive guards sit at L2 (or L3 when nested inside a behavior group). If the guard semantically belongs to an existing describe, nest it inside.
 
 ### 6.3 Tests that are NOT defensive guards
 
