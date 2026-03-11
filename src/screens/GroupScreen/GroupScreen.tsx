@@ -73,7 +73,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 onAddExpense={openAddExpense}
             />
 
-            <SettlementsSection settlements={group.settlements} users={users} />
+            <SettlementsSection
+                settlements={group.settlements}
+                users={users}
+                onAddSettlement={() => {}}
+            />
 
             <AddMemberModal
                 groupId={groupId}

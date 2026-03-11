@@ -7,16 +7,17 @@ import { Plus } from "lucide-react";
 type Props = {
     settlements: Settlement[];
     users: User[];
+    onAddSettlement: () => void;
 };
 
-export function SettlementsSection({ settlements, users }: Props) {
+export function SettlementsSection({ settlements, users, onAddSettlement }: Props) {
     return (
         <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
                     Settlements
                 </h2>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={onAddSettlement}>
                     <Plus className="w-4 h-4 mr-1" />
                     Add settlement
                 </Button>

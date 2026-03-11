@@ -1,8 +1,9 @@
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { testUsers } from "@tests/mocks";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { SettlementsSection } from "./SettlementsSection";
 
 const users: User[] = testUsers;
@@ -14,10 +15,21 @@ const settlement: Settlement = {
     amount: 10000,
 };
 
-function renderSection(settlements: Settlement[], usersArg: User[] = users) {
-    return render(
-        <SettlementsSection settlements={settlements} users={usersArg} />,
-    );
+function renderSection(
+    settlements: Settlement[],
+    usersArg: User[] = users,
+    onAddSettlement = vi.fn(),
+) {
+    return {
+        onAddSettlement,
+        ...render(
+            <SettlementsSection
+                settlements={settlements}
+                users={usersArg}
+                onAddSettlement={onAddSettlement}
+            />,
+        ),
+    };
 }
 
 describe("SettlementsSection", () => {
@@ -44,6 +56,16 @@ describe("SettlementsSection", () => {
             expect(
                 screen.queryByText(/no settlements yet/i),
             ).not.toBeInTheDocument();
+        });
+    });
+
+    describe("add settlement button", () => {
+        test("calls onAddSettlement when clicked", async () => {
+            const { onAddSettlement } = renderSection([]);
+            await userEvent.click(
+                screen.getByRole("button", { name: /add settlement/i }),
+            );
+            expect(onAddSettlement).toHaveBeenCalledOnce();
         });
     });
 
