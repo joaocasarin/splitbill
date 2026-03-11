@@ -10,6 +10,7 @@ type UseSettlementFormParams = {
     directDebts: DirectDebt[];
     onSubmit: (settlement: Omit<Settlement, "id">) => void;
     onClose: () => void;
+    settlement?: Settlement;
 };
 
 export function useSettlementForm({
@@ -17,10 +18,17 @@ export function useSettlementForm({
     directDebts,
     onSubmit,
     onClose,
+    settlement,
 }: UseSettlementFormParams) {
-    const [fromMemberId, setFromMemberId] = useState<EntityId | null>(null);
-    const [toMemberId, setToMemberId] = useState<EntityId | null>(null);
-    const [amount, setAmount] = useState(0);
+    const isEditing = settlement !== undefined;
+
+    const [fromMemberId, setFromMemberId] = useState<EntityId | null>(
+        settlement?.fromMemberId ?? null,
+    );
+    const [toMemberId, setToMemberId] = useState<EntityId | null>(
+        settlement?.toMemberId ?? null,
+    );
+    const [amount, setAmount] = useState(settlement?.amount ?? 0);
 
     const debtorsWithDebts = members.filter((m) =>
         directDebts.some((d) => d.fromMemberId === m.id),
@@ -50,7 +58,7 @@ export function useSettlementForm({
 
     const maxAmount = selectedDebt?.amount ?? 0;
 
-    const canCreate =
+    const canSubmit =
         fromMemberId !== null &&
         toMemberId !== null &&
         amount > 0 &&
@@ -78,8 +86,8 @@ export function useSettlementForm({
         setAmount(0);
     }
 
-    function handleCreate() {
-        if (!canCreate || fromMemberId === null || toMemberId === null) return;
+    function handleSubmit() {
+        if (!canSubmit || fromMemberId === null || toMemberId === null) return;
         onSubmit({ fromMemberId, toMemberId, amount });
         reset();
         onClose();
@@ -93,6 +101,7 @@ export function useSettlementForm({
     }
 
     return {
+        isEditing,
         fromMemberId,
         toMemberId,
         amount,
@@ -100,10 +109,10 @@ export function useSettlementForm({
         debtorsWithDebts,
         creditorsForDebtor,
         maxAmount,
-        canCreate,
+        canSubmit,
         handleFromChange,
         handleToChange,
-        handleCreate,
+        handleSubmit,
         handleOpenChange,
     };
 }
