@@ -46,6 +46,8 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         closeAddSettlement,
         removeMember,
         addSettlement,
+        deleteExpense,
+        deleteSettlement,
     } = state;
 
     return (
@@ -77,12 +79,14 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 expenses={group.expenses}
                 users={users}
                 onAddExpense={openAddExpense}
+                onDeleteExpense={deleteExpense}
             />
 
             <SettlementsSection
                 settlements={group.settlements}
                 users={users}
                 onAddSettlement={openAddSettlement}
+                onDeleteSettlement={deleteSettlement}
             />
 
             <AddMemberModal

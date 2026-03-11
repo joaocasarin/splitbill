@@ -28,6 +28,8 @@ type GroupFound = {
     closeAddSettlement: () => void;
     removeMember: (id: EntityId) => void;
     addSettlement: (settlement: Omit<Settlement, "id">) => void;
+    deleteExpense: (expenseId: EntityId) => void;
+    deleteSettlement: (settlementId: EntityId) => void;
 };
 
 export type UseGroupScreenReturn = GroupNotFound | GroupFound;
@@ -37,6 +39,8 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         global,
         removeMemberFromGroup,
         addSettlement: storeAddSettlement,
+        deleteExpense: storeDeleteExpense,
+        deleteSettlement: storeDeleteSettlement,
     } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
     const users = global.users;
@@ -82,5 +86,9 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         removeMember: (id: EntityId) => removeMemberFromGroup(groupId, id),
         addSettlement: (settlement: Omit<Settlement, "id">) =>
             storeAddSettlement(groupId, settlement),
+        deleteExpense: (expenseId: EntityId) =>
+            storeDeleteExpense(groupId, expenseId),
+        deleteSettlement: (settlementId: EntityId) =>
+            storeDeleteSettlement(groupId, settlementId),
     };
 }

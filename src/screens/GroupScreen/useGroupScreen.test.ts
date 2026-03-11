@@ -210,6 +210,32 @@ describe("useGroupScreen", () => {
         });
     });
 
+    describe("deleteExpense", () => {
+        test("delegates to store deleteExpense", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "deleteExpense");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            act(() => {
+                state.deleteExpense(1);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, 1);
+        });
+    });
+
+    describe("deleteSettlement", () => {
+        test("delegates to store deleteSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "deleteSettlement");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            act(() => {
+                state.deleteSettlement(1);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, 1);
+        });
+    });
+
     describe("removeMember", () => {
         test("removes member from group via store", () => {
             useAppStore.getState().addUser("Alice");
