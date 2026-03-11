@@ -36,10 +36,12 @@ type AppActions = {
         userId: EntityId,
     ) => ValidationResult;
     addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => void;
+    deleteExpense: (groupId: EntityId, expenseId: EntityId) => void;
     addSettlement: (
         groupId: EntityId,
         settlement: Omit<Settlement, "id">,
     ) => ValidationResult;
+    deleteSettlement: (groupId: EntityId, settlementId: EntityId) => void;
 };
 
 export type AppStore = AppState & AppActions;
@@ -213,6 +215,26 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
+    deleteExpense: (groupId: EntityId, expenseId: EntityId) => {
+        const { global, syncToUrl } = get();
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((group) =>
+                    group.id === groupId
+                        ? {
+                              ...group,
+                              expenses: group.expenses.filter(
+                                  (e) => e.id !== expenseId,
+                              ),
+                          }
+                        : group,
+                ),
+            },
+        });
+        syncToUrl();
+    },
     addSettlement: (groupId: EntityId, settlement: Omit<Settlement, "id">) => {
         const { global, createId, syncToUrl } = get();
 
@@ -261,5 +283,25 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         syncToUrl();
 
         return { valid: true };
+    },
+    deleteSettlement: (groupId: EntityId, settlementId: EntityId) => {
+        const { global, syncToUrl } = get();
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((group) =>
+                    group.id === groupId
+                        ? {
+                              ...group,
+                              settlements: group.settlements.filter(
+                                  (s) => s.id !== settlementId,
+                              ),
+                          }
+                        : group,
+                ),
+            },
+        });
+        syncToUrl();
     },
 }));

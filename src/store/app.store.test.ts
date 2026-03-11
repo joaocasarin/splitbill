@@ -204,6 +204,66 @@ describe("AppStore", () => {
         });
     });
 
+    describe("deleteExpense", () => {
+        test("removes expense from correct group", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+
+            const expenseId =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)?.expenses[0]
+                    .id ?? -1;
+
+            useAppStore.getState().deleteExpense(group.id, expenseId);
+
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+
+            expect(updated?.expenses).toHaveLength(0);
+        });
+
+        test("does not affect other groups", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+
+            useAppStore.getState().addGroup("Dinner", [1, 2]);
+            const dinnerGroup = useAppStore.getState().global.groups[1];
+            useAppStore.getState().addExpense(dinnerGroup.id, {
+                ...defaultEqualExpense,
+                title: "Food",
+            });
+
+            const expenseId =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)?.expenses[0]
+                    .id ?? -1;
+
+            useAppStore.getState().deleteExpense(group.id, expenseId);
+
+            const updatedDinner = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === dinnerGroup.id);
+
+            expect(updatedDinner?.expenses).toHaveLength(1);
+        });
+
+        test("does nothing when expense ID does not exist", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+
+            useAppStore.getState().deleteExpense(group.id, 999);
+
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+
+            expect(updated?.expenses).toHaveLength(1);
+        });
+    });
+
     describe("addSettlement", () => {
         test("adds settlement to correct group", () => {
             useAppStore.getState().addGroup("Dinner", [1, 2]);
@@ -312,6 +372,85 @@ describe("AppStore", () => {
                     "no direct debt from fromMember to toMember",
                 );
             }
+        });
+    });
+
+    describe("deleteSettlement", () => {
+        test("removes settlement from correct group", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            });
+
+            const settlementId =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)
+                    ?.settlements[0].id ?? -1;
+
+            useAppStore.getState().deleteSettlement(group.id, settlementId);
+
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+
+            expect(updated?.settlements).toHaveLength(0);
+        });
+
+        test("does not affect other groups", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 3000,
+            });
+
+            useAppStore.getState().addGroup("Dinner", [1, 2]);
+            const dinnerGroup = useAppStore.getState().global.groups[1];
+            useAppStore
+                .getState()
+                .addExpense(dinnerGroup.id, defaultEqualExpense);
+            useAppStore.getState().addSettlement(dinnerGroup.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 2000,
+            });
+
+            const settlementId =
+                useAppStore
+                    .getState()
+                    .global.groups.find((g) => g.id === group.id)
+                    ?.settlements[0].id ?? -1;
+
+            useAppStore.getState().deleteSettlement(group.id, settlementId);
+
+            const updatedDinner = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === dinnerGroup.id);
+
+            expect(updatedDinner?.settlements).toHaveLength(1);
+        });
+
+        test("does nothing when settlement ID does not exist", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, defaultEqualExpense);
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            });
+
+            useAppStore.getState().deleteSettlement(group.id, 999);
+
+            const updated = useAppStore
+                .getState()
+                .global.groups.find((g) => g.id === group.id);
+
+            expect(updated?.settlements).toHaveLength(1);
         });
     });
 
