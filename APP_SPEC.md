@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-03-08  
+> **Last updated:** 2026-03-10  
 > **Status:** Draft
 
 ---
@@ -85,13 +85,35 @@ Business rules are isolated in pure `*.rules.ts` functions today precisely to ma
 src/
 ├── App.tsx              # root — owns view state and isSidebarOpen state
 ├── AppLayout.tsx        # shell — header, desktop aside, mobile drawer overlay
-└── components/
-    └── Sidebar.tsx      # navigation — users list, groups list, modals
+├── components/
+│   ├── Sidebar.tsx      # navigation — users list, groups list, modals
+│   ├── UsersSection.tsx # user list with avatars + "Add user" button
+│   ├── GroupsSection.tsx# group list with member counts + "Add group" button
+│   └── CurrencyInput.tsx# cents-based currency input (R$, keyboard-driven)
+└── screens/
+    ├── HomeScreen/      # empty state — "Select a group from the sidebar"
+    │   ├── AddUsersModal.tsx   # multi-user creation (dynamic row list)
+    │   └── AddGroupModal.tsx   # group creation with member checkboxes
+    ├── GroupScreen/      # main group view — members, expenses, settlements
+    │   ├── useGroupScreen.ts   # hook: group data, balances, modal state
+    │   ├── useExpenseForm.ts   # hook: expense form state and validation
+    │   ├── MembersSection.tsx  # member list with balances + remove buttons
+    │   ├── ExpensesSection.tsx # expense list (read-only)
+    │   ├── SettlementsSection.tsx # settlement list (read-only, Add button exists but no modal yet)
+    │   ├── AddExpenseModal.tsx # expense creation with split mode sections
+    │   ├── AddMemberModal.tsx  # add existing user to group
+    │   ├── SplitModeToggle.tsx # toggle between equal/fixed/percentage
+    │   ├── EqualSplitSection.tsx      # participant checkboxes
+    │   ├── FixedSplitSection.tsx      # currency input per member
+    │   └── PercentageSplitSection.tsx # percentage input per member
+    └── ErrorScreen/     # invalid/corrupted state display
 ```
 
-**Desktop:** sidebar always visible via `hidden md:block` on the `<aside>`.  
-**Mobile:** sidebar hidden by default. Burger button in the header toggles a drawer overlay. Backdrop is a `<button>` (not `<div>`) for keyboard and screen reader accessibility.  
+**Desktop:** sidebar always visible via `hidden md:block` on the `<aside>`.
+**Mobile:** sidebar hidden by default. Burger button in the header toggles a drawer overlay. Backdrop is a `<button>` (not `<div>`) for keyboard and screen reader accessibility.
 **State:** `isSidebarOpen` lives in `App` and is passed to `AppLayout` (`isSidebarOpen`, `onToggleSidebar`, `onCloseSidebar`) and to `Sidebar` (`onClose`). `onClose` is optional — `Sidebar` works standalone on desktop without it.
+
+**Not yet implemented:** `AddSettlementModal` — the "Add settlement" button exists in `SettlementsSection` but has no modal or handler wired to it yet.
 
 ---
 
@@ -262,17 +284,17 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 
 **Implementation:** `removeMemberFromGroup(groupId, memberId)` in the store. Returns `ValidationResult`.
 
-### Referential integrity conflict
+### Referential integrity note
 
-The current schema enforces that all expense and settlement references must exist in `group.memberIds`. This is intentionally strict for the current version.
+The current schema enforces that all expense and settlement references must exist in `group.memberIds`. Member removal (`removeMemberFromGroup`) is implemented — it validates that the member's balance is zero and that at least 2 members remain, then removes the member from `memberIds`. Historical expenses and settlements referencing the removed member remain unchanged.
 
-When member removal and soft delete are implemented, the referential integrity model must be revised. Two approaches are being considered:
+When soft delete for users is implemented, the referential integrity model may need to be revised. Two approaches are being considered:
 
 **Option A — Historical roster:** `memberIds` becomes the full historical roster. A separate `activeMemberIds` field tracks current active members. Validation splits: structural references check against `memberIds`, new expense/settlement creation checks against `activeMemberIds`.
 
 **Option B — Relaxed validation:** References in historical expenses and settlements are no longer validated against `memberIds`. Only new expenses and settlements validate against active members.
 
-This decision is deferred until soft delete and member removal are implemented.
+This decision is deferred until soft delete is implemented.
 
 ---
 
