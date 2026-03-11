@@ -96,16 +96,19 @@ src/
     │   └── AddGroupModal.tsx   # group creation with member checkboxes
     ├── GroupScreen/      # main group view — members, expenses, settlements
     │   ├── useGroupScreen.ts   # hook: group data, balances, modal state
-    │   ├── useExpenseForm.ts   # hook: expense form state and validation
-    │   ├── MembersSection.tsx  # member list with balances + remove buttons
-    │   ├── ExpensesSection.tsx # expense list (read-only)
-    │   ├── SettlementsSection.tsx # settlement list (read-only, Add button exists but no modal yet)
-    │   ├── AddExpenseModal.tsx # expense creation with split mode sections
-    │   ├── AddMemberModal.tsx  # add existing user to group
-    │   ├── SplitModeToggle.tsx # toggle between equal/fixed/percentage
-    │   ├── EqualSplitSection.tsx      # participant checkboxes
-    │   ├── FixedSplitSection.tsx      # currency input per member
-    │   └── PercentageSplitSection.tsx # percentage input per member
+    │   ├── members/
+    │   │   ├── MembersSection.tsx  # member list with balances + remove buttons
+    │   │   └── AddMemberModal.tsx  # add existing user to group
+    │   ├── expenses/
+    │   │   ├── ExpensesSection.tsx # expense list (read-only)
+    │   │   ├── AddExpenseModal.tsx # expense creation with split mode sections
+    │   │   ├── useExpenseForm.ts   # hook: expense form state and validation
+    │   │   ├── SplitModeToggle.tsx # toggle between equal/fixed/percentage
+    │   │   ├── EqualSplitSection.tsx      # participant checkboxes
+    │   │   ├── FixedSplitSection.tsx      # currency input per member
+    │   │   └── PercentageSplitSection.tsx # percentage input per member
+    │   └── settlements/
+    │       └── SettlementsSection.tsx # settlement list (read-only, Add button exists but no modal yet)
     └── ErrorScreen/     # invalid/corrupted state display
 ```
 

@@ -1,6 +1,5 @@
 import type { AppView } from "@app";
 import type { Group } from "@domain/group";
-import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupGroupWithTwoMembers, setupTwoUsers } from "@tests/helpers";

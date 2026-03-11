@@ -4,7 +4,7 @@ import type { Group } from "@domain/group";
 import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
-import type { MemberRow } from "./MembersSection";
+import type { MemberRow } from "./members/MembersSection";
 
 type GroupNotFound = { group: null };
 
