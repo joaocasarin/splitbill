@@ -34,7 +34,32 @@ vi.mock("./expenses/ExpensesSection", () => ({
 }));
 
 vi.mock("./settlements/SettlementsSection", () => ({
-    SettlementsSection: () => <div data-testid="settlements-section" />,
+    SettlementsSection: ({
+        onAddSettlement,
+    }: {
+        onAddSettlement: () => void;
+    }) => (
+        <button type="button" onClick={onAddSettlement}>
+            Add settlement
+        </button>
+    ),
+}));
+
+vi.mock("./settlements/AddSettlementModal", () => ({
+    AddSettlementModal: ({
+        open,
+        onClose,
+    }: {
+        open: boolean;
+        onClose: () => void;
+    }) =>
+        open ? (
+            <div role="dialog" aria-label="settlement-modal">
+                <button type="button" onClick={onClose}>
+                    Cancel
+                </button>
+            </div>
+        ) : null,
 }));
 
 vi.mock("./members/AddMemberModal", () => ({
@@ -89,13 +114,18 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         members: testUsers.map((u) => ({ ...u, amount: 0 })),
         memberCount: 2,
         canAddMember: false,
+        directDebts: [],
         isAddMemberOpen: false,
         isAddExpenseOpen: false,
+        isAddSettlementOpen: false,
         openAddMember: vi.fn(),
         closeAddMember: vi.fn(),
         openAddExpense: vi.fn(),
         closeAddExpense: vi.fn(),
+        openAddSettlement: vi.fn(),
+        closeAddSettlement: vi.fn(),
         removeMember: vi.fn(),
+        addSettlement: vi.fn(),
         ...overrides,
     } as unknown as ReturnType<typeof useGroupScreenModule.useGroupScreen>;
 }
@@ -208,6 +238,38 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(closeAddExpense).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("add settlement modal", () => {
+        test("calls openAddSettlement when Add settlement is clicked", async () => {
+            const openAddSettlement = vi.fn();
+            renderScreen(makeHookReturn({ openAddSettlement }));
+            await userEvent.click(
+                screen.getByRole("button", { name: /add settlement/i }),
+            );
+            expect(openAddSettlement).toHaveBeenCalledOnce();
+        });
+
+        test("renders AddSettlementModal when isAddSettlementOpen is true", () => {
+            renderScreen(makeHookReturn({ isAddSettlementOpen: true }));
+            expect(
+                screen.getByRole("dialog", { name: /settlement-modal/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("calls closeAddSettlement when modal cancel is clicked", async () => {
+            const closeAddSettlement = vi.fn();
+            renderScreen(
+                makeHookReturn({
+                    isAddSettlementOpen: true,
+                    closeAddSettlement,
+                }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(closeAddSettlement).toHaveBeenCalledOnce();
         });
     });
 });

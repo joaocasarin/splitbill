@@ -1,0 +1,279 @@
+import type { DirectDebt } from "@domain/balance";
+import type { User } from "@domain/user";
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import { useSettlementForm } from "./useSettlementForm";
+
+const alice: User = { id: 1, name: "Alice" };
+const bob: User = { id: 2, name: "Bob" };
+const charlie: User = { id: 3, name: "Charlie" };
+const members: User[] = [alice, bob, charlie];
+
+const directDebts: DirectDebt[] = [
+    { fromMemberId: 1, toMemberId: 2, amount: 5000 },
+    { fromMemberId: 1, toMemberId: 3, amount: 3000 },
+    { fromMemberId: 3, toMemberId: 2, amount: 1000 },
+];
+
+function setup(
+    overrides: {
+        members?: User[];
+        directDebts?: DirectDebt[];
+        onSubmit?: (
+            settlement: Omit<import("@domain/settlement").Settlement, "id">,
+        ) => void;
+        onClose?: () => void;
+    } = {},
+) {
+    const onSubmit = overrides.onSubmit ?? vi.fn();
+    const onClose = overrides.onClose ?? vi.fn();
+    const hook = renderHook(() =>
+        useSettlementForm({
+            members: overrides.members ?? members,
+            directDebts: overrides.directDebts ?? directDebts,
+            onSubmit,
+            onClose,
+        }),
+    );
+    return { onSubmit, onClose, hook };
+}
+
+describe("useSettlementForm", () => {
+    describe("initial state", () => {
+        test("fromMemberId is null", () => {
+            const { hook } = setup();
+            expect(hook.result.current.fromMemberId).toBeNull();
+        });
+
+        test("toMemberId is null", () => {
+            const { hook } = setup();
+            expect(hook.result.current.toMemberId).toBeNull();
+        });
+
+        test("amount is 0", () => {
+            const { hook } = setup();
+            expect(hook.result.current.amount).toBe(0);
+        });
+
+        test("canCreate is false", () => {
+            const { hook } = setup();
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+
+        test("maxAmount is 0", () => {
+            const { hook } = setup();
+            expect(hook.result.current.maxAmount).toBe(0);
+        });
+
+        test("creditorsForDebtor is empty", () => {
+            const { hook } = setup();
+            expect(hook.result.current.creditorsForDebtor).toEqual([]);
+        });
+    });
+
+    describe("debtorsWithDebts", () => {
+        test("returns only members who owe someone", () => {
+            const { hook } = setup();
+            expect(hook.result.current.debtorsWithDebts).toEqual([
+                alice,
+                charlie,
+            ]);
+        });
+
+        test("returns empty when no debts exist", () => {
+            const { hook } = setup({ directDebts: [] });
+            expect(hook.result.current.debtorsWithDebts).toEqual([]);
+        });
+    });
+
+    describe("creditorsForDebtor", () => {
+        test("returns creditors with maxAmount when fromMemberId is set", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            expect(hook.result.current.creditorsForDebtor).toEqual([
+                { id: 2, name: "Bob", maxAmount: 5000 },
+                { id: 3, name: "Charlie", maxAmount: 3000 },
+            ]);
+        });
+
+        test("falls back to User {id} when member not found", () => {
+            const debts: DirectDebt[] = [
+                { fromMemberId: 1, toMemberId: 99, amount: 1000 },
+            ];
+            const { hook } = setup({ directDebts: debts });
+            act(() => hook.result.current.handleFromChange(1));
+            expect(hook.result.current.creditorsForDebtor).toEqual([
+                { id: 99, name: "User 99", maxAmount: 1000 },
+            ]);
+        });
+    });
+
+    describe("maxAmount", () => {
+        test("returns debt amount when both from and to are selected", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            expect(hook.result.current.maxAmount).toBe(5000);
+        });
+
+        test("returns 0 when no matching debt exists", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(2));
+            act(() => hook.result.current.handleToChange(1));
+            expect(hook.result.current.maxAmount).toBe(0);
+        });
+    });
+
+    describe("handleFromChange", () => {
+        test("sets fromMemberId", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            expect(hook.result.current.fromMemberId).toBe(1);
+        });
+
+        test("resets toMemberId to null", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.handleFromChange(3));
+            expect(hook.result.current.toMemberId).toBeNull();
+        });
+
+        test("resets amount to 0", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(1000));
+            act(() => hook.result.current.handleFromChange(3));
+            expect(hook.result.current.amount).toBe(0);
+        });
+    });
+
+    describe("handleToChange", () => {
+        test("sets toMemberId", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleToChange(2));
+            expect(hook.result.current.toMemberId).toBe(2);
+        });
+
+        test("resets amount to 0", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(1000));
+            act(() => hook.result.current.handleToChange(3));
+            expect(hook.result.current.amount).toBe(0);
+        });
+    });
+
+    describe("canCreate", () => {
+        test("true when valid from, to, and amount within debt", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(5000));
+            expect(hook.result.current.canCreate).toBe(true);
+        });
+
+        test("false when amount is 0", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+
+        test("false when amount exceeds debt", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(9999));
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+
+        test("false when fromMemberId is null", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(1000));
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+
+        test("false when toMemberId is null", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.setAmount(1000));
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+
+        test("false when no matching debt exists", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(2));
+            act(() => hook.result.current.handleToChange(1));
+            act(() => hook.result.current.setAmount(1000));
+            expect(hook.result.current.canCreate).toBe(false);
+        });
+    });
+
+    describe("handleCreate", () => {
+        test("calls onSubmit with settlement data", () => {
+            const { onSubmit, hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(3000));
+            act(() => hook.result.current.handleCreate());
+            expect(onSubmit).toHaveBeenCalledWith({
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 3000,
+            });
+        });
+
+        test("calls onClose after submit", () => {
+            const { onClose, hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(3000));
+            act(() => hook.result.current.handleCreate());
+            expect(onClose).toHaveBeenCalledOnce();
+        });
+
+        test("resets form after creating", () => {
+            const { hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(3000));
+            act(() => hook.result.current.handleCreate());
+            expect(hook.result.current.fromMemberId).toBeNull();
+            expect(hook.result.current.toMemberId).toBeNull();
+            expect(hook.result.current.amount).toBe(0);
+        });
+    });
+
+    describe("handleOpenChange", () => {
+        test("resets and calls onClose when next is false", () => {
+            const { onClose, hook } = setup();
+            act(() => hook.result.current.handleFromChange(1));
+            act(() => hook.result.current.handleToChange(2));
+            act(() => hook.result.current.setAmount(1000));
+            act(() => hook.result.current.handleOpenChange(false));
+            expect(hook.result.current.fromMemberId).toBeNull();
+            expect(hook.result.current.toMemberId).toBeNull();
+            expect(hook.result.current.amount).toBe(0);
+            expect(onClose).toHaveBeenCalledOnce();
+        });
+
+        test("is a no-op when next is true", () => {
+            const { onClose, hook } = setup();
+            act(() => hook.result.current.handleOpenChange(true));
+            expect(onClose).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("defensive guards (unreachable in valid usage)", () => {
+        test("handleCreate is a no-op when canCreate is false", () => {
+            const { onSubmit, onClose, hook } = setup();
+            act(() => hook.result.current.handleCreate());
+            expect(onSubmit).not.toHaveBeenCalled();
+            expect(onClose).not.toHaveBeenCalled();
+        });
+    });
+});

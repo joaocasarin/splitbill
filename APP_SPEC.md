@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-03-10  
+> **Last updated:** 2026-03-11  
 > **Status:** Draft
 
 ---
@@ -108,15 +108,15 @@ src/
     │   │   ├── FixedSplitSection.tsx      # currency input per member
     │   │   └── PercentageSplitSection.tsx # percentage input per member
     │   └── settlements/
-    │       └── SettlementsSection.tsx # settlement list (read-only, Add button exists but no modal yet)
+    │       ├── SettlementsSection.tsx  # settlement list + "Add settlement" button
+    │       ├── AddSettlementModal.tsx  # settlement creation (from/to/amount)
+    │       └── useSettlementForm.ts    # hook: settlement form state and validation
     └── ErrorScreen/     # invalid/corrupted state display
 ```
 
 **Desktop:** sidebar always visible via `hidden md:block` on the `<aside>`.
 **Mobile:** sidebar hidden by default. Burger button in the header toggles a drawer overlay. Backdrop is a `<button>` (not `<div>`) for keyboard and screen reader accessibility.
 **State:** `isSidebarOpen` lives in `App` and is passed to `AppLayout` (`isSidebarOpen`, `onToggleSidebar`, `onCloseSidebar`) and to `Sidebar` (`onClose`). `onClose` is optional — `Sidebar` works standalone on desktop without it.
-
-**Not yet implemented:** `AddSettlementModal` — the "Add settlement" button exists in `SettlementsSection` but has no modal or handler wired to it yet.
 
 ---
 

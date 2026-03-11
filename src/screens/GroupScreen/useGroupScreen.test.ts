@@ -1,3 +1,4 @@
+import type { DirectDebt } from "@domain/balance";
 import * as balanceDomain from "@domain/balance";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
@@ -131,6 +132,81 @@ describe("useGroupScreen", () => {
                 (result.current as FoundState).closeAddExpense();
             });
             expect((result.current as FoundState).isAddExpenseOpen).toBe(false);
+        });
+
+        test("isAddSettlementOpen defaults to false", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.isAddSettlementOpen).toBe(false);
+        });
+
+        test("openAddSettlement sets isAddSettlementOpen to true", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).openAddSettlement();
+            });
+            expect((result.current as FoundState).isAddSettlementOpen).toBe(
+                true,
+            );
+        });
+
+        test("closeAddSettlement sets isAddSettlementOpen to false", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).openAddSettlement();
+            });
+            act(() => {
+                (result.current as FoundState).closeAddSettlement();
+            });
+            expect((result.current as FoundState).isAddSettlementOpen).toBe(
+                false,
+            );
+        });
+    });
+
+    describe("directDebts", () => {
+        test("returns empty array when group has no expenses", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.directDebts).toEqual([]);
+        });
+
+        test("returns computed direct debts from group", () => {
+            const mockDebts: DirectDebt[] = [
+                { fromMemberId: 2, toMemberId: 1, amount: 5000 },
+            ];
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
+                mockDebts,
+            );
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.directDebts).toEqual(mockDebts);
+        });
+    });
+
+    describe("addSettlement", () => {
+        test("delegates to store addSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "addSettlement");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            act(() => {
+                state.addSettlement({
+                    fromMemberId: 2,
+                    toMemberId: 1,
+                    amount: 5000,
+                });
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            });
         });
     });
 
