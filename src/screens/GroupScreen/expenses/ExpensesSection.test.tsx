@@ -1,4 +1,4 @@
-import type { EqualExpense } from "@domain/expense";
+import type { EqualExpense, Expense } from "@domain/expense";
 import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -23,19 +23,23 @@ function renderSection(
     expenses: EqualExpense[] = [],
     overrides: {
         onAddExpense?: () => void;
+        onEditExpense?: (expense: Expense) => void;
         onDeleteExpense?: (id: number) => void;
     } = {},
 ) {
     const onAddExpense = overrides.onAddExpense ?? vi.fn();
+    const onEditExpense = overrides.onEditExpense ?? vi.fn();
     const onDeleteExpense = overrides.onDeleteExpense ?? vi.fn();
     return {
         onAddExpense,
+        onEditExpense,
         onDeleteExpense,
         ...render(
             <ExpensesSection
                 expenses={expenses}
                 users={users}
                 onAddExpense={onAddExpense}
+                onEditExpense={onEditExpense}
                 onDeleteExpense={onDeleteExpense}
             />,
         ),
@@ -109,6 +113,24 @@ describe("ExpensesSection", () => {
                 screen.getByRole("button", { name: /add expense/i }),
             );
             expect(onAddExpense).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("editing", () => {
+        test("clicking expense item calls onEditExpense with the expense", async () => {
+            const onEditExpense = vi.fn();
+            renderSection([expense], { onEditExpense });
+            await userEvent.click(
+                screen.getByRole("button", { name: /edit hotel/i }),
+            );
+            expect(onEditExpense).toHaveBeenCalledWith(expense);
+        });
+
+        test("renders edit button for each expense", () => {
+            renderSection([expense]);
+            expect(
+                screen.getByRole("button", { name: /edit hotel/i }),
+            ).toBeInTheDocument();
         });
     });
 

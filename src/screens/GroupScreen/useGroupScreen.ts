@@ -1,6 +1,7 @@
 import type { DirectDebt } from "@domain/balance";
 import { computeBalances, computeDirectDebts } from "@domain/balance";
 import type { EntityId } from "@domain/common";
+import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
@@ -18,12 +19,15 @@ type GroupFound = {
     canAddMember: boolean;
     directDebts: DirectDebt[];
     isAddMemberOpen: boolean;
+    editingExpense: Expense | null;
     isAddExpenseOpen: boolean;
     isAddSettlementOpen: boolean;
     openAddMember: () => void;
     closeAddMember: () => void;
     openAddExpense: () => void;
     closeAddExpense: () => void;
+    openEditExpense: (expense: Expense) => void;
+    closeEditExpense: () => void;
     openAddSettlement: () => void;
     closeAddSettlement: () => void;
     removeMember: (id: EntityId) => void;
@@ -46,6 +50,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
     const users = global.users;
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+    const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [isAddSettlementOpen, setIsAddSettlementOpen] = useState(false);
 
     if (!group) {
@@ -75,12 +80,15 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         canAddMember,
         directDebts,
         isAddMemberOpen,
+        editingExpense,
         isAddExpenseOpen,
         isAddSettlementOpen,
         openAddMember: () => setIsAddMemberOpen(true),
         closeAddMember: () => setIsAddMemberOpen(false),
         openAddExpense: () => setIsAddExpenseOpen(true),
         closeAddExpense: () => setIsAddExpenseOpen(false),
+        openEditExpense: (expense: Expense) => setEditingExpense(expense),
+        closeEditExpense: () => setEditingExpense(null),
         openAddSettlement: () => setIsAddSettlementOpen(true),
         closeAddSettlement: () => setIsAddSettlementOpen(false),
         removeMember: (id: EntityId) => removeMemberFromGroup(groupId, id),

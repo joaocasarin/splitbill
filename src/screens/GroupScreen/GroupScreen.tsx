@@ -35,6 +35,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         memberCount,
         canAddMember,
         directDebts,
+        editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
         isAddSettlementOpen,
@@ -42,6 +43,8 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         closeAddMember,
         openAddExpense,
         closeAddExpense,
+        openEditExpense,
+        closeEditExpense,
         openAddSettlement,
         closeAddSettlement,
         removeMember,
@@ -79,6 +82,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 expenses={group.expenses}
                 users={users}
                 onAddExpense={openAddExpense}
+                onEditExpense={openEditExpense}
                 onDeleteExpense={deleteExpense}
             />
 
@@ -100,6 +104,16 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 open={isAddExpenseOpen}
                 onClose={closeAddExpense}
             />
+
+            {editingExpense !== null && (
+                <ExpenseModal
+                    groupId={groupId}
+                    open
+                    expense={editingExpense}
+                    onClose={closeEditExpense}
+                    onDelete={deleteExpense}
+                />
+            )}
 
             <AddSettlementModal
                 open={isAddSettlementOpen}

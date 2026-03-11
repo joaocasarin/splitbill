@@ -134,6 +134,52 @@ describe("useGroupScreen", () => {
             expect((result.current as FoundState).isAddExpenseOpen).toBe(false);
         });
 
+        test("editingExpense defaults to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.editingExpense).toBeNull();
+        });
+
+        test("openEditExpense sets editingExpense", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const expense = {
+                id: 1,
+                title: "Hotel",
+                total: 10000,
+                payerId: 1,
+                splitMode: "equal" as const,
+                memberIds: [1, 2],
+            };
+            act(() => {
+                (result.current as FoundState).openEditExpense(expense);
+            });
+            expect((result.current as FoundState).editingExpense).toEqual(
+                expense,
+            );
+        });
+
+        test("closeEditExpense sets editingExpense to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const expense = {
+                id: 1,
+                title: "Hotel",
+                total: 10000,
+                payerId: 1,
+                splitMode: "equal" as const,
+                memberIds: [1, 2],
+            };
+            act(() => {
+                (result.current as FoundState).openEditExpense(expense);
+            });
+            act(() => {
+                (result.current as FoundState).closeEditExpense();
+            });
+            expect((result.current as FoundState).editingExpense).toBeNull();
+        });
+
         test("isAddSettlementOpen defaults to false", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
