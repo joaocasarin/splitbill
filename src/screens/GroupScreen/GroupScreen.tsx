@@ -6,6 +6,7 @@ import { AddExpenseModal } from "./expenses/AddExpenseModal";
 import { ExpensesSection } from "./expenses/ExpensesSection";
 import { AddMemberModal } from "./members/AddMemberModal";
 import { MembersSection } from "./members/MembersSection";
+import { AddSettlementModal } from "./settlements/AddSettlementModal";
 import { SettlementsSection } from "./settlements/SettlementsSection";
 import { useGroupScreen } from "./useGroupScreen";
 
@@ -33,13 +34,18 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         members,
         memberCount,
         canAddMember,
+        directDebts,
         isAddMemberOpen,
         isAddExpenseOpen,
+        isAddSettlementOpen,
         openAddMember,
         closeAddMember,
         openAddExpense,
         closeAddExpense,
+        openAddSettlement,
+        closeAddSettlement,
         removeMember,
+        addSettlement,
     } = state;
 
     return (
@@ -76,7 +82,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
             <SettlementsSection
                 settlements={group.settlements}
                 users={users}
-                onAddSettlement={() => {}}
+                onAddSettlement={openAddSettlement}
             />
 
             <AddMemberModal
@@ -89,6 +95,14 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 groupId={groupId}
                 open={isAddExpenseOpen}
                 onClose={closeAddExpense}
+            />
+
+            <AddSettlementModal
+                open={isAddSettlementOpen}
+                members={members}
+                directDebts={directDebts}
+                onSubmit={addSettlement}
+                onClose={closeAddSettlement}
             />
         </div>
     );
