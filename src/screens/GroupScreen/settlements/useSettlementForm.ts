@@ -41,11 +41,11 @@ export function useSettlementForm({
 
     const selectedDebt =
         fromMemberId !== null && toMemberId !== null
-            ? directDebts.find(
+            ? (directDebts.find(
                   (d) =>
                       d.fromMemberId === fromMemberId &&
                       d.toMemberId === toMemberId,
-              ) ?? null
+              ) ?? null)
             : null;
 
     const maxAmount = selectedDebt?.amount ?? 0;
@@ -54,8 +54,12 @@ export function useSettlementForm({
         fromMemberId !== null &&
         toMemberId !== null &&
         amount > 0 &&
-        validateSettlementCreation(directDebts, fromMemberId, toMemberId, amount)
-            .valid;
+        validateSettlementCreation(
+            directDebts,
+            fromMemberId,
+            toMemberId,
+            amount,
+        ).valid;
 
     function handleFromChange(id: EntityId) {
         setFromMemberId(id);

@@ -147,7 +147,9 @@ describe("useGroupScreen", () => {
             act(() => {
                 (result.current as FoundState).openAddSettlement();
             });
-            expect((result.current as FoundState).isAddSettlementOpen).toBe(true);
+            expect((result.current as FoundState).isAddSettlementOpen).toBe(
+                true,
+            );
         });
 
         test("closeAddSettlement sets isAddSettlementOpen to false", () => {
@@ -159,7 +161,9 @@ describe("useGroupScreen", () => {
             act(() => {
                 (result.current as FoundState).closeAddSettlement();
             });
-            expect((result.current as FoundState).isAddSettlementOpen).toBe(false);
+            expect((result.current as FoundState).isAddSettlementOpen).toBe(
+                false,
+            );
         });
     });
 

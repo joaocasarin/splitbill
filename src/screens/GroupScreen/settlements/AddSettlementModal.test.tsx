@@ -49,27 +49,21 @@ describe("AddSettlementModal", () => {
     describe("initial state", () => {
         test("renders dialog title", () => {
             renderModal();
-            expect(
-                screen.getByText("Add settlement"),
-            ).toBeInTheDocument();
+            expect(screen.getByText("Add settlement")).toBeInTheDocument();
         });
 
         test("renders From select with placeholder", () => {
             renderModal();
             const fromSelect = screen.getByRole("combobox", { name: /from/i });
             expect(fromSelect).toBeInTheDocument();
-            expect(
-                screen.getByText("Select debtor"),
-            ).toBeInTheDocument();
+            expect(screen.getByText("Select debtor")).toBeInTheDocument();
         });
 
         test("renders To select with placeholder", () => {
             renderModal();
             const toSelect = screen.getByRole("combobox", { name: /to/i });
             expect(toSelect).toBeInTheDocument();
-            expect(
-                screen.getByText("Select creditor"),
-            ).toBeInTheDocument();
+            expect(screen.getByText("Select creditor")).toBeInTheDocument();
         });
 
         test("To select is disabled when fromMemberId is null", () => {
@@ -88,9 +82,7 @@ describe("AddSettlementModal", () => {
                     ],
                 }),
             );
-            expect(
-                screen.getByRole("combobox", { name: /to/i }),
-            ).toBeEnabled();
+            expect(screen.getByRole("combobox", { name: /to/i })).toBeEnabled();
         });
 
         test("renders Amount CurrencyInput", () => {
@@ -140,9 +132,9 @@ describe("AddSettlementModal", () => {
 
         test("shows fromMemberId as selected value", () => {
             renderModal(makeHookReturn({ fromMemberId: 1 }));
-            expect(
-                screen.getByRole("combobox", { name: /from/i }),
-            ).toHaveValue("1");
+            expect(screen.getByRole("combobox", { name: /from/i })).toHaveValue(
+                "1",
+            );
         });
     });
 
@@ -171,9 +163,9 @@ describe("AddSettlementModal", () => {
                     ],
                 }),
             );
-            expect(
-                screen.getByRole("combobox", { name: /to/i }),
-            ).toHaveValue("2");
+            expect(screen.getByRole("combobox", { name: /to/i })).toHaveValue(
+                "2",
+            );
         });
     });
 

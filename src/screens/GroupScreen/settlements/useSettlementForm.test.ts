@@ -19,7 +19,9 @@ function setup(
     overrides: {
         members?: User[];
         directDebts?: DirectDebt[];
-        onSubmit?: (settlement: Omit<import("@domain/settlement").Settlement, "id">) => void;
+        onSubmit?: (
+            settlement: Omit<import("@domain/settlement").Settlement, "id">,
+        ) => void;
         onClose?: () => void;
     } = {},
 ) {

@@ -10,7 +10,11 @@ type Props = {
     onAddSettlement: () => void;
 };
 
-export function SettlementsSection({ settlements, users, onAddSettlement }: Props) {
+export function SettlementsSection({
+    settlements,
+    users,
+    onAddSettlement,
+}: Props) {
     return (
         <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">

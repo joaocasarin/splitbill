@@ -33,7 +33,11 @@ type GroupFound = {
 export type UseGroupScreenReturn = GroupNotFound | GroupFound;
 
 export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
-    const { global, removeMemberFromGroup, addSettlement: storeAddSettlement } = useAppStore();
+    const {
+        global,
+        removeMemberFromGroup,
+        addSettlement: storeAddSettlement,
+    } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
     const users = global.users;
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
