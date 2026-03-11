@@ -2,11 +2,11 @@ import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import { ArrowLeft } from "lucide-react";
-import { AddExpenseModal } from "./AddExpenseModal";
-import { AddMemberModal } from "./AddMemberModal";
-import { ExpensesSection } from "./ExpensesSection";
-import { MembersSection } from "./MembersSection";
-import { SettlementsSection } from "./SettlementsSection";
+import { AddExpenseModal } from "./expenses/AddExpenseModal";
+import { ExpensesSection } from "./expenses/ExpensesSection";
+import { AddMemberModal } from "./members/AddMemberModal";
+import { MembersSection } from "./members/MembersSection";
+import { SettlementsSection } from "./settlements/SettlementsSection";
 import { useGroupScreen } from "./useGroupScreen";
 
 type Props = {

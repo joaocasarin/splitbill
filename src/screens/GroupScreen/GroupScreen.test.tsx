@@ -6,7 +6,7 @@ import { GroupScreen } from "./GroupScreen";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
 import * as useGroupScreenModule from "./useGroupScreen";
 
-vi.mock("./MembersSection", () => ({
+vi.mock("./members/MembersSection", () => ({
     MembersSection: ({
         onAddMember,
         onRemoveMember,
@@ -25,7 +25,7 @@ vi.mock("./MembersSection", () => ({
     ),
 }));
 
-vi.mock("./ExpensesSection", () => ({
+vi.mock("./expenses/ExpensesSection", () => ({
     ExpensesSection: ({ onAddExpense }: { onAddExpense: () => void }) => (
         <button type="button" onClick={onAddExpense}>
             Add expense
@@ -33,11 +33,11 @@ vi.mock("./ExpensesSection", () => ({
     ),
 }));
 
-vi.mock("./SettlementsSection", () => ({
+vi.mock("./settlements/SettlementsSection", () => ({
     SettlementsSection: () => <div data-testid="settlements-section" />,
 }));
 
-vi.mock("./AddMemberModal", () => ({
+vi.mock("./members/AddMemberModal", () => ({
     AddMemberModal: ({
         open,
         onClose,
@@ -54,7 +54,7 @@ vi.mock("./AddMemberModal", () => ({
         ) : null,
 }));
 
-vi.mock("./AddExpenseModal", () => ({
+vi.mock("./expenses/AddExpenseModal", () => ({
     AddExpenseModal: ({
         open,
         onClose,
