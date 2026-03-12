@@ -164,7 +164,7 @@ render(<Sidebar {...defaultProps} view={{ screen: "group", groupId: 1 }} />);
 
 `vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"))`
 
-Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `AddUsersModal.test.tsx`, `AddExpenseModal.test.tsx`.
+Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `AddUsersModal.test.tsx`, `ExpenseModal.test.tsx`, `SettlementModal.test.tsx`, `ExpensesSection.test.tsx`, `SettlementsSection.test.tsx`, `ConfirmDeleteDialog.test.tsx`.
 
 Centralized because it is identical in all three files. Replaces the library’s headless component with a minimal implementation that: conditionally renders children, exposes a trigger button to open the dialog, and provides passthrough for header/title/footer.
 
@@ -225,12 +225,19 @@ The label is inline documentation: any reader understands the block exists for c
 | File | Position of the describe |
 |---|---|
 | `compute-balances.test.ts` | L2 inside the top-level describe |
+| `build-equal-expense.test.ts` | L2 inside the top-level describe |
+| `build-fixed-expense.test.ts` | L2 inside the top-level describe |
+| `build-percentage-expense.test.ts` | L2 inside the top-level describe |
 | `app.store.test.ts` | L3 nested inside `describe("removeMemberFromGroup")` |
 | `useGroupScreen.test.ts` | L2 inside the top-level describe |
 | `useExpenseForm.test.ts` | L2 inside the top-level describe |
+| `useSettlementForm.test.ts` | L2 inside the top-level describe |
+| `computeCanSubmit.test.ts` | L2 inside the top-level describe |
+| `getInitialExpenseState.test.ts` | L2 inside the top-level describe |
 | `ExpensesSection.test.tsx` | L2 inside the top-level describe |
 | `SettlementsSection.test.tsx` | L2 inside the top-level describe |
-| `AddExpenseModal.test.tsx` | L2 inside the top-level describe |
+| `ExpenseModal.test.tsx` | L2 inside the top-level describe |
+| `SettlementModal.test.tsx` | L2 inside the top-level describe |
 | `MembersSection.test.tsx` | L2 inside the top-level describe |
 
 **Rule:** defensive guards sit at L2 (or L3 when nested inside a behavior group). If the guard semantically belongs to an existing describe, nest it inside.
