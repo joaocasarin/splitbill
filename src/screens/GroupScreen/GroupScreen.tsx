@@ -35,6 +35,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         memberCount,
         canAddMember,
         directDebts,
+        editDirectDebts,
         editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
@@ -132,7 +133,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 <SettlementModal
                     open
                     members={members}
-                    directDebts={directDebts}
+                    directDebts={editDirectDebts}
                     settlement={editingSettlement}
                     onSubmit={(data) =>
                         updateSettlement({ ...data, id: editingSettlement.id })

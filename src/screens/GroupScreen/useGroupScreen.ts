@@ -18,6 +18,7 @@ type GroupFound = {
     memberCount: number;
     canAddMember: boolean;
     directDebts: DirectDebt[];
+    editDirectDebts: DirectDebt[];
     isAddMemberOpen: boolean;
     editingExpense: Expense | null;
     isAddExpenseOpen: boolean;
@@ -78,6 +79,14 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
     const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
     const canAddMember = nonMembers.length > 0;
     const directDebts = computeDirectDebts(group);
+    const editDirectDebts = editingSettlement
+        ? computeDirectDebts({
+              ...group,
+              settlements: group.settlements.filter(
+                  (s) => s.id !== editingSettlement.id,
+              ),
+          })
+        : directDebts;
 
     return {
         group,
@@ -86,6 +95,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         memberCount: group.memberIds.length,
         canAddMember,
         directDebts,
+        editDirectDebts,
         isAddMemberOpen,
         editingExpense,
         isAddExpenseOpen,

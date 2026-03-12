@@ -142,6 +142,7 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         memberCount: 2,
         canAddMember: false,
         directDebts: [],
+        editDirectDebts: [],
         editingExpense: null,
         isAddMemberOpen: false,
         isAddExpenseOpen: false,
