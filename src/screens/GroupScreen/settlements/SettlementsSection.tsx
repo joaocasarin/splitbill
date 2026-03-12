@@ -1,20 +1,38 @@
+import { ConfirmDeleteDialog } from "@components/ConfirmDeleteDialog";
 import { Button } from "@components/ui/button";
+import type { EntityId } from "@domain/common";
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { formatCurrency } from "@lib/format";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
     settlements: Settlement[];
     users: User[];
     onAddSettlement: () => void;
+    onEditSettlement: (settlement: Settlement) => void;
+    onDeleteSettlement: (settlementId: EntityId) => void;
 };
 
 export function SettlementsSection({
     settlements,
     users,
     onAddSettlement,
+    onEditSettlement,
+    onDeleteSettlement,
 }: Props) {
+    const [deletingId, setDeletingId] = useState<EntityId | null>(null);
+
+    function confirmDelete(id: EntityId) {
+        onDeleteSettlement(id);
+        setDeletingId(null);
+    }
+
+    function cancelDelete() {
+        setDeletingId(null);
+    }
+
     return (
         <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -44,14 +62,43 @@ export function SettlementsSection({
                                 key={settlement.id}
                                 className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
                             >
-                                <span>
+                                <button
+                                    type="button"
+                                    className="flex-1 text-left cursor-pointer"
+                                    onClick={() => onEditSettlement(settlement)}
+                                    aria-label={`Edit settlement ${fromName} to ${toName}`}
+                                >
                                     {fromName} → {toName}
-                                </span>
-                                <span>{formatCurrency(settlement.amount)}</span>
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <span>
+                                        {formatCurrency(settlement.amount)}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        onClick={() =>
+                                            setDeletingId(settlement.id)
+                                        }
+                                        aria-label={`Delete settlement ${fromName} to ${toName}`}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </li>
                         );
                     })}
                 </ul>
+            )}
+
+            {deletingId !== null && (
+                <ConfirmDeleteDialog
+                    open
+                    title="Delete settlement"
+                    description="This will permanently remove this settlement and recalculate all balances."
+                    onConfirm={() => confirmDelete(deletingId)}
+                    onClose={cancelDelete}
+                />
             )}
         </section>
     );

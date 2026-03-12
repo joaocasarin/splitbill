@@ -23,6 +23,7 @@ function setup(
             settlement: Omit<import("@domain/settlement").Settlement, "id">,
         ) => void;
         onClose?: () => void;
+        settlement?: import("@domain/settlement").Settlement;
     } = {},
 ) {
     const onSubmit = overrides.onSubmit ?? vi.fn();
@@ -33,6 +34,7 @@ function setup(
             directDebts: overrides.directDebts ?? directDebts,
             onSubmit,
             onClose,
+            settlement: overrides.settlement,
         }),
     );
     return { onSubmit, onClose, hook };
@@ -55,9 +57,9 @@ describe("useSettlementForm", () => {
             expect(hook.result.current.amount).toBe(0);
         });
 
-        test("canCreate is false", () => {
+        test("canSubmit is false", () => {
             const { hook } = setup();
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("maxAmount is 0", () => {
@@ -166,20 +168,20 @@ describe("useSettlementForm", () => {
         });
     });
 
-    describe("canCreate", () => {
+    describe("canSubmit", () => {
         test("true when valid from, to, and amount within debt", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(5000));
-            expect(hook.result.current.canCreate).toBe(true);
+            expect(hook.result.current.canSubmit).toBe(true);
         });
 
         test("false when amount is 0", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when amount exceeds debt", () => {
@@ -187,21 +189,21 @@ describe("useSettlementForm", () => {
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(9999));
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when fromMemberId is null", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(1000));
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when toMemberId is null", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.setAmount(1000));
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
 
         test("false when no matching debt exists", () => {
@@ -209,17 +211,17 @@ describe("useSettlementForm", () => {
             act(() => hook.result.current.handleFromChange(2));
             act(() => hook.result.current.handleToChange(1));
             act(() => hook.result.current.setAmount(1000));
-            expect(hook.result.current.canCreate).toBe(false);
+            expect(hook.result.current.canSubmit).toBe(false);
         });
     });
 
-    describe("handleCreate", () => {
+    describe("handleSubmit", () => {
         test("calls onSubmit with settlement data", () => {
             const { onSubmit, hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(3000));
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onSubmit).toHaveBeenCalledWith({
                 fromMemberId: 1,
                 toMemberId: 2,
@@ -232,7 +234,7 @@ describe("useSettlementForm", () => {
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(3000));
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onClose).toHaveBeenCalledOnce();
         });
 
@@ -241,7 +243,7 @@ describe("useSettlementForm", () => {
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
             act(() => hook.result.current.setAmount(3000));
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(hook.result.current.fromMemberId).toBeNull();
             expect(hook.result.current.toMemberId).toBeNull();
             expect(hook.result.current.amount).toBe(0);
@@ -268,10 +270,61 @@ describe("useSettlementForm", () => {
         });
     });
 
+    describe("edit mode", () => {
+        const existingSettlement = {
+            id: 10,
+            fromMemberId: 1,
+            toMemberId: 2,
+            amount: 3000,
+        };
+
+        test("isEditing is true when settlement is provided", () => {
+            const { hook } = setup({ settlement: existingSettlement });
+            expect(hook.result.current.isEditing).toBe(true);
+        });
+
+        test("isEditing is false when no settlement is provided", () => {
+            const { hook } = setup();
+            expect(hook.result.current.isEditing).toBe(false);
+        });
+
+        test("initializes fromMemberId from settlement", () => {
+            const { hook } = setup({ settlement: existingSettlement });
+            expect(hook.result.current.fromMemberId).toBe(1);
+        });
+
+        test("initializes toMemberId from settlement", () => {
+            const { hook } = setup({ settlement: existingSettlement });
+            expect(hook.result.current.toMemberId).toBe(2);
+        });
+
+        test("initializes amount from settlement", () => {
+            const { hook } = setup({ settlement: existingSettlement });
+            expect(hook.result.current.amount).toBe(3000);
+        });
+
+        test("canSubmit is true when settlement values are valid", () => {
+            const { hook } = setup({ settlement: existingSettlement });
+            expect(hook.result.current.canSubmit).toBe(true);
+        });
+
+        test("handleSubmit calls onSubmit with current form data", () => {
+            const { onSubmit, hook } = setup({
+                settlement: existingSettlement,
+            });
+            act(() => hook.result.current.handleSubmit());
+            expect(onSubmit).toHaveBeenCalledWith({
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 3000,
+            });
+        });
+    });
+
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("handleCreate is a no-op when canCreate is false", () => {
+        test("handleSubmit is a no-op when canSubmit is false", () => {
             const { onSubmit, onClose, hook } = setup();
-            act(() => hook.result.current.handleCreate());
+            act(() => hook.result.current.handleSubmit());
             expect(onSubmit).not.toHaveBeenCalled();
             expect(onClose).not.toHaveBeenCalled();
         });

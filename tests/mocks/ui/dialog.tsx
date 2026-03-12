@@ -31,6 +31,10 @@ export const DialogTitle = ({ children }: { children?: ReactNode }) => (
     <h2>{children}</h2>
 );
 
+export const DialogDescription = ({ children }: { children?: ReactNode }) => (
+    <p>{children}</p>
+);
+
 export const DialogFooter = ({ children }: { children?: ReactNode }) => (
     <div>{children}</div>
 );

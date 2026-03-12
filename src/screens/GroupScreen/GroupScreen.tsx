@@ -2,11 +2,11 @@ import type { AppView } from "@app";
 import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import { ArrowLeft } from "lucide-react";
-import { AddExpenseModal } from "./expenses/AddExpenseModal";
+import { ExpenseModal } from "./expenses/ExpenseModal";
 import { ExpensesSection } from "./expenses/ExpensesSection";
 import { AddMemberModal } from "./members/AddMemberModal";
 import { MembersSection } from "./members/MembersSection";
-import { AddSettlementModal } from "./settlements/AddSettlementModal";
+import { SettlementModal } from "./settlements/SettlementModal";
 import { SettlementsSection } from "./settlements/SettlementsSection";
 import { useGroupScreen } from "./useGroupScreen";
 
@@ -35,17 +35,27 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         memberCount,
         canAddMember,
         directDebts,
+        editDirectDebts,
+        editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
         isAddSettlementOpen,
+        editingSettlement,
         openAddMember,
         closeAddMember,
         openAddExpense,
         closeAddExpense,
+        openEditExpense,
+        closeEditExpense,
         openAddSettlement,
         closeAddSettlement,
+        openEditSettlement,
+        closeEditSettlement,
         removeMember,
         addSettlement,
+        updateSettlement,
+        deleteExpense,
+        deleteSettlement,
     } = state;
 
     return (
@@ -77,12 +87,16 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 expenses={group.expenses}
                 users={users}
                 onAddExpense={openAddExpense}
+                onEditExpense={openEditExpense}
+                onDeleteExpense={deleteExpense}
             />
 
             <SettlementsSection
                 settlements={group.settlements}
                 users={users}
                 onAddSettlement={openAddSettlement}
+                onEditSettlement={openEditSettlement}
+                onDeleteSettlement={deleteSettlement}
             />
 
             <AddMemberModal
@@ -91,19 +105,43 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 onClose={closeAddMember}
             />
 
-            <AddExpenseModal
+            <ExpenseModal
                 groupId={groupId}
                 open={isAddExpenseOpen}
                 onClose={closeAddExpense}
             />
 
-            <AddSettlementModal
+            {editingExpense !== null && (
+                <ExpenseModal
+                    groupId={groupId}
+                    open
+                    expense={editingExpense}
+                    onClose={closeEditExpense}
+                    onDelete={deleteExpense}
+                />
+            )}
+
+            <SettlementModal
                 open={isAddSettlementOpen}
                 members={members}
                 directDebts={directDebts}
                 onSubmit={addSettlement}
                 onClose={closeAddSettlement}
             />
+
+            {editingSettlement !== null && (
+                <SettlementModal
+                    open
+                    members={members}
+                    directDebts={editDirectDebts}
+                    settlement={editingSettlement}
+                    onSubmit={(data) =>
+                        updateSettlement({ ...data, id: editingSettlement.id })
+                    }
+                    onClose={closeEditSettlement}
+                    onDelete={deleteSettlement}
+                />
+            )}
         </div>
     );
 }

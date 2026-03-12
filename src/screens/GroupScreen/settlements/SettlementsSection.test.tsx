@@ -6,6 +6,8 @@ import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { SettlementsSection } from "./SettlementsSection";
 
+vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
+
 const users: User[] = testUsers;
 
 const settlement: Settlement = {
@@ -16,17 +18,27 @@ const settlement: Settlement = {
 };
 
 function renderSection(
-    settlements: Settlement[],
-    usersArg: User[] = users,
-    onAddSettlement = vi.fn(),
+    settlements: Settlement[] = [],
+    overrides: {
+        onAddSettlement?: () => void;
+        onEditSettlement?: (settlement: Settlement) => void;
+        onDeleteSettlement?: (id: number) => void;
+    } = {},
 ) {
+    const onAddSettlement = overrides.onAddSettlement ?? vi.fn();
+    const onEditSettlement = overrides.onEditSettlement ?? vi.fn();
+    const onDeleteSettlement = overrides.onDeleteSettlement ?? vi.fn();
     return {
         onAddSettlement,
+        onEditSettlement,
+        onDeleteSettlement,
         ...render(
             <SettlementsSection
                 settlements={settlements}
-                users={usersArg}
+                users={users}
                 onAddSettlement={onAddSettlement}
+                onEditSettlement={onEditSettlement}
+                onDeleteSettlement={onDeleteSettlement}
             />,
         ),
     };
@@ -61,7 +73,8 @@ describe("SettlementsSection", () => {
 
     describe("add settlement button", () => {
         test("calls onAddSettlement when clicked", async () => {
-            const { onAddSettlement } = renderSection([]);
+            const onAddSettlement = vi.fn();
+            renderSection([], { onAddSettlement });
             await userEvent.click(
                 screen.getByRole("button", { name: /add settlement/i }),
             );
@@ -90,6 +103,77 @@ describe("SettlementsSection", () => {
             renderSection([settlement, settlement2]);
             const items = screen.getAllByRole("listitem");
             expect(items).toHaveLength(2);
+        });
+
+        test("renders edit button for each settlement", () => {
+            renderSection([settlement]);
+            expect(
+                screen.getByRole("button", {
+                    name: /edit settlement bob to alice/i,
+                }),
+            ).toBeInTheDocument();
+        });
+
+        test("renders delete button for each settlement", () => {
+            renderSection([settlement]);
+            expect(
+                screen.getByRole("button", {
+                    name: /delete settlement bob to alice/i,
+                }),
+            ).toBeInTheDocument();
+        });
+    });
+
+    describe("editing", () => {
+        test("clicking settlement calls onEditSettlement with settlement", async () => {
+            const onEditSettlement = vi.fn();
+            renderSection([settlement], { onEditSettlement });
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: /edit settlement bob to alice/i,
+                }),
+            );
+            expect(onEditSettlement).toHaveBeenCalledWith(settlement);
+        });
+    });
+
+    describe("deleting", () => {
+        test("clicking delete button opens confirm dialog", async () => {
+            renderSection([settlement]);
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: /delete settlement bob to alice/i,
+                }),
+            );
+            expect(screen.getByText("Delete settlement")).toBeInTheDocument();
+        });
+
+        test("confirming delete calls onDeleteSettlement with settlement id", async () => {
+            const onDeleteSettlement = vi.fn();
+            renderSection([settlement], { onDeleteSettlement });
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: /delete settlement bob to alice/i,
+                }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /^delete$/i }),
+            );
+            expect(onDeleteSettlement).toHaveBeenCalledWith(1);
+        });
+
+        test("cancelling delete does not call onDeleteSettlement", async () => {
+            const onDeleteSettlement = vi.fn();
+            renderSection([settlement], { onDeleteSettlement });
+            await userEvent.click(
+                screen.getByRole("button", {
+                    name: /delete settlement bob to alice/i,
+                }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(onDeleteSettlement).not.toHaveBeenCalled();
         });
     });
 

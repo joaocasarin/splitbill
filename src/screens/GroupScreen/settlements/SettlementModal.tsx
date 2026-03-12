@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from "@components/ui/dialog";
 import type { DirectDebt } from "@domain/balance";
+import type { EntityId } from "@domain/common";
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { useId } from "react";
@@ -19,16 +20,21 @@ type Props = {
     directDebts: DirectDebt[];
     onSubmit: (settlement: Omit<Settlement, "id">) => void;
     onClose: () => void;
+    settlement?: Settlement;
+    onDelete?: (settlementId: EntityId) => void;
 };
 
-export function AddSettlementModal({
+export function SettlementModal({
     open,
     members,
     directDebts,
     onSubmit,
     onClose,
+    settlement,
+    onDelete,
 }: Props) {
     const {
+        isEditing,
         fromMemberId,
         toMemberId,
         amount,
@@ -36,20 +42,35 @@ export function AddSettlementModal({
         debtorsWithDebts,
         creditorsForDebtor,
         maxAmount,
-        canCreate,
+        canSubmit,
         handleFromChange,
         handleToChange,
-        handleCreate,
+        handleSubmit,
         handleOpenChange,
-    } = useSettlementForm({ members, directDebts, onSubmit, onClose });
+    } = useSettlementForm({
+        members,
+        directDebts,
+        onSubmit,
+        onClose,
+        settlement,
+    });
 
     const baseId = useId();
+
+    function handleDelete() {
+        if (settlement && onDelete) {
+            onDelete(settlement.id);
+            onClose();
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Add settlement</DialogTitle>
+                    <DialogTitle>
+                        {isEditing ? "Edit settlement" : "Add settlement"}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-2">
@@ -111,6 +132,15 @@ export function AddSettlementModal({
                 </div>
 
                 <DialogFooter>
+                    {isEditing && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDelete}
+                        >
+                            Delete
+                        </Button>
+                    )}
                     <Button
                         variant="outline"
                         size="sm"
@@ -120,10 +150,10 @@ export function AddSettlementModal({
                     </Button>
                     <Button
                         size="sm"
-                        disabled={!canCreate}
-                        onClick={handleCreate}
+                        disabled={!canSubmit}
+                        onClick={handleSubmit}
                     >
-                        Add
+                        {isEditing ? "Save" : "Add"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

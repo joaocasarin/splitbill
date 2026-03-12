@@ -388,7 +388,7 @@ src/domain/
 │   ├── percentage.schema.ts        # PercentageBasePointSchema
 │   └── index.ts                    # barrel re-exports
 ├── settlement/
-│   ├── settlement.rules.ts         # validateSettlementCreation()
+│   ├── settlement.rules.ts         # validateSettlementCreation(), validateSettlementsStillValid()
 │   ├── settlement.schema.ts        # SettlementSchema
 │   └── index.ts                    # barrel re-exports
 └── user/

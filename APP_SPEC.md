@@ -89,7 +89,8 @@ src/
 │   ├── Sidebar.tsx      # navigation — users list, groups list, modals
 │   ├── UsersSection.tsx # user list with avatars + "Add user" button
 │   ├── GroupsSection.tsx# group list with member counts + "Add group" button
-│   └── CurrencyInput.tsx# cents-based currency input (R$, keyboard-driven)
+│   ├── CurrencyInput.tsx# cents-based currency input (R$, keyboard-driven)
+│   └── ConfirmDeleteDialog.tsx # reusable delete confirmation dialog
 └── screens/
     ├── HomeScreen/      # empty state — "Select a group from the sidebar"
     │   ├── AddUsersModal.tsx   # multi-user creation (dynamic row list)
@@ -100,16 +101,18 @@ src/
     │   │   ├── MembersSection.tsx  # member list with balances + remove buttons
     │   │   └── AddMemberModal.tsx  # add existing user to group
     │   ├── expenses/
-    │   │   ├── ExpensesSection.tsx # expense list (read-only)
-    │   │   ├── AddExpenseModal.tsx # expense creation with split mode sections
-    │   │   ├── useExpenseForm.ts   # hook: expense form state and validation
-    │   │   ├── SplitModeToggle.tsx # toggle between equal/fixed/percentage
+    │   │   ├── ExpensesSection.tsx        # expense list with edit/delete actions
+    │   │   ├── ExpenseModal.tsx           # dual-purpose add/edit expense modal
+    │   │   ├── useExpenseForm.ts          # hook: expense form state and validation
+    │   │   ├── computeCanSubmit.ts        # pure function: form submit eligibility
+    │   │   ├── getInitialExpenseState.ts  # pure function: initial form state from expense
+    │   │   ├── SplitModeToggle.tsx        # toggle between equal/fixed/percentage
     │   │   ├── EqualSplitSection.tsx      # participant checkboxes
     │   │   ├── FixedSplitSection.tsx      # currency input per member
     │   │   └── PercentageSplitSection.tsx # percentage input per member
     │   └── settlements/
-    │       ├── SettlementsSection.tsx  # settlement list + "Add settlement" button
-    │       ├── AddSettlementModal.tsx  # settlement creation (from/to/amount)
+    │       ├── SettlementsSection.tsx  # settlement list with edit/delete actions
+    │       ├── SettlementModal.tsx     # dual-purpose add/edit settlement modal
     │       └── useSettlementForm.ts    # hook: settlement form state and validation
     └── ErrorScreen/     # invalid/corrupted state display
 ```
@@ -354,7 +357,11 @@ The application state is managed by a single Zustand store located at `src/store
 | `addUser(name)` | Creates a new user and syncs to URL |
 | `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
+| `updateExpense(groupId, expense)` | Validates that existing settlements remain valid after the change, updates the expense, and syncs to URL. Returns `ValidationResult`. |
+| `deleteExpense(groupId, expenseId)` | Validates that existing settlements remain valid after removal, deletes the expense, and syncs to URL. Returns `ValidationResult`. |
 | `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
+| `updateSettlement(groupId, settlement)` | Excludes the current settlement from debt calculation, validates with `validateSettlementCreation`, updates the settlement, and syncs to URL. Returns `ValidationResult`. |
+| `deleteSettlement(groupId, settlementId)` | Deletes the settlement from the group and syncs to URL. Returns `ValidationResult`. |
 | `addMemberToGroup(groupId, userId)` | Adds a user to a group's memberIds. Idempotent — no-op if already a member. |
 | `removeMemberFromGroup(groupId, memberId)` | Validates balance, minimum members, and membership, then removes. Returns `ValidationResult`. |
 

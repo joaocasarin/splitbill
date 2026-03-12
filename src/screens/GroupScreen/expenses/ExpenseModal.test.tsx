@@ -1,10 +1,11 @@
+import type { Expense } from "@domain/expense";
 import * as expenseDomain from "@domain/expense";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { testUsers } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { AddExpenseModal } from "./AddExpenseModal";
+import { ExpenseModal } from "./ExpenseModal";
 import * as useExpenseFormModule from "./useExpenseForm";
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
@@ -121,6 +122,7 @@ function makeHookReturn(
 ): ReturnType<typeof useExpenseFormModule.useExpenseForm> {
     return {
         members,
+        isEditing: false,
         title: "",
         setTitle: vi.fn(),
         total: 0,
@@ -137,12 +139,12 @@ function makeHookReturn(
             [1, 0],
             [2, 0],
         ]),
-        canCreate: false,
+        canSubmit: false,
         toggleParticipant: vi.fn(),
         handlePayerChange: vi.fn(),
         handleFixedShareChange: vi.fn(),
         handlePercentageShareChange: vi.fn(),
-        handleCreate: vi.fn(),
+        handleSubmit: vi.fn(),
         handleOpenChange: vi.fn(),
         ...overrides,
     };
@@ -152,20 +154,143 @@ beforeEach(() => {
     setupStoreOnly();
 });
 
-function renderModal(hookReturn = makeHookReturn(), onClose = vi.fn()) {
+function renderModal(
+    hookReturn = makeHookReturn(),
+    options: {
+        onClose?: () => void;
+        expense?: Expense;
+        onDelete?: (id: number) => void;
+    } = {},
+) {
+    const onClose = options.onClose ?? vi.fn();
+    const onDelete = options.onDelete ?? vi.fn();
     vi.spyOn(useExpenseFormModule, "useExpenseForm").mockReturnValue(
         hookReturn,
     );
     return {
         onClose,
+        onDelete,
         hookReturn,
         ...render(
-            <AddExpenseModal groupId={1} open={true} onClose={onClose} />,
+            <ExpenseModal
+                groupId={1}
+                open={true}
+                onClose={onClose}
+                expense={options.expense}
+                onDelete={onDelete}
+            />,
         ),
     };
 }
 
-describe("AddExpenseModal", () => {
+describe("ExpenseModal", () => {
+    describe("add mode", () => {
+        test("renders 'Add expense' title", () => {
+            renderModal();
+            expect(screen.getByText("Add expense")).toBeInTheDocument();
+        });
+
+        test("renders 'Add' submit button", () => {
+            renderModal();
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("does not render Delete button", () => {
+            renderModal();
+            expect(
+                screen.queryByRole("button", { name: /^delete$/i }),
+            ).not.toBeInTheDocument();
+        });
+
+        test("Add button is disabled when canSubmit is false", () => {
+            renderModal(makeHookReturn({ canSubmit: false }));
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toBeDisabled();
+        });
+
+        test("Add button is enabled when canSubmit is true", () => {
+            renderModal(makeHookReturn({ canSubmit: true }));
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toBeEnabled();
+        });
+    });
+
+    describe("edit mode", () => {
+        const expense: Expense = {
+            id: 42,
+            title: "Hotel",
+            total: 10000,
+            payerId: 1,
+            splitMode: "equal",
+            memberIds: [1, 2],
+        };
+
+        test("renders 'Edit expense' title", () => {
+            renderModal(makeHookReturn({ isEditing: true }), { expense });
+            expect(screen.getByText("Edit expense")).toBeInTheDocument();
+        });
+
+        test("renders 'Save' submit button", () => {
+            renderModal(makeHookReturn({ isEditing: true }), { expense });
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("renders Delete button", () => {
+            renderModal(makeHookReturn({ isEditing: true }), { expense });
+            expect(
+                screen.getByRole("button", { name: /^delete$/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("Save button is disabled when canSubmit is false", () => {
+            renderModal(makeHookReturn({ isEditing: true, canSubmit: false }), {
+                expense,
+            });
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeDisabled();
+        });
+
+        test("Save button is enabled when canSubmit is true", () => {
+            renderModal(makeHookReturn({ isEditing: true, canSubmit: true }), {
+                expense,
+            });
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeEnabled();
+        });
+
+        test("Save button click calls handleSubmit", async () => {
+            const hookReturn = makeHookReturn({
+                isEditing: true,
+                canSubmit: true,
+            });
+            renderModal(hookReturn, { expense });
+            await userEvent.click(
+                screen.getByRole("button", { name: /^save$/i }),
+            );
+            expect(hookReturn.handleSubmit).toHaveBeenCalledOnce();
+        });
+
+        test("Delete button click calls onDelete with expense id and onClose", async () => {
+            const hookReturn = makeHookReturn({ isEditing: true });
+            const onDelete = vi.fn();
+            const onClose = vi.fn();
+            renderModal(hookReturn, { expense, onDelete, onClose });
+            await userEvent.click(
+                screen.getByRole("button", { name: /^delete$/i }),
+            );
+            expect(onDelete).toHaveBeenCalledWith(42);
+            expect(onClose).toHaveBeenCalledOnce();
+        });
+    });
+
     describe("initial state", () => {
         test("renders title input with hook title value", () => {
             renderModal(makeHookReturn({ title: "Hotel" }));
@@ -190,20 +315,6 @@ describe("AddExpenseModal", () => {
             expect(
                 screen.getByRole("option", { name: "Bob" }),
             ).toBeInTheDocument();
-        });
-
-        test("Add button is disabled when canCreate is false", () => {
-            renderModal(makeHookReturn({ canCreate: false }));
-            expect(
-                screen.getByRole("button", { name: /^add$/i }),
-            ).toBeDisabled();
-        });
-
-        test("Add button is enabled when canCreate is true", () => {
-            renderModal(makeHookReturn({ canCreate: true }));
-            expect(
-                screen.getByRole("button", { name: /^add$/i }),
-            ).toBeEnabled();
         });
 
         test("payer select shows payerId as selected value", () => {
@@ -301,13 +412,13 @@ describe("AddExpenseModal", () => {
             );
         });
 
-        test("Add button click calls handleCreate", async () => {
-            const hookReturn = makeHookReturn({ canCreate: true });
+        test("Add button click calls handleSubmit", async () => {
+            const hookReturn = makeHookReturn({ canSubmit: true });
             renderModal(hookReturn);
             await userEvent.click(
                 screen.getByRole("button", { name: /^add$/i }),
             );
-            expect(hookReturn.handleCreate).toHaveBeenCalledOnce();
+            expect(hookReturn.handleSubmit).toHaveBeenCalledOnce();
         });
 
         test("Cancel button click calls handleOpenChange(false)", async () => {
@@ -320,22 +431,30 @@ describe("AddExpenseModal", () => {
         });
     });
 
-    describe("defensive guards (unreachable in valid usage)", () => {
-        test("select renders with empty string value when payerId is null", () => {
-            renderModal(makeHookReturn({ payerId: null }));
-            // payerId ?? "" falls back to "" — jsdom selects first option but
-            // the value attribute is set to "" confirming the null branch is hit
-            const select = screen.getByRole("combobox", { name: /paid by/i });
-            expect(select).toBeInTheDocument();
-        });
-    });
-
     describe("handleOpenChange", () => {
         test("dialog onOpenChange(true) wires to handleOpenChange", async () => {
             const hookReturn = makeHookReturn();
             renderModal(hookReturn);
             await userEvent.click(screen.getByTestId("__dialog_open__"));
             expect(hookReturn.handleOpenChange).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe("defensive guards (unreachable in valid usage)", () => {
+        test("select renders with empty string value when payerId is null", () => {
+            renderModal(makeHookReturn({ payerId: null }));
+            const select = screen.getByRole("combobox", { name: /paid by/i });
+            expect(select).toBeInTheDocument();
+        });
+
+        test("handleDelete is a no-op when expense is undefined", async () => {
+            const hookReturn = makeHookReturn({ isEditing: true });
+            const onDelete = vi.fn();
+            renderModal(hookReturn, { onDelete });
+            await userEvent.click(
+                screen.getByRole("button", { name: /^delete$/i }),
+            );
+            expect(onDelete).not.toHaveBeenCalled();
         });
     });
 });

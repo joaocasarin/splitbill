@@ -1,21 +1,22 @@
-import {
-    BPS_TOTAL,
-    type EntityId,
-    EXPENSE_TITLE_MAX,
-    EXPENSE_TITLE_MIN,
-} from "@domain/common";
+import type { EntityId } from "@domain/common";
+import type { Expense } from "@domain/expense";
 import {
     buildEqualExpense,
     buildFixedExpense,
     buildPercentageExpense,
-    type SplitMode,
 } from "@domain/expense";
 import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
+import { computeCanSubmit } from "./computeCanSubmit";
+import { getInitialExpenseState } from "./getInitialExpenseState";
 
-export function useExpenseForm(groupId: EntityId, onClose: () => void) {
-    const { global, addExpense } = useAppStore();
+export function useExpenseForm(
+    groupId: EntityId,
+    onClose: () => void,
+    expense?: Expense,
+) {
+    const { global, addExpense, updateExpense } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
     const users = global.users;
     const members: User[] = group
@@ -26,61 +27,30 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
         : [];
 
     const firstMemberId = members[0]?.id ?? null;
+    const isEditing = expense !== undefined;
+    const initial = getInitialExpenseState(members, firstMemberId, expense);
 
-    const [title, setTitle] = useState("");
-    const [total, setTotal] = useState(0);
-    const [payerId, setPayerId] = useState<EntityId | null>(firstMemberId);
-    const [splitMode, setSplitMode] = useState<SplitMode>("equal");
-    const [participantIds, setParticipantIds] = useState<Set<EntityId>>(
-        new Set(firstMemberId !== null ? [firstMemberId] : []),
+    const [title, setTitle] = useState(initial.title);
+    const [total, setTotal] = useState(initial.total);
+    const [payerId, setPayerId] = useState(initial.payerId);
+    const [splitMode, setSplitMode] = useState(initial.splitMode);
+    const [participantIds, setParticipantIds] = useState(
+        initial.participantIds,
     );
-    const [fixedShares, setFixedShares] = useState<Map<EntityId, number>>(
-        () => new Map(members.map((m) => [m.id, 0])),
+    const [fixedShares, setFixedShares] = useState(initial.fixedShares);
+    const [percentageShares, setPercentageShares] = useState(
+        initial.percentageShares,
     );
-    const [percentageShares, setPercentageShares] = useState<
-        Map<EntityId, number>
-    >(() => new Map(members.map((m) => [m.id, 0])));
 
-    const isTitleValid =
-        title.trim().length >= EXPENSE_TITLE_MIN &&
-        title.trim().length <= EXPENSE_TITLE_MAX;
-    const isTotalValid = total > 0;
-
-    const hasNonPayerParticipant =
-        payerId !== null &&
-        Array.from(participantIds).some((id) => id !== payerId);
-
-    const fixedSum = Array.from(fixedShares.values()).reduce(
-        (a, b) => a + b,
-        0,
+    const canSubmit = computeCanSubmit(
+        title,
+        total,
+        payerId,
+        splitMode,
+        participantIds,
+        fixedShares,
+        percentageShares,
     );
-    const fixedHasNonPayerShare =
-        payerId !== null &&
-        Array.from(fixedShares.entries()).some(
-            ([id, value]) => id !== payerId && value > 0,
-        );
-    const isFixedValid = fixedSum === total && fixedHasNonPayerShare;
-
-    const percentageSum = Array.from(percentageShares.values()).reduce(
-        (a, b) => a + b,
-        0,
-    );
-    const percentageHasNonPayerShare =
-        payerId !== null &&
-        Array.from(percentageShares.entries()).some(
-            ([id, value]) => id !== payerId && value > 0,
-        );
-    const isPercentageValid =
-        percentageSum === BPS_TOTAL && percentageHasNonPayerShare;
-
-    const canCreate =
-        isTitleValid &&
-        isTotalValid &&
-        (splitMode === "equal"
-            ? hasNonPayerParticipant
-            : splitMode === "fixed"
-              ? isFixedValid
-              : isPercentageValid);
 
     function toggleParticipant(id: EntityId) {
         setParticipantIds((prev) => {
@@ -112,8 +82,8 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
         );
     }
 
-    function handleCreate() {
-        const expense =
+    function handleSubmit() {
+        const built =
             splitMode === "equal"
                 ? buildEqualExpense(title, total, payerId, participantIds)
                 : splitMode === "fixed"
@@ -125,22 +95,26 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
                         percentageShares,
                     );
 
-        if (expense === null) return;
-        addExpense(groupId, expense);
+        if (built === null) return;
+
+        if (expense) {
+            updateExpense(groupId, { ...built, id: expense.id });
+        } else {
+            addExpense(groupId, built);
+        }
         reset();
         onClose();
     }
 
     function reset() {
-        setTitle("");
-        setTotal(0);
-        setPayerId(firstMemberId);
-        setSplitMode("equal");
-        setParticipantIds(
-            new Set(firstMemberId !== null ? [firstMemberId] : []),
-        );
-        setFixedShares(new Map(members.map((m) => [m.id, 0])));
-        setPercentageShares(new Map(members.map((m) => [m.id, 0])));
+        const defaults = getInitialExpenseState(members, firstMemberId);
+        setTitle(defaults.title);
+        setTotal(defaults.total);
+        setPayerId(defaults.payerId);
+        setSplitMode(defaults.splitMode);
+        setParticipantIds(defaults.participantIds);
+        setFixedShares(defaults.fixedShares);
+        setPercentageShares(defaults.percentageShares);
     }
 
     function handleOpenChange(next: boolean) {
@@ -152,6 +126,7 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
 
     return {
         members,
+        isEditing,
         title,
         setTitle,
         total,
@@ -162,12 +137,12 @@ export function useExpenseForm(groupId: EntityId, onClose: () => void) {
         participantIds,
         fixedShares,
         percentageShares,
-        canCreate,
+        canSubmit,
         toggleParticipant,
         handlePayerChange,
         handleFixedShareChange,
         handlePercentageShareChange,
-        handleCreate,
+        handleSubmit,
         handleOpenChange,
     };
 }

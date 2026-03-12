@@ -11,6 +11,7 @@ import {
     type Settlement,
     type ValidationResult,
     validateSettlementCreation,
+    validateSettlementsStillValid,
 } from "@domain/settlement";
 import type { User } from "@domain/user";
 import lzstring from "lz-string";
@@ -36,9 +37,19 @@ type AppActions = {
         userId: EntityId,
     ) => ValidationResult;
     addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => void;
+    updateExpense: (groupId: EntityId, expense: Expense) => ValidationResult;
+    deleteExpense: (groupId: EntityId, expenseId: EntityId) => ValidationResult;
     addSettlement: (
         groupId: EntityId,
         settlement: Omit<Settlement, "id">,
+    ) => ValidationResult;
+    updateSettlement: (
+        groupId: EntityId,
+        settlement: Settlement,
+    ) => ValidationResult;
+    deleteSettlement: (
+        groupId: EntityId,
+        settlementId: EntityId,
     ) => ValidationResult;
 };
 
@@ -213,6 +224,85 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
+    deleteExpense: (
+        groupId: EntityId,
+        expenseId: EntityId,
+    ): ValidationResult => {
+        const { global, syncToUrl } = get();
+
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        const groupWithoutExpense: Group = {
+            ...group,
+            expenses: group.expenses.filter((e) => e.id !== expenseId),
+        };
+
+        const directDebts = computeDirectDebts(groupWithoutExpense);
+        const settlementCheck = validateSettlementsStillValid(
+            directDebts,
+            group.settlements,
+        );
+
+        if (!settlementCheck.valid) {
+            return settlementCheck;
+        }
+
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId ? groupWithoutExpense : g,
+                ),
+            },
+        });
+        syncToUrl();
+
+        return { valid: true };
+    },
+    updateExpense: (groupId: EntityId, expense: Expense): ValidationResult => {
+        const { global, syncToUrl } = get();
+
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        const groupWithUpdatedExpense: Group = {
+            ...group,
+            expenses: group.expenses.map((e) =>
+                e.id === expense.id ? expense : e,
+            ),
+        };
+
+        const directDebts = computeDirectDebts(groupWithUpdatedExpense);
+        const settlementCheck = validateSettlementsStillValid(
+            directDebts,
+            group.settlements,
+        );
+
+        if (!settlementCheck.valid) {
+            return settlementCheck;
+        }
+
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId ? groupWithUpdatedExpense : g,
+                ),
+            },
+        });
+        syncToUrl();
+
+        return { valid: true };
+    },
     addSettlement: (groupId: EntityId, settlement: Omit<Settlement, "id">) => {
         const { global, createId, syncToUrl } = get();
 
@@ -258,6 +348,91 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             },
         });
 
+        syncToUrl();
+
+        return { valid: true };
+    },
+    updateSettlement: (
+        groupId: EntityId,
+        settlement: Settlement,
+    ): ValidationResult => {
+        const { global, syncToUrl } = get();
+
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        const groupWithoutSettlement: Group = {
+            ...group,
+            settlements: group.settlements.filter(
+                (s) => s.id !== settlement.id,
+            ),
+        };
+
+        const directDebts = computeDirectDebts(groupWithoutSettlement);
+
+        const validation = validateSettlementCreation(
+            directDebts,
+            settlement.fromMemberId,
+            settlement.toMemberId,
+            settlement.amount,
+        );
+
+        if (!validation.valid) {
+            return validation;
+        }
+
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              settlements: g.settlements.map((s) =>
+                                  s.id === settlement.id ? settlement : s,
+                              ),
+                          }
+                        : g,
+                ),
+            },
+        });
+
+        syncToUrl();
+
+        return { valid: true };
+    },
+    deleteSettlement: (
+        groupId: EntityId,
+        settlementId: EntityId,
+    ): ValidationResult => {
+        const { global, syncToUrl } = get();
+
+        const group = global.groups.find((g) => g.id === groupId);
+
+        if (!group) {
+            return { valid: false, reason: "group not found" };
+        }
+
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              settlements: g.settlements.filter(
+                                  (s) => s.id !== settlementId,
+                              ),
+                          }
+                        : g,
+                ),
+            },
+        });
         syncToUrl();
 
         return { valid: true };

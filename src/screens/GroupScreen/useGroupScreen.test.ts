@@ -3,6 +3,7 @@ import * as balanceDomain from "@domain/balance";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
+import { defaultEqualExpense } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
@@ -134,6 +135,52 @@ describe("useGroupScreen", () => {
             expect((result.current as FoundState).isAddExpenseOpen).toBe(false);
         });
 
+        test("editingExpense defaults to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.editingExpense).toBeNull();
+        });
+
+        test("openEditExpense sets editingExpense", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const expense = {
+                id: 1,
+                title: "Hotel",
+                total: 10000,
+                payerId: 1,
+                splitMode: "equal" as const,
+                memberIds: [1, 2],
+            };
+            act(() => {
+                (result.current as FoundState).openEditExpense(expense);
+            });
+            expect((result.current as FoundState).editingExpense).toEqual(
+                expense,
+            );
+        });
+
+        test("closeEditExpense sets editingExpense to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const expense = {
+                id: 1,
+                title: "Hotel",
+                total: 10000,
+                payerId: 1,
+                splitMode: "equal" as const,
+                memberIds: [1, 2],
+            };
+            act(() => {
+                (result.current as FoundState).openEditExpense(expense);
+            });
+            act(() => {
+                (result.current as FoundState).closeEditExpense();
+            });
+            expect((result.current as FoundState).editingExpense).toBeNull();
+        });
+
         test("isAddSettlementOpen defaults to false", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
@@ -165,6 +212,48 @@ describe("useGroupScreen", () => {
                 false,
             );
         });
+
+        test("editingSettlement defaults to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.editingSettlement).toBeNull();
+        });
+
+        test("openEditSettlement sets editingSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                (result.current as FoundState).openEditSettlement(settlement);
+            });
+            expect((result.current as FoundState).editingSettlement).toEqual(
+                settlement,
+            );
+        });
+
+        test("closeEditSettlement sets editingSettlement to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                (result.current as FoundState).openEditSettlement(settlement);
+            });
+            act(() => {
+                (result.current as FoundState).closeEditSettlement();
+            });
+            expect((result.current as FoundState).editingSettlement).toBeNull();
+        });
     });
 
     describe("directDebts", () => {
@@ -189,6 +278,56 @@ describe("useGroupScreen", () => {
         });
     });
 
+    describe("editDirectDebts", () => {
+        test("equals directDebts when editingSettlement is null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.editDirectDebts).toEqual(state.directDebts);
+        });
+
+        test("excludes edited settlement from debt calculation", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addExpense(group.id, {
+                ...defaultEqualExpense,
+                title: "Lunch",
+                total: 2500,
+            });
+            useAppStore.getState().addSettlement(group.id, {
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 1000,
+            });
+            const { result } = renderHook(() => useGroupScreen(group.id));
+
+            // Before editing: directDebts reflects remaining debt (1250 - 1000 = 250)
+            const stateBefore = result.current as FoundState;
+            expect(stateBefore.directDebts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 250 },
+            ]);
+            expect(stateBefore.editDirectDebts).toEqual(
+                stateBefore.directDebts,
+            );
+
+            // Open edit on the settlement
+            const settlement =
+                useAppStore.getState().global.groups[0].settlements[0];
+            act(() => {
+                (result.current as FoundState).openEditSettlement(settlement);
+            });
+
+            // After editing: editDirectDebts excludes the settlement (full debt = 1250)
+            const stateAfter = result.current as FoundState;
+            expect(stateAfter.editDirectDebts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 1250 },
+            ]);
+            // directDebts is still the same (includes the settlement)
+            expect(stateAfter.directDebts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 250 },
+            ]);
+        });
+    });
+
     describe("addSettlement", () => {
         test("delegates to store addSettlement", () => {
             const group = setupGroupWithTwoMembers();
@@ -207,6 +346,51 @@ describe("useGroupScreen", () => {
                 toMemberId: 1,
                 amount: 5000,
             });
+        });
+    });
+
+    describe("updateSettlement", () => {
+        test("delegates to store updateSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "updateSettlement");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                state.updateSettlement(settlement);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, settlement);
+        });
+    });
+
+    describe("deleteExpense", () => {
+        test("delegates to store deleteExpense", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "deleteExpense");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            act(() => {
+                state.deleteExpense(1);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, 1);
+        });
+    });
+
+    describe("deleteSettlement", () => {
+        test("delegates to store deleteSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "deleteSettlement");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            act(() => {
+                state.deleteSettlement(1);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, 1);
         });
     });
 

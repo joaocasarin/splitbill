@@ -48,6 +48,7 @@ The system is designed with strong domain consistency and financial determinism.
 - Deterministic balance computation
 - Full state sharing via compressed URL
 - Direct-debt validation on settlement creation
+- Edit and delete expenses and settlements with confirmation dialogs
 - Member removal with balance and minimum-member validation
 - Multi-user creation (batch add users)
 - Responsive layout with sidebar navigation and mobile drawer support
@@ -162,7 +163,6 @@ The system guarantees:
 
 ## 10. Future Roadmap
 
-- Edit/delete expenses and settlements
 - Timestamps (`createdAt`, `updatedAt`) on all entities
 - Free payments (settlement between any two members without debt constraint)
 - Debt simplification algorithm (suggested optimized payment paths)
