@@ -1,14 +1,6 @@
-import { computeBalances } from "@domain/balance/compute-balances";
-import type { Group } from "@domain/group";
+import { baseGroup } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
-
-const baseGroup: Group = {
-    id: 1,
-    name: "Test Group",
-    memberIds: [1, 2, 3],
-    expenses: [],
-    settlements: [],
-};
+import { computeBalances } from "../balance";
 
 describe("computeBalances", () => {
     describe("equal split", () => {
@@ -370,6 +362,69 @@ describe("computeBalances", () => {
                     { memberId: 3, amount: 0 },
                 ]),
             );
+        });
+    });
+
+    describe("defensive guards (unreachable in valid usage)", () => {
+        test("falls back to 0 when memberId is not in initialized balances", () => {
+            const balances = computeBalances({
+                ...baseGroup,
+                settlements: [
+                    { id: 1, fromMemberId: 999, toMemberId: 1, amount: 50 },
+                ],
+            });
+            const member999 = balances.find((b) => b.memberId === 999);
+            expect(member999?.amount).toBe(50);
+        });
+
+        describe("equal split", () => {
+            test("skips remainder when all memberIds equal payerId", () => {
+                const balances = computeBalances({
+                    ...baseGroup,
+                    expenses: [
+                        {
+                            id: 1,
+                            title: "Dinner",
+                            total: 3,
+                            payerId: 1,
+                            splitMode: "equal",
+                            // Invalid data by design: duplicates make firstNonPayer = undefined,
+                            // covering the unreachable branch of the defensive guard.
+                            memberIds: [1, 1],
+                        },
+                    ],
+                });
+
+                const member1 = balances.find((b) => b.memberId === 1);
+                expect(member1?.amount).toBe(1);
+            });
+        });
+
+        describe("percentage split", () => {
+            test("skips remainder when all shares belong to payerId", () => {
+                const balances = computeBalances({
+                    ...baseGroup,
+                    expenses: [
+                        {
+                            id: 1,
+                            title: "Dinner",
+                            total: 100,
+                            payerId: 1,
+                            splitMode: "percentage",
+                            // Invalid data by design: duplicates make firstNonPayer = undefined,
+                            // covering the unreachable branch of the defensive guard.
+                            shares: [
+                                { memberId: 1, value: 3334 },
+                                { memberId: 1, value: 3333 },
+                                { memberId: 1, value: 3333 },
+                            ],
+                        },
+                    ],
+                });
+
+                const member1 = balances.find((b) => b.memberId === 1);
+                expect(member1?.amount).toBe(1);
+            });
         });
     });
 });

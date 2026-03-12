@@ -5,9 +5,15 @@ export default defineConfig({
     ...userConfig,
     test: {
         environment: "happy-dom",
+        setupFiles: ["./tests/vitest.setup.ts"],
         exclude: ["**/node_modules/**", "**/dist/**", "public/**"],
         coverage: {
             provider: "v8",
+            thresholds: {
+                "100": true,
+            },
+            enabled: true,
+            reportOnFailure: true,
             reporter: ["text", "html"],
             include: ["src/**/*.{ts,tsx}"],
             exclude: [
@@ -22,6 +28,10 @@ export default defineConfig({
                 "**/*.d.ts",
                 "vite.config.ts",
                 "vitest.config.ts",
+                "tests/helpers/**/*.{ts,tsx}",
+                "tests/mocks/**/*.{ts,tsx}",
+                "tests/setup/**/*.{ts,tsx}",
+                "src/components/ui/**",
             ],
         },
     },

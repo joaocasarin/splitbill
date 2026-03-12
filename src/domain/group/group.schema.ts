@@ -1,12 +1,12 @@
+import z from "zod";
 import {
     EntityIdSchema,
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
-} from "@domain/common";
-import { ExpenseSchema } from "@domain/expense";
-import { SettlementSchema } from "@domain/settlement";
-import z from "zod";
+} from "../common";
+import { ExpenseSchema } from "../expense";
+import { SettlementSchema } from "../settlement";
 
 export const GroupSchema = z
     .object({

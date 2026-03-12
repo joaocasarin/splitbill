@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-02-24  
+> **Last updated:** 2026-03-11  
 > **Status:** Draft
 
 ---
@@ -79,6 +79,47 @@ The domain layer (`src/domain/`) is framework-agnostic by design. If a backend i
 | Client state | Zustand + URL | Zustand + API calls |
 
 Business rules are isolated in pure `*.rules.ts` functions today precisely to make this migration a file move, not a refactor.
+
+### UI Layout
+```
+src/
+├── App.tsx              # root — owns view state and isSidebarOpen state
+├── AppLayout.tsx        # shell — header, desktop aside, mobile drawer overlay
+├── components/
+│   ├── Sidebar.tsx      # navigation — users list, groups list, modals
+│   ├── UsersSection.tsx # user list with avatars + "Add user" button
+│   ├── GroupsSection.tsx# group list with member counts + "Add group" button
+│   ├── CurrencyInput.tsx# cents-based currency input (R$, keyboard-driven)
+│   └── ConfirmDeleteDialog.tsx # reusable delete confirmation dialog
+└── screens/
+    ├── HomeScreen/      # empty state — "Select a group from the sidebar"
+    │   ├── AddUsersModal.tsx   # multi-user creation (dynamic row list)
+    │   └── AddGroupModal.tsx   # group creation with member checkboxes
+    ├── GroupScreen/      # main group view — members, expenses, settlements
+    │   ├── useGroupScreen.ts   # hook: group data, balances, modal state
+    │   ├── members/
+    │   │   ├── MembersSection.tsx  # member list with balances + remove buttons
+    │   │   └── AddMemberModal.tsx  # add existing user to group
+    │   ├── expenses/
+    │   │   ├── ExpensesSection.tsx        # expense list with edit/delete actions
+    │   │   ├── ExpenseModal.tsx           # dual-purpose add/edit expense modal
+    │   │   ├── useExpenseForm.ts          # hook: expense form state and validation
+    │   │   ├── computeCanSubmit.ts        # pure function: form submit eligibility
+    │   │   ├── getInitialExpenseState.ts  # pure function: initial form state from expense
+    │   │   ├── SplitModeToggle.tsx        # toggle between equal/fixed/percentage
+    │   │   ├── EqualSplitSection.tsx      # participant checkboxes
+    │   │   ├── FixedSplitSection.tsx      # currency input per member
+    │   │   └── PercentageSplitSection.tsx # percentage input per member
+    │   └── settlements/
+    │       ├── SettlementsSection.tsx  # settlement list with edit/delete actions
+    │       ├── SettlementModal.tsx     # dual-purpose add/edit settlement modal
+    │       └── useSettlementForm.ts    # hook: settlement form state and validation
+    └── ErrorScreen/     # invalid/corrupted state display
+```
+
+**Desktop:** sidebar always visible via `hidden md:block` on the `<aside>`.
+**Mobile:** sidebar hidden by default. Burger button in the header toggles a drawer overlay. Backdrop is a `<button>` (not `<div>`) for keyboard and screen reader accessibility.
+**State:** `isSidebarOpen` lives in `App` and is passed to `AppLayout` (`isSidebarOpen`, `onToggleSidebar`, `onCloseSidebar`) and to `Sidebar` (`onClose`). `onClose` is optional — `Sidebar` works standalone on desktop without it.
 
 ---
 
@@ -239,7 +280,7 @@ Users are never permanently removed. Instead, `deletedAt` is set on the `User` e
 
 Removing a user from a group does not delete them from the app, and vice versa. Each has its own set of rules.
 
-**Removing a member from a group** follows separate rules from soft deleting a user:
+**Removing a member from a group** follows separate rules from soft deleting a user: ✅ Implemented
 
 | Rule | Detail |
 |---|---|
@@ -247,17 +288,19 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 | Balance | Member's balance in the group must be 0 before removal |
 | History | Member's past expenses and settlements remain in the group unchanged |
 
-### Referential integrity conflict
+**Implementation:** `removeMemberFromGroup(groupId, memberId)` in the store. Returns `ValidationResult`.
 
-The current schema enforces that all expense and settlement references must exist in `group.memberIds`. This is intentionally strict for the current version.
+### Referential integrity note
 
-When member removal and soft delete are implemented, the referential integrity model must be revised. Two approaches are being considered:
+The current schema enforces that all expense and settlement references must exist in `group.memberIds`. Member removal (`removeMemberFromGroup`) is implemented — it validates that the member's balance is zero and that at least 2 members remain, then removes the member from `memberIds`. Historical expenses and settlements referencing the removed member remain unchanged.
+
+When soft delete for users is implemented, the referential integrity model may need to be revised. Two approaches are being considered:
 
 **Option A — Historical roster:** `memberIds` becomes the full historical roster. A separate `activeMemberIds` field tracks current active members. Validation splits: structural references check against `memberIds`, new expense/settlement creation checks against `activeMemberIds`.
 
 **Option B — Relaxed validation:** References in historical expenses and settlements are no longer validated against `memberIds`. Only new expenses and settlements validate against active members.
 
-This decision is deferred until soft delete and member removal are implemented.
+This decision is deferred until soft delete is implemented.
 
 ---
 
@@ -314,9 +357,15 @@ The application state is managed by a single Zustand store located at `src/store
 | `addUser(name)` | Creates a new user and syncs to URL |
 | `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
+| `updateExpense(groupId, expense)` | Validates that existing settlements remain valid after the change, updates the expense, and syncs to URL. Returns `ValidationResult`. |
+| `deleteExpense(groupId, expenseId)` | Validates that existing settlements remain valid after removal, deletes the expense, and syncs to URL. Returns `ValidationResult`. |
 | `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
+| `updateSettlement(groupId, settlement)` | Excludes the current settlement from debt calculation, validates with `validateSettlementCreation`, updates the settlement, and syncs to URL. Returns `ValidationResult`. |
+| `deleteSettlement(groupId, settlementId)` | Deletes the settlement from the group and syncs to URL. Returns `ValidationResult`. |
+| `addMemberToGroup(groupId, userId)` | Adds a user to a group's memberIds. Idempotent — no-op if already a member. |
+| `removeMemberFromGroup(groupId, memberId)` | Validates balance, minimum members, and membership, then removes. Returns `ValidationResult`. |
 
 ### Notes
 - `syncToUrl` is called automatically at the end of every mutating action
 - `createId` is re-initialized from the loaded state on `hydrateFromUrl` to prevent ID collisions
-- `syncToUrl` currently uses `JSON.stringify` + `encodeURIComponent` — LZ compression will be added in the URL Serialization context
+- `syncToUrl` uses `lzstring.compressToEncodedURIComponent(JSON.stringify(global))` for compression and encoding

@@ -9,7 +9,7 @@
         "ignoreUnknown": false,
         "includes": [
             "src/**",
-            "test/**",
+            "tests/**",
             ".vscode/**",
             "biome.json",
             "components.json",

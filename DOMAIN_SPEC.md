@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-02-24  
+> **Last updated:** 2026-03-10  
 > **Status:** Draft
 
 ---
@@ -361,26 +361,40 @@ The order of arrays in the domain is not arbitrary — it has financial conseque
 ```
 src/domain/
 ├── balance/
-│   ├── balance.schema.ts        # MemberBalanceSchema, DirectDebtSchema, SimplifiedDebtSchem
-│   ├── compute-balances.ts      # computeBalances()
-│   └── compute-direct-debts.ts  # computeDirectDebts()
+│   ├── balance.schema.ts           # MemberBalanceSchema, DirectDebtSchema, SimplifiedDebtSchema
+│   ├── compute-balances.ts         # computeBalances()
+│   ├── compute-direct-debts.ts     # computeDirectDebts()
+│   └── index.ts                    # barrel re-exports
 ├── common/
-│   ├── constants.ts             # BPS_TOTAL, BPS_MIN...
-│   ├── create-id.ts             # createIdGenerator()
-│   └── entity-id.schema.ts      # EntityIdSchema
+│   ├── constants.ts                # BPS_TOTAL, BPS_MIN...
+│   ├── create-id.ts                # createIdGenerator()
+│   ├── entity-id.schema.ts         # EntityIdSchema
+│   └── index.ts                    # barrel re-exports
 ├── expense/
-│   ├── expense-share.schema.ts  # MoneyShareSchema, PercentageShareSchema
-│   └── expense.schema.ts        # EqualExpense, FixedExpense, PercentageExpense, Expense
+│   ├── build-equal-expense.ts      # buildEqualExpense()
+│   ├── build-fixed-expense.ts      # buildFixedExpense()
+│   ├── build-percentage-expense.ts # buildPercentageExpense()
+│   ├── expense-share.schema.ts     # MoneyShareSchema, PercentageShareSchema
+│   ├── expense.schema.ts           # EqualExpense, FixedExpense, PercentageExpense, Expense
+│   └── index.ts                    # barrel re-exports
 ├── global/
-│   └── global.schema.ts         # GlobalSchema (root of all state)
+│   ├── global.schema.ts            # GlobalSchema (root of all state)
+│   └── index.ts                    # barrel re-exports
 ├── group/
-│   └── group.schema.ts          # GroupSchema
+│   ├── group.schema.ts             # GroupSchema
+│   └── index.ts                    # barrel re-exports
 ├── money/
-│   ├── money.schema.ts          # ExpenseTotal, ShareAmount, BalanceAmount
-│   └── percentage.schema.ts     # PercentageBasePointSchema
+│   ├── money.schema.ts             # ExpenseTotal, ShareAmount, BalanceAmount
+│   ├── percentage.schema.ts        # PercentageBasePointSchema
+│   └── index.ts                    # barrel re-exports
 ├── settlement/
-│   ├── settlement.rules.ts      # validateSettlementCreation()
-│   └── settlement.schema.ts     # SettlementSchema
+│   ├── settlement.rules.ts         # validateSettlementCreation(), validateSettlementsStillValid()
+│   ├── settlement.schema.ts        # SettlementSchema
+│   └── index.ts                    # barrel re-exports
 └── user/
-    └── user.schema.ts           # UserSchema
+    ├── user.schema.ts              # UserSchema
+    └── index.ts                    # barrel re-exports
+src/lib/
+└── format.ts                       # Presentation utilities (formatCurrency — BRL, integer cents)
+
 ```

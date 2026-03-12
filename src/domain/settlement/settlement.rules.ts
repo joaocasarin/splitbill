@@ -1,5 +1,6 @@
-import type { DirectDebt } from "@domain/balance";
-import type { EntityId } from "@domain/common";
+import type { DirectDebt } from "../balance";
+import type { EntityId } from "../common";
+import type { Settlement } from "./settlement.schema";
 
 export type ValidationResult =
     | { valid: true }
@@ -26,5 +27,26 @@ export function validateSettlementCreation(
         return { valid: false, reason: "amount exceeds outstanding debt" };
     }
 
+    return { valid: true };
+}
+
+export function validateSettlementsStillValid(
+    directDebts: DirectDebt[],
+    settlements: Settlement[],
+): ValidationResult {
+    for (const settlement of settlements) {
+        const result = validateSettlementCreation(
+            directDebts,
+            settlement.fromMemberId,
+            settlement.toMemberId,
+            settlement.amount,
+        );
+        if (!result.valid) {
+            return {
+                valid: false,
+                reason: "existing settlements would become invalid",
+            };
+        }
+    }
     return { valid: true };
 }

@@ -1,6 +1,6 @@
-import { GroupSchema } from "@domain/group";
-import { UserSchema } from "@domain/user";
 import z from "zod";
+import { GroupSchema } from "../group";
+import { UserSchema } from "../user";
 
 export const GlobalSchema = z
     .object({

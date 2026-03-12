@@ -1,9 +1,9 @@
-# Expense Sharing Web App
+# Splitbill
 
 A fully client-side deterministic expense splitting application built with React and Vite.
 
-No backend.  
-No authentication.  
+No backend.
+No authentication.
 Fully shareable via URL.
 
 ---
@@ -12,13 +12,15 @@ Fully shareable via URL.
 
 1. [Overview](#1-overview)
 2. [Features](#2-features)
-3. [Architecture](#3-architecture)
-4. [State Management](#4-state-management)
-5. [Money Handling](#5-money-handling)
-6. [URL Sharing](#6-url-sharing)
-7. [Financial Invariants](#7-financial-invariants)
-8. [Future Roadmap](#8-future-roadmap)
-9. [Documentation](#9-documentation)
+3. [Tech Stack](#3-tech-stack)
+4. [Getting Started](#4-getting-started)
+5. [Architecture](#5-architecture)
+6. [State Management](#6-state-management)
+7. [Money Handling](#7-money-handling)
+8. [URL Sharing](#8-url-sharing)
+9. [Financial Invariants](#9-financial-invariants)
+10. [Future Roadmap](#10-future-roadmap)
+11. [Documentation](#11-documentation)
 
 ---
 
@@ -27,10 +29,11 @@ Fully shareable via URL.
 This application allows users to:
 
 - Create users
-- Create groups
-- Add expenses
-- Register settlements
-- View dynamic balances
+- Create groups with members
+- Add expenses with equal, fixed, or percentage splits
+- View member balances per group
+- Register settlements between members
+- Add or remove members from groups
 - Share full application state via URL
 
 The system is designed with strong domain consistency and financial determinism.
@@ -45,10 +48,45 @@ The system is designed with strong domain consistency and financial determinism.
 - Deterministic balance computation
 - Full state sharing via compressed URL
 - Direct-debt validation on settlement creation
+- Edit and delete expenses and settlements with confirmation dialogs
+- Member removal with balance and minimum-member validation
+- Multi-user creation (batch add users)
+- Responsive layout with sidebar navigation and mobile drawer support
 
 ---
 
-## 3. Architecture
+## 3. Tech Stack
+
+| Concern | Tool |
+|---|---|
+| Framework | React 19 + Vite |
+| Language | TypeScript |
+| State management | Zustand |
+| Schema & validation | Zod v4 |
+| Styling | Tailwind CSS |
+| UI primitives | Base UI React |
+| Testing | Vitest + Testing Library |
+| Linting & formatting | Biome |
+| State persistence | URL (JSON → lz-string compression → URI encode) |
+| Currency | BRL only (integer cents) |
+
+---
+
+## 4. Getting Started
+
+```bash
+npm install
+npm run dev       # start dev server
+npm run test      # run tests
+npm run test:cov  # run tests with coverage
+npm run build     # type-check + production build
+npm run lint      # lint with auto-fix
+npm run format    # format with Biome
+```
+
+---
+
+## 5. Architecture
 
 The application state is structured as:
 
@@ -57,15 +95,18 @@ Global
 ├── version
 ├── users[]
 └── groups[]
+    ├── memberIds[]
+    ├── expenses[]
+    └── settlements[]
 ```
 
-Users are global.  
-Groups reference users by ID.  
+Users are global.
+Groups reference users by ID.
 Balances are computed dynamically — never stored.
 
 ---
 
-## 4. State Management
+## 6. State Management
 
 No backend is used.
 
@@ -79,7 +120,7 @@ Opening the link restores the exact application state.
 
 ---
 
-## 5. Money Handling
+## 7. Money Handling
 
 All monetary values use integer cents.
 
@@ -96,7 +137,7 @@ Percentages use basis points:
 
 ---
 
-## 6. URL Sharing
+## 8. URL Sharing
 
 State is serialized using:
 
@@ -110,7 +151,7 @@ If invalid or missing state is detected on load, an error screen is shown.
 
 ---
 
-## 7. Financial Invariants
+## 9. Financial Invariants
 
 The system guarantees:
 
@@ -120,20 +161,20 @@ The system guarantees:
 
 ---
 
-## 8. Future Roadmap
+## 10. Future Roadmap
 
 - Timestamps (`createdAt`, `updatedAt`) on all entities
-- Soft delete for users (`deletedAt`)
-- Member removal from groups
-- Debt simplification algorithm
-- Editing expenses and settlements
-- Migration system for version upgrades
 - Free payments (settlement between any two members without debt constraint)
-- Simplified debts toggle (suggested optimized payment paths)
+- Debt simplification algorithm (suggested optimized payment paths)
+- Soft delete for users (`deletedAt`)
+- Migration system for version upgrades
 
-## 9. Documentation
+---
+
+## 11. Documentation
 
 | File | Scope |
 |---|---|
 | [`APP_SPEC.md`](./APP_SPEC.md) | Tech stack, architecture, persistence strategy, roadmap |
 | [`DOMAIN_SPEC.md`](./DOMAIN_SPEC.md) | Schemas, business rules, validation architecture, design decisions |
+| [`TEST_SPEC.md`](./TEST_SPEC.md) | Testing conventions, mock strategies, coverage configuration |

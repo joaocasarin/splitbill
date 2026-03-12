@@ -1,7 +1,8 @@
-import { BPS_TOTAL, type EntityId } from "@domain/common";
-import type { Expense } from "@domain/expense";
-import type { Group } from "@domain/group";
-import type { Settlement } from "@domain/settlement";
+import type { EntityId } from "../common";
+import { BPS_TOTAL } from "../common";
+import type { Expense } from "../expense";
+import type { Group } from "../group";
+import type { Settlement } from "../settlement";
 import type { MemberBalance } from "./balance.schema";
 
 function initializeBalances(memberIds: EntityId[]): Map<EntityId, number> {
@@ -17,11 +18,7 @@ function updateBalance(
     memberId: EntityId,
     delta: number,
 ): void {
-    balances.set(
-        memberId,
-        /* c8 ignore next */
-        (balances.get(memberId) ?? 0) + delta,
-    );
+    balances.set(memberId, (balances.get(memberId) ?? 0) + delta);
 }
 
 function applyExpensePayment(
@@ -49,7 +46,6 @@ function applyEqualSplit(
     if (remainder !== 0) {
         const firstNonPayer = memberIds.find((id) => id !== payerId);
 
-        /* c8 ignore next */
         if (firstNonPayer !== undefined) {
             updateBalance(balances, firstNonPayer, -remainder);
         }
@@ -88,7 +84,6 @@ function applyPercentageSplit(
             (s) => s.memberId !== payerId,
         );
 
-        /* c8 ignore next */
         if (firstNonPayer !== undefined) {
             updateBalance(balances, firstNonPayer.memberId, -remainder);
         }
