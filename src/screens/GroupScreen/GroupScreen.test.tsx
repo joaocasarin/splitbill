@@ -56,15 +56,35 @@ vi.mock("./settlements/SettlementModal", () => ({
     SettlementModal: ({
         open,
         onClose,
+        onSubmit,
     }: {
         open: boolean;
         onClose: () => void;
+        onSubmit?: (data: {
+            fromMemberId: number;
+            toMemberId: number;
+            amount: number;
+        }) => void;
     }) =>
         open ? (
             <div role="dialog" aria-label="settlement-modal">
                 <button type="button" onClick={onClose}>
                     Cancel
                 </button>
+                {onSubmit && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            onSubmit({
+                                fromMemberId: 2,
+                                toMemberId: 1,
+                                amount: 3000,
+                            })
+                        }
+                    >
+                        Submit
+                    </button>
+                )}
             </div>
         ) : null,
 }));
@@ -345,6 +365,28 @@ describe("GroupScreen", () => {
             expect(
                 screen.queryByRole("dialog", { name: /settlement-modal/i }),
             ).not.toBeInTheDocument();
+        });
+
+        test("calls updateSettlement with settlement id when edit modal submits", async () => {
+            const updateSettlement = vi.fn();
+            const editingSettlement = {
+                id: 7,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 3000,
+            };
+            renderScreen(
+                makeHookReturn({ editingSettlement, updateSettlement }),
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /submit/i }),
+            );
+            expect(updateSettlement).toHaveBeenCalledWith({
+                id: 7,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 3000,
+            });
         });
     });
 });

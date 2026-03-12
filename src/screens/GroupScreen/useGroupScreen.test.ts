@@ -211,6 +211,48 @@ describe("useGroupScreen", () => {
                 false,
             );
         });
+
+        test("editingSettlement defaults to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.editingSettlement).toBeNull();
+        });
+
+        test("openEditSettlement sets editingSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                (result.current as FoundState).openEditSettlement(settlement);
+            });
+            expect((result.current as FoundState).editingSettlement).toEqual(
+                settlement,
+            );
+        });
+
+        test("closeEditSettlement sets editingSettlement to null", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                (result.current as FoundState).openEditSettlement(settlement);
+            });
+            act(() => {
+                (result.current as FoundState).closeEditSettlement();
+            });
+            expect((result.current as FoundState).editingSettlement).toBeNull();
+        });
     });
 
     describe("directDebts", () => {
@@ -253,6 +295,25 @@ describe("useGroupScreen", () => {
                 toMemberId: 1,
                 amount: 5000,
             });
+        });
+    });
+
+    describe("updateSettlement", () => {
+        test("delegates to store updateSettlement", () => {
+            const group = setupGroupWithTwoMembers();
+            const spy = vi.spyOn(useAppStore.getState(), "updateSettlement");
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            const settlement = {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 5000,
+            };
+            act(() => {
+                state.updateSettlement(settlement);
+            });
+            expect(spy).toHaveBeenCalledWith(group.id, settlement);
         });
     });
 
