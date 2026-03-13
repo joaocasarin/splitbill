@@ -44,11 +44,10 @@ function applyEqualSplit(
     }
 
     if (remainder !== 0) {
-        const firstNonPayer = memberIds.find((id) => id !== payerId);
-
-        if (firstNonPayer !== undefined) {
-            updateBalance(balances, firstNonPayer, -remainder);
-        }
+        const remainderTarget = memberIds.includes(payerId)
+            ? payerId
+            : memberIds[0];
+        updateBalance(balances, remainderTarget, -remainder);
     }
 }
 
@@ -80,13 +79,12 @@ function applyPercentageSplit(
     }
 
     if (remainder !== 0) {
-        const firstNonPayer = computedShares.find(
-            (s) => s.memberId !== payerId,
-        );
-
-        if (firstNonPayer !== undefined) {
-            updateBalance(balances, firstNonPayer.memberId, -remainder);
-        }
+        const remainderTarget = computedShares.some(
+            (s) => s.memberId === payerId,
+        )
+            ? payerId
+            : computedShares[0].memberId;
+        updateBalance(balances, remainderTarget, -remainder);
     }
 }
 
@@ -135,7 +133,8 @@ function balancesToArray(balances: Map<EntityId, number>): MemberBalance[] {
  * Computes the net balance of each member in a group.
  *
  * Remainder cents (equal split) and rounding remainders (percentage split)
- * are absorbed by the first non-payer participant in the list — deterministic by design.
+ * are absorbed by the payer when the payer is a participant, otherwise by the
+ * first participant in the list — this ensures symmetric expenses cancel out.
  *
  * Invariant: sum of all returned amounts === 0.
  */
