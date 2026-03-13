@@ -240,9 +240,9 @@ All monetary values are stored as **integers in cents (BRL)**. No floats anywher
 
 | Mode | Data stored | Schema-level validation | Calc-level logic |
 |---|---|---|---|
-| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the first non-payer participant in the list |
+| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the payer (or first participant if payer is not in the list) |
 | `fixed` | `shares[]{memberId, value}` | No duplicates; sum = total | Direct use |
-| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the first non-payer participant in the list |
+| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the payer (or first participant if payer is not in shares) |
 
 ---
 
@@ -327,9 +327,8 @@ Rules files:
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
 
-- **`group.memberIds[]`** — the first non-payer participant absorbs remainder cents in equal splits
-- **`expense.memberIds[]`** (equal split) — the first member absorbs remainder cents
-- **`expense.shares[]`** (percentage split) — the first non-payer participant's share absorbs rounding remainder
+- **`expense.memberIds[]`** (equal split) — the payer absorbs remainder cents (or first participant if payer is not in the list)
+- **`expense.shares[]`** (percentage split) — the payer's share absorbs rounding remainder (or first participant if payer is not in shares)
 
 **Consequences:**
 - Reordering these arrays changes the financial outcome

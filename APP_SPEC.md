@@ -231,14 +231,14 @@ Two pure functions to implement in `src/domain/balance/`:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
   - For each settlement: `from.balance += amount`, `to.balance -= amount`
   - Handle all three split modes including bps → cents conversion for percentage
-  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first non-payer participant in the list
-  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first non-payer participant in the list
+  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the payer (or first participant if payer is not in the list)
+  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the payer (or first participant if payer is not in shares)
 
 **`compute-direct-debts.ts`** ✅ _Implemented_
 - Input: `Group`
 - Output: `DirectDebt[]`
 - Logic: for each expense, computes how much each non-payer owes the payer directly. Settlements reduce existing debts. Results with `amount <= 0` are filtered out.
-- Remainder absorption follows the same rule as `compute-balances`: first non-payer participant in the list.
+- Remainder absorption follows the same rule as `compute-balances`: payer absorbs remainder (or first participant if payer is not in the list).
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
