@@ -27,6 +27,8 @@ const BaseExpenseFields = {
         }),
     total: ExpenseTotalSchema,
     payerId: EntityIdSchema,
+    createdAt: z.number().int().positive(),
+    updatedAt: z.number().int().positive().optional(),
 };
 
 export const EqualExpenseSchema = z.object({

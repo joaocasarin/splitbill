@@ -36,12 +36,15 @@ type AppActions = {
         groupId: EntityId,
         userId: EntityId,
     ) => ValidationResult;
-    addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => void;
+    addExpense: (
+        groupId: EntityId,
+        expense: Omit<Expense, "id" | "createdAt" | "updatedAt">,
+    ) => void;
     updateExpense: (groupId: EntityId, expense: Expense) => ValidationResult;
     deleteExpense: (groupId: EntityId, expenseId: EntityId) => ValidationResult;
     addSettlement: (
         groupId: EntityId,
-        settlement: Omit<Settlement, "id">,
+        settlement: Omit<Settlement, "id" | "createdAt" | "updatedAt">,
     ) => ValidationResult;
     updateSettlement: (
         groupId: EntityId,
@@ -56,7 +59,7 @@ type AppActions = {
 export type AppStore = AppState & AppActions;
 
 const emptyGlobal: Global = {
-    version: 1,
+    version: 2,
     users: [],
     groups: [],
 };
@@ -114,6 +117,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const newUser: User = {
             id: createId("user"),
             name,
+            createdAt: Date.now(),
         };
         set({
             status: "loaded",
@@ -129,6 +133,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const newGroup: Group = {
             id: createId("group"),
             name,
+            createdAt: Date.now(),
             memberIds,
             expenses: [],
             settlements: [],
@@ -202,11 +207,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         syncToUrl();
         return { valid: true };
     },
-    addExpense: (groupId: EntityId, expense: Omit<Expense, "id">) => {
+    addExpense: (
+        groupId: EntityId,
+        expense: Omit<Expense, "id" | "createdAt" | "updatedAt">,
+    ) => {
         const { global, createId, syncToUrl } = get();
         const newExpense = {
             ...expense,
             id: createId("expense"),
+            createdAt: Date.now(),
         } as Expense;
         set({
             status: "loaded",
@@ -276,7 +285,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const groupWithUpdatedExpense: Group = {
             ...group,
             expenses: group.expenses.map((e) =>
-                e.id === expense.id ? expense : e,
+                e.id === expense.id ? { ...expense, updatedAt: Date.now() } : e,
             ),
         };
 
@@ -303,7 +312,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         return { valid: true };
     },
-    addSettlement: (groupId: EntityId, settlement: Omit<Settlement, "id">) => {
+    addSettlement: (
+        groupId: EntityId,
+        settlement: Omit<Settlement, "id" | "createdAt" | "updatedAt">,
+    ) => {
         const { global, createId, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
@@ -328,6 +340,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const newSettlement: Settlement = {
             ...settlement,
             id: createId("settlement"),
+            createdAt: Date.now(),
         };
 
         set({
@@ -393,7 +406,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                         ? {
                               ...g,
                               settlements: g.settlements.map((s) =>
-                                  s.id === settlement.id ? settlement : s,
+                                  s.id === settlement.id
+                                      ? {
+                                            ...settlement,
+                                            updatedAt: Date.now(),
+                                        }
+                                      : s,
                               ),
                           }
                         : g,

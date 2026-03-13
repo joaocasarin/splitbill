@@ -103,7 +103,7 @@ describe("AppStore", () => {
 
             useAppStore.getState().initEmpty();
             expect(useAppStore.getState().global).toEqual({
-                version: 1,
+                version: 2,
                 users: [],
                 groups: [],
             });
@@ -379,6 +379,7 @@ describe("AppStore", () => {
                 payerId: 1,
                 splitMode: "equal",
                 memberIds: [1, 2],
+                createdAt: 1000000,
             } as EqualExpense);
 
             const updated = useAppStore
@@ -398,6 +399,7 @@ describe("AppStore", () => {
                 payerId: 1,
                 splitMode: "equal",
                 memberIds: [1, 2],
+                createdAt: 1000000,
             } as EqualExpense);
 
             expect(result.valid).toBe(false);
@@ -687,6 +689,7 @@ describe("AppStore", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 1000,
+                createdAt: 1000000,
             });
 
             expect(result.valid).toBe(false);
