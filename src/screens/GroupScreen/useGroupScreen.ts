@@ -66,19 +66,36 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
     }
 
     const balances = computeBalances(group);
+    const directDebts = computeDirectDebts(group);
+
+    const getUserName = (id: EntityId) =>
+        users.find((u) => u.id === id)?.name ?? `User ${id}`;
+
     const members: MemberRow[] = group.memberIds.map((id) => {
-        const user = users.find((u) => u.id === id);
         const balance = balances.find((b) => b.memberId === id);
+        const owes = directDebts
+            .filter((d) => d.fromMemberId === id)
+            .map((d) => ({
+                name: getUserName(d.toMemberId),
+                amount: d.amount,
+            }));
+        const receives = directDebts
+            .filter((d) => d.toMemberId === id)
+            .map((d) => ({
+                name: getUserName(d.fromMemberId),
+                amount: d.amount,
+            }));
         return {
             id,
-            name: user?.name ?? `User ${id}`,
+            name: getUserName(id),
             amount: balance?.amount ?? 0,
+            owes,
+            receives,
         };
     });
 
     const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
     const canAddMember = nonMembers.length > 0;
-    const directDebts = computeDirectDebts(group);
     const editDirectDebts = editingSettlement
         ? computeDirectDebts({
               ...group,

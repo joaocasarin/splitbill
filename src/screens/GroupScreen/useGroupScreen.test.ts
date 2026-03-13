@@ -47,8 +47,8 @@ describe("useGroupScreen", () => {
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.members).toEqual([
-                { id: 1, name: "Alice", amount: 0 },
-                { id: 2, name: "Bob", amount: 0 },
+                { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
             ]);
         });
 

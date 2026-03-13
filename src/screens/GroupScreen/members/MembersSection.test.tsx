@@ -6,8 +6,8 @@ import type { MemberRow } from "./MembersSection";
 import { MembersSection } from "./MembersSection";
 
 const members: MemberRow[] = [
-    { id: 1, name: "Alice", amount: 10000 },
-    { id: 2, name: "Bob", amount: -10000 },
+    { id: 1, name: "Alice", amount: 10000, owes: [], receives: [] },
+    { id: 2, name: "Bob", amount: -10000, owes: [], receives: [] },
 ];
 
 function renderSection(
@@ -109,8 +109,8 @@ describe("MembersSection", () => {
         test("remove button is disabled when memberCount equals GROUP_MEMBERS_MIN", () => {
             renderSection({
                 members: [
-                    { id: 1, name: "Alice", amount: 0 },
-                    { id: 2, name: "Bob", amount: 0 },
+                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
                 ],
                 memberCount: GROUP_MEMBERS_MIN,
             });
@@ -125,9 +125,21 @@ describe("MembersSection", () => {
         test("remove button is enabled for member with zero balance when memberCount exceeds GROUP_MEMBERS_MIN", () => {
             renderSection({
                 members: [
-                    { id: 1, name: "Alice", amount: 0 },
-                    { id: 2, name: "Bob", amount: -10000 },
-                    { id: 3, name: "Carol", amount: 10000 },
+                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                    {
+                        id: 2,
+                        name: "Bob",
+                        amount: -10000,
+                        owes: [],
+                        receives: [],
+                    },
+                    {
+                        id: 3,
+                        name: "Carol",
+                        amount: 10000,
+                        owes: [],
+                        receives: [],
+                    },
                 ],
                 memberCount: GROUP_MEMBERS_MIN + 1,
             });
@@ -143,9 +155,9 @@ describe("MembersSection", () => {
             const onRemoveMember = vi.fn();
             renderSection({
                 members: [
-                    { id: 1, name: "Alice", amount: 0 },
-                    { id: 2, name: "Bob", amount: 0 },
-                    { id: 3, name: "Carol", amount: 0 },
+                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
+                    { id: 3, name: "Carol", amount: 0, owes: [], receives: [] },
                 ],
                 memberCount: GROUP_MEMBERS_MIN + 1,
                 onRemoveMember,
@@ -157,10 +169,88 @@ describe("MembersSection", () => {
         });
     });
 
+    describe("debt details", () => {
+        test("renders owes details under member with debts", () => {
+            renderSection({
+                members: [
+                    {
+                        id: 1,
+                        name: "Alice",
+                        amount: -5000,
+                        owes: [{ name: "Bob", amount: 5000 }],
+                        receives: [],
+                    },
+                    {
+                        id: 2,
+                        name: "Bob",
+                        amount: 5000,
+                        owes: [],
+                        receives: [{ name: "Alice", amount: 5000 }],
+                    },
+                ],
+            });
+            expect(screen.getByText(/owes/)).toBeInTheDocument();
+            expect(screen.getByText(/to Bob/)).toBeInTheDocument();
+        });
+
+        test("renders multiple owes lines", () => {
+            renderSection({
+                members: [
+                    {
+                        id: 1,
+                        name: "Alice",
+                        amount: -10000,
+                        owes: [
+                            { name: "Bob", amount: 5000 },
+                            { name: "Carol", amount: 5000 },
+                        ],
+                        receives: [],
+                    },
+                ],
+            });
+            expect(screen.getByText(/to Bob/)).toBeInTheDocument();
+            expect(screen.getByText(/to Carol/)).toBeInTheDocument();
+        });
+
+        test("renders receives details under member with credits", () => {
+            renderSection({
+                members: [
+                    {
+                        id: 1,
+                        name: "Alice",
+                        amount: 5000,
+                        owes: [],
+                        receives: [{ name: "Bob", amount: 5000 }],
+                    },
+                ],
+            });
+            expect(screen.getByText(/receives/)).toBeInTheDocument();
+            expect(screen.getByText(/from Bob/)).toBeInTheDocument();
+        });
+
+        test("does not render debt details when owes and receives are empty", () => {
+            renderSection({
+                members: [
+                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                ],
+            });
+            expect(screen.queryByText(/owes/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/receives/)).not.toBeInTheDocument();
+        });
+    });
+
     describe("defensive guards (unreachable in valid usage)", () => {
         test("shows User fallback name initial when name starts with any character", () => {
             renderSection({
-                members: [{ id: 999, name: "User 999", amount: 0 }],
+                members: [
+                    {
+                        id: 999,
+                        name: "User 999",
+                        amount: 0,
+                        owes: [],
+                        receives: [],
+                    },
+                ],
             });
             expect(screen.getByText("U")).toBeInTheDocument();
         });

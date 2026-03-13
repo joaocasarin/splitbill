@@ -138,7 +138,12 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
             settlements: [],
         },
         users: testUsers,
-        members: testUsers.map((u) => ({ ...u, amount: 0 })),
+        members: testUsers.map((u) => ({
+            ...u,
+            amount: 0,
+            owes: [],
+            receives: [],
+        })),
         memberCount: 2,
         canAddMember: false,
         directDebts: [],
