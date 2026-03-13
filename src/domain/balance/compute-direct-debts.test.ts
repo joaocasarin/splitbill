@@ -28,7 +28,7 @@ describe("computeDirectDebts", () => {
             expect(debts).toHaveLength(2);
         });
 
-        test("remainder absorbed by first non-payer", () => {
+        test("remainder absorbed by payer — non-payers owe base share only", () => {
             const debts = computeDirectDebts({
                 ...baseGroup,
                 expenses: [
@@ -45,10 +45,35 @@ describe("computeDirectDebts", () => {
 
             expect(debts).toEqual(
                 expect.arrayContaining([
-                    { fromMemberId: 2, toMemberId: 1, amount: 34 },
+                    { fromMemberId: 2, toMemberId: 1, amount: 33 },
                     { fromMemberId: 3, toMemberId: 1, amount: 33 },
                 ]),
             );
+        });
+
+        test("remainder goes to first participant when payer is not in memberIds", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 100,
+                        payerId: 1,
+                        splitMode: "equal",
+                        memberIds: [2, 3, 4],
+                    },
+                ],
+            });
+
+            expect(debts).toEqual(
+                expect.arrayContaining([
+                    { fromMemberId: 2, toMemberId: 1, amount: 34 },
+                    { fromMemberId: 3, toMemberId: 1, amount: 33 },
+                    { fromMemberId: 4, toMemberId: 1, amount: 33 },
+                ]),
+            );
+            expect(debts).toHaveLength(3);
         });
 
         test("payer not in memberIds generates no self-debt", () => {
@@ -160,7 +185,7 @@ describe("computeDirectDebts", () => {
             expect(debts).toHaveLength(1);
         });
 
-        test("remainder absorbed by first non-payer", () => {
+        test("remainder absorbed by payer — non-payers owe base amount only", () => {
             const debts = computeDirectDebts({
                 ...baseGroup,
                 expenses: [
@@ -181,10 +206,40 @@ describe("computeDirectDebts", () => {
 
             expect(debts).toEqual(
                 expect.arrayContaining([
-                    { fromMemberId: 2, toMemberId: 1, amount: 34 },
+                    { fromMemberId: 2, toMemberId: 1, amount: 33 },
                     { fromMemberId: 3, toMemberId: 1, amount: 33 },
                 ]),
             );
+        });
+
+        test("remainder goes to first participant when payer is not in shares", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                memberIds: [1, 2, 3, 4],
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 100,
+                        payerId: 1,
+                        splitMode: "percentage",
+                        shares: [
+                            { memberId: 2, value: 3333 },
+                            { memberId: 3, value: 3333 },
+                            { memberId: 4, value: 3334 },
+                        ],
+                    },
+                ],
+            });
+
+            expect(debts).toEqual(
+                expect.arrayContaining([
+                    { fromMemberId: 2, toMemberId: 1, amount: 34 },
+                    { fromMemberId: 3, toMemberId: 1, amount: 33 },
+                    { fromMemberId: 4, toMemberId: 1, amount: 33 },
+                ]),
+            );
+            expect(debts).toHaveLength(3);
         });
     });
 

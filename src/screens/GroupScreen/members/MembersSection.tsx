@@ -3,10 +3,17 @@ import { type EntityId, GROUP_MEMBERS_MIN } from "@domain/common";
 import { formatCurrency } from "@lib/format";
 import { Plus, X } from "lucide-react";
 
+export type DebtDetail = {
+    name: string;
+    amount: number;
+};
+
 export type MemberRow = {
     id: EntityId;
     name: string;
     amount: number;
+    owes: DebtDetail[];
+    receives: DebtDetail[];
 };
 
 type Props = {
@@ -47,36 +54,61 @@ export function MembersSection({
                     return (
                         <li
                             key={member.id}
-                            className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
+                            className="flex flex-col rounded-lg border border-border px-4 py-3 text-sm"
                         >
-                            <div className="flex items-center gap-3">
-                                <span className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                                    {member.name[0].toUpperCase()}
-                                </span>
-                                <span>{member.name}</span>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                                        {member.name[0].toUpperCase()}
+                                    </span>
+                                    <span>{member.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        className={
+                                            member.amount > 0
+                                                ? "text-green-600 dark:text-green-400"
+                                                : member.amount < 0
+                                                  ? "text-red-500"
+                                                  : "text-muted-foreground"
+                                        }
+                                    >
+                                        {formatCurrency(member.amount)}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        disabled={!canRemove}
+                                        aria-label={`Remove ${member.name}`}
+                                        onClick={() =>
+                                            onRemoveMember(member.id)
+                                        }
+                                    >
+                                        <X />
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span
-                                    className={
-                                        member.amount > 0
-                                            ? "text-green-600 dark:text-green-400"
-                                            : member.amount < 0
-                                              ? "text-red-500"
-                                              : "text-muted-foreground"
-                                    }
-                                >
-                                    {formatCurrency(member.amount)}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    disabled={!canRemove}
-                                    aria-label={`Remove ${member.name}`}
-                                    onClick={() => onRemoveMember(member.id)}
-                                >
-                                    <X />
-                                </Button>
-                            </div>
+                            {member.owes.length > 0 && (
+                                <ul className="ml-10 mt-1 flex flex-col gap-0.5 text-xs text-red-500">
+                                    {member.owes.map((debt) => (
+                                        <li key={debt.name}>
+                                            owes {formatCurrency(debt.amount)}{" "}
+                                            to {debt.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {member.receives.length > 0 && (
+                                <ul className="ml-10 mt-1 flex flex-col gap-0.5 text-xs text-green-600 dark:text-green-400">
+                                    {member.receives.map((credit) => (
+                                        <li key={credit.name}>
+                                            receives{" "}
+                                            {formatCurrency(credit.amount)} from{" "}
+                                            {credit.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </li>
                     );
                 })}
