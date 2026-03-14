@@ -97,3 +97,9 @@ export type FixedExpense = z.infer<typeof FixedExpenseSchema>;
 export type PercentageExpense = z.infer<typeof PercentageExpenseSchema>;
 export type Expense = z.infer<typeof ExpenseSchema>;
 export type SplitMode = z.infer<typeof SplitModeSchema>;
+
+type StoreManaged = "id" | "createdAt" | "updatedAt";
+export type CreateExpense = Omit<Expense, StoreManaged>;
+export type CreateEqualExpense = Omit<EqualExpense, StoreManaged>;
+export type CreateFixedExpense = Omit<FixedExpense, StoreManaged>;
+export type CreatePercentageExpense = Omit<PercentageExpense, StoreManaged>;

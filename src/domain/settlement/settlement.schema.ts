@@ -17,3 +17,7 @@ export const SettlementSchema = z
     });
 
 export type Settlement = z.infer<typeof SettlementSchema>;
+export type CreateSettlement = Omit<
+    Settlement,
+    "id" | "createdAt" | "updatedAt"
+>;
