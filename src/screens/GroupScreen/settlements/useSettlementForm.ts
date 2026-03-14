@@ -1,14 +1,14 @@
 import type { DirectDebt } from "@domain/balance";
 import type { EntityId } from "@domain/common";
-import type { Settlement } from "@domain/settlement";
+import type { CreateSettlement, Settlement } from "@domain/settlement";
 import { validateSettlementCreation } from "@domain/settlement";
-import type { User } from "@domain/user";
 import { useState } from "react";
+import type { MemberRow } from "../members/MembersSection";
 
 type UseSettlementFormParams = {
-    members: User[];
+    members: MemberRow[];
     directDebts: DirectDebt[];
-    onSubmit: (settlement: Omit<Settlement, "id">) => void;
+    onSubmit: (settlement: CreateSettlement) => void;
     onClose: () => void;
     settlement?: Settlement;
 };

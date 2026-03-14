@@ -9,16 +9,16 @@ import {
 } from "@components/ui/dialog";
 import type { DirectDebt } from "@domain/balance";
 import type { EntityId } from "@domain/common";
-import type { Settlement } from "@domain/settlement";
-import type { User } from "@domain/user";
+import type { CreateSettlement, Settlement } from "@domain/settlement";
 import { useId } from "react";
+import type { MemberRow } from "../members/MembersSection";
 import { useSettlementForm } from "./useSettlementForm";
 
 type Props = {
     open: boolean;
-    members: User[];
+    members: MemberRow[];
     directDebts: DirectDebt[];
-    onSubmit: (settlement: Omit<Settlement, "id">) => void;
+    onSubmit: (settlement: CreateSettlement) => void;
     onClose: () => void;
     settlement?: Settlement;
     onDelete?: (settlementId: EntityId) => void;

@@ -1,9 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
+import type { MemberRow } from "../members/MembersSection";
 import { SettlementModal } from "./SettlementModal";
 import * as useSettlementFormModule from "./useSettlementForm";
+
+const testMembers: MemberRow[] = [
+    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
+];
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
@@ -16,7 +21,7 @@ function makeHookReturn(overrides: Partial<HookReturn> = {}): HookReturn {
         toMemberId: null,
         amount: 0,
         setAmount: vi.fn(),
-        debtorsWithDebts: testUsers,
+        debtorsWithDebts: testMembers,
         creditorsForDebtor: [],
         maxAmount: 0,
         canSubmit: false,
@@ -43,7 +48,7 @@ function renderModal(
         ...render(
             <SettlementModal
                 open={true}
-                members={testUsers}
+                members={testMembers}
                 directDebts={[]}
                 onSubmit={vi.fn()}
                 onClose={vi.fn()}
@@ -96,6 +101,7 @@ describe("SettlementModal", () => {
             fromMemberId: 2,
             toMemberId: 1,
             amount: 3000,
+            createdAt: 1000000,
         };
 
         test("renders dialog title as Edit settlement", () => {
@@ -211,7 +217,15 @@ describe("SettlementModal", () => {
         test("renders debtor options from debtorsWithDebts", () => {
             renderModal(
                 makeHookReturn({
-                    debtorsWithDebts: [{ id: 1, name: "Alice" }],
+                    debtorsWithDebts: [
+                        {
+                            id: 1,
+                            name: "Alice",
+                            amount: 0,
+                            owes: [],
+                            receives: [],
+                        },
+                    ],
                 }),
             );
             expect(
@@ -262,8 +276,8 @@ describe("SettlementModal", () => {
         test("From select change calls handleFromChange", async () => {
             const hookReturn = makeHookReturn({
                 debtorsWithDebts: [
-                    { id: 1, name: "Alice" },
-                    { id: 2, name: "Bob" },
+                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
+                    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
                 ],
             });
             renderModal(hookReturn);
@@ -346,6 +360,7 @@ describe("SettlementModal", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             };
             renderModal(makeHookReturn({ isEditing: true }), { settlement });
             await userEvent.click(
