@@ -15,6 +15,7 @@ const settlement: Settlement = {
     fromMemberId: 2,
     toMemberId: 1,
     amount: 10000,
+    createdAt: 1000000,
 };
 
 function renderSection(
@@ -99,6 +100,7 @@ describe("SettlementsSection", () => {
                 fromMemberId: 1,
                 toMemberId: 2,
                 amount: 5000,
+                createdAt: 1000000,
             };
             renderSection([settlement, settlement2]);
             const items = screen.getAllByRole("listitem");

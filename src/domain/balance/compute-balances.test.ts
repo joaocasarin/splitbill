@@ -15,6 +15,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -39,6 +40,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -63,6 +65,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [2, 3, 4],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -88,6 +91,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -112,6 +116,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -142,6 +147,7 @@ describe("computeBalances", () => {
                             { memberId: 2, value: 100 },
                             { memberId: 3, value: 100 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -169,6 +175,7 @@ describe("computeBalances", () => {
                             { memberId: 2, value: 100 },
                             { memberId: 3, value: 100 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -198,6 +205,7 @@ describe("computeBalances", () => {
                             { memberId: 1, value: 5000 },
                             { memberId: 2, value: 5000 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -226,6 +234,7 @@ describe("computeBalances", () => {
                             { memberId: 2, value: 3333 },
                             { memberId: 3, value: 3333 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -253,6 +262,7 @@ describe("computeBalances", () => {
                             { memberId: 2, value: 5000 },
                             { memberId: 3, value: 5000 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -282,6 +292,7 @@ describe("computeBalances", () => {
                             { memberId: 3, value: 3333 },
                             { memberId: 4, value: 3334 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             };
@@ -311,6 +322,7 @@ describe("computeBalances", () => {
                         fromMemberId: 2,
                         toMemberId: 1,
                         amount: 50,
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -328,8 +340,20 @@ describe("computeBalances", () => {
             const balances = computeBalances({
                 ...baseGroup,
                 settlements: [
-                    { id: 1, fromMemberId: 2, toMemberId: 1, amount: 50 },
-                    { id: 2, fromMemberId: 3, toMemberId: 1, amount: 30 },
+                    {
+                        id: 1,
+                        fromMemberId: 2,
+                        toMemberId: 1,
+                        amount: 50,
+                        createdAt: 1000000,
+                    },
+                    {
+                        id: 2,
+                        fromMemberId: 3,
+                        toMemberId: 1,
+                        amount: 30,
+                        createdAt: 1000000,
+                    },
                 ],
             });
 
@@ -355,6 +379,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                     {
                         id: 2,
@@ -363,6 +388,7 @@ describe("computeBalances", () => {
                         payerId: 2,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                     {
                         id: 3,
@@ -371,6 +397,7 @@ describe("computeBalances", () => {
                         payerId: 3,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -397,6 +424,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -419,6 +447,7 @@ describe("computeBalances", () => {
                             { memberId: 2, value: 3333 },
                             { memberId: 3, value: 3333 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -437,6 +466,7 @@ describe("computeBalances", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
                 settlements: [
@@ -445,6 +475,7 @@ describe("computeBalances", () => {
                         fromMemberId: 2,
                         toMemberId: 1,
                         amount: 100,
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -471,7 +502,13 @@ describe("computeBalances", () => {
             const balances = computeBalances({
                 ...baseGroup,
                 settlements: [
-                    { id: 1, fromMemberId: 999, toMemberId: 1, amount: 50 },
+                    {
+                        id: 1,
+                        fromMemberId: 999,
+                        toMemberId: 1,
+                        amount: 50,
+                        createdAt: 1000000,
+                    },
                 ],
             });
             const member999 = balances.find((b) => b.memberId === 999);
@@ -491,6 +528,7 @@ describe("computeBalances", () => {
                             splitMode: "equal",
                             // Invalid data by design: duplicates — remainder still goes to payer.
                             memberIds: [1, 1],
+                            createdAt: 1000000,
                         },
                     ],
                 });
@@ -517,6 +555,7 @@ describe("computeBalances", () => {
                                 { memberId: 1, value: 3333 },
                                 { memberId: 1, value: 3333 },
                             ],
+                            createdAt: 1000000,
                         },
                     ],
                 });

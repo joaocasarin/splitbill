@@ -17,6 +17,7 @@ const expense: EqualExpense = {
     payerId: 1,
     splitMode: "equal",
     memberIds: [1, 2],
+    createdAt: 1000000,
 };
 
 function renderSection(
