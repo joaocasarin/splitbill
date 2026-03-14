@@ -3,11 +3,13 @@ import {
     createIdGenerator,
     type EntityId,
     GROUP_MEMBERS_MIN,
+    SCHEMA_VERSION,
 } from "@domain/common";
-import type { Expense } from "@domain/expense";
+import type { CreateExpense, Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
 import {
+    type CreateSettlement,
     type Settlement,
     type ValidationResult,
     validateSettlementCreation,
@@ -36,15 +38,12 @@ type AppActions = {
         groupId: EntityId,
         userId: EntityId,
     ) => ValidationResult;
-    addExpense: (
-        groupId: EntityId,
-        expense: Omit<Expense, "id" | "createdAt" | "updatedAt">,
-    ) => void;
+    addExpense: (groupId: EntityId, expense: CreateExpense) => void;
     updateExpense: (groupId: EntityId, expense: Expense) => ValidationResult;
     deleteExpense: (groupId: EntityId, expenseId: EntityId) => ValidationResult;
     addSettlement: (
         groupId: EntityId,
-        settlement: Omit<Settlement, "id" | "createdAt" | "updatedAt">,
+        settlement: CreateSettlement,
     ) => ValidationResult;
     updateSettlement: (
         groupId: EntityId,
@@ -59,7 +58,7 @@ type AppActions = {
 export type AppStore = AppState & AppActions;
 
 const emptyGlobal: Global = {
-    version: 2,
+    version: SCHEMA_VERSION,
     users: [],
     groups: [],
 };
@@ -207,10 +206,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         syncToUrl();
         return { valid: true };
     },
-    addExpense: (
-        groupId: EntityId,
-        expense: Omit<Expense, "id" | "createdAt" | "updatedAt">,
-    ) => {
+    addExpense: (groupId: EntityId, expense: CreateExpense) => {
         const { global, createId, syncToUrl } = get();
         const newExpense = {
             ...expense,
@@ -312,10 +308,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         return { valid: true };
     },
-    addSettlement: (
-        groupId: EntityId,
-        settlement: Omit<Settlement, "id" | "createdAt" | "updatedAt">,
-    ) => {
+    addSettlement: (groupId: EntityId, settlement: CreateSettlement) => {
         const { global, createId, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
