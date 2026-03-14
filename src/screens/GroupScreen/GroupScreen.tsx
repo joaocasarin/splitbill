@@ -136,7 +136,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                     directDebts={editDirectDebts}
                     settlement={editingSettlement}
                     onSubmit={(data) =>
-                        updateSettlement({ ...data, id: editingSettlement.id })
+                        updateSettlement({
+                            ...data,
+                            id: editingSettlement.id,
+                            createdAt: editingSettlement.createdAt,
+                        })
                     }
                     onClose={closeEditSettlement}
                     onDelete={deleteSettlement}

@@ -3,7 +3,7 @@ import { computeBalances, computeDirectDebts } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
-import type { Settlement } from "@domain/settlement";
+import type { CreateSettlement, Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
@@ -35,7 +35,7 @@ type GroupFound = {
     openEditSettlement: (settlement: Settlement) => void;
     closeEditSettlement: () => void;
     removeMember: (id: EntityId) => void;
-    addSettlement: (settlement: Omit<Settlement, "id">) => void;
+    addSettlement: (settlement: CreateSettlement) => void;
     updateSettlement: (settlement: Settlement) => void;
     deleteExpense: (expenseId: EntityId) => void;
     deleteSettlement: (settlementId: EntityId) => void;
@@ -130,7 +130,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
             setEditingSettlement(settlement),
         closeEditSettlement: () => setEditingSettlement(null),
         removeMember: (id: EntityId) => removeMemberFromGroup(groupId, id),
-        addSettlement: (settlement: Omit<Settlement, "id">) =>
+        addSettlement: (settlement: CreateSettlement) =>
             storeAddSettlement(groupId, settlement),
         updateSettlement: (settlement: Settlement) =>
             storeUpdateSettlement(groupId, settlement),
