@@ -98,6 +98,52 @@ describe("ExpensesSection", () => {
             expect(screen.getByText("Dinner")).toBeInTheDocument();
         });
 
+        test("renders timestamp on expense item", () => {
+            renderSection([expense]);
+            expect(
+                screen.getByText(/\d{2}:\d{2} \d{2}\/\d{2}\/\d{2}/),
+            ).toBeInTheDocument();
+        });
+
+        test("sorts expenses by createdAt descending", () => {
+            const older = {
+                ...expense,
+                id: 1,
+                title: "Older",
+                createdAt: 1000,
+            };
+            const newer = {
+                ...expense,
+                id: 2,
+                title: "Newer",
+                createdAt: 2000,
+            };
+            renderSection([older, newer]);
+            const items = screen.getAllByRole("listitem");
+            expect(items[0]).toHaveTextContent("Newer");
+            expect(items[1]).toHaveTextContent("Older");
+        });
+
+        test("uses updatedAt over createdAt for sorting when present", () => {
+            const e1 = {
+                ...expense,
+                id: 1,
+                title: "Created Later",
+                createdAt: 2000,
+            };
+            const e2 = {
+                ...expense,
+                id: 2,
+                title: "Updated Later",
+                createdAt: 1000,
+                updatedAt: 3000,
+            };
+            renderSection([e1, e2]);
+            const items = screen.getAllByRole("listitem");
+            expect(items[0]).toHaveTextContent("Updated Later");
+            expect(items[1]).toHaveTextContent("Created Later");
+        });
+
         test("renders delete button for each expense", () => {
             renderSection([expense]);
             expect(
