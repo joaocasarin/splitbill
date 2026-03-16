@@ -320,4 +320,118 @@ describe("computeDirectDebts", () => {
             expect(debts).toHaveLength(0);
         });
     });
+
+    describe("netting", () => {
+        test("nets cross-debts between two members (partial: only net debtor shown)", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 5250,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 5250 }],
+                        createdAt: 1000000,
+                    },
+                    {
+                        id: 2,
+                        title: "Coffee",
+                        total: 500,
+                        payerId: 2,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 1, value: 500 }],
+                        createdAt: 1000001,
+                    },
+                ],
+            });
+
+            expect(debts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 4750 },
+            ]);
+        });
+
+        test("nets to zero when debts cancel exactly", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 1000,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 1000 }],
+                        createdAt: 1000000,
+                    },
+                    {
+                        id: 2,
+                        title: "Lunch",
+                        total: 1000,
+                        payerId: 2,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 1, value: 1000 }],
+                        createdAt: 1000001,
+                    },
+                ],
+            });
+
+            expect(debts).toHaveLength(0);
+        });
+
+        test("nets correctly when smaller debt is iterated before larger reverse debt", () => {
+            // Expense 1 creates key "1-2" first (small), Expense 2 creates "2-1" (large).
+            // When the loop hits "1-2" first, reverseAmount > amount → else branch (skip).
+            // When the loop hits "2-1", it handles the netting.
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Coffee",
+                        total: 500,
+                        payerId: 2,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 1, value: 500 }],
+                        createdAt: 1000000,
+                    },
+                    {
+                        id: 2,
+                        title: "Dinner",
+                        total: 5250,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 5250 }],
+                        createdAt: 1000001,
+                    },
+                ],
+            });
+
+            expect(debts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 4750 },
+            ]);
+        });
+
+        test("does not affect debts with no reverse counterpart", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 2000,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 2000 }],
+                        createdAt: 1000000,
+                    },
+                ],
+            });
+
+            expect(debts).toEqual([
+                { fromMemberId: 2, toMemberId: 1, amount: 2000 },
+            ]);
+        });
+    });
 });
