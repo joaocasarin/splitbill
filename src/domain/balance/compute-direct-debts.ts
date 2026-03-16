@@ -80,6 +80,18 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
         );
     }
 
+    for (const [key, amount] of debts.entries()) {
+        const [from, to] = key.split("-").map(Number);
+        const reverseKey = getKey(to, from);
+        const reverseAmount = debts.get(reverseKey) ?? 0;
+        if (reverseAmount > 0 && amount > 0) {
+            if (amount >= reverseAmount) {
+                debts.set(key, amount - reverseAmount);
+                debts.set(reverseKey, 0);
+            }
+        }
+    }
+
     return Array.from(debts.entries())
         .filter(([, amount]) => amount > 0)
         .map(([key, amount]) => {
