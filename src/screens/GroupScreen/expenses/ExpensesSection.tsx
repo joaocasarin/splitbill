@@ -3,7 +3,7 @@ import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { User } from "@domain/user";
-import { formatCurrency } from "@lib/format";
+import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -50,45 +50,57 @@ export function ExpensesSection({
                 </p>
             ) : (
                 <ul className="flex flex-col gap-2">
-                    {expenses.map((expense) => {
-                        const payerName =
-                            users.find((u) => u.id === expense.payerId)?.name ??
-                            `User ${expense.payerId}`;
-                        return (
-                            <li
-                                key={expense.id}
-                                className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
-                            >
-                                <button
-                                    type="button"
-                                    className="flex-1 text-left cursor-pointer"
-                                    onClick={() => onEditExpense(expense)}
-                                    aria-label={`Edit ${expense.title}`}
+                    {expenses
+                        .sort(
+                            (a, b) =>
+                                (b.updatedAt ?? b.createdAt) -
+                                (a.updatedAt ?? a.createdAt),
+                        )
+                        .map((expense) => {
+                            const payerName =
+                                users.find((u) => u.id === expense.payerId)
+                                    ?.name ?? `User ${expense.payerId}`;
+                            return (
+                                <li
+                                    key={expense.id}
+                                    className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
                                 >
-                                    <span className="font-medium">
-                                        {expense.title}
-                                    </span>
-                                    <p className="text-muted-foreground text-xs mt-0.5">
-                                        Paid by {payerName} ·{" "}
-                                        {expense.splitMode}
-                                    </p>
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    <span>{formatCurrency(expense.total)}</span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        onClick={() =>
-                                            setDeletingId(expense.id)
-                                        }
-                                        aria-label={`Delete ${expense.title}`}
+                                    <button
+                                        type="button"
+                                        className="flex-1 text-left cursor-pointer"
+                                        onClick={() => onEditExpense(expense)}
+                                        aria-label={`Edit ${expense.title}`}
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </li>
-                        );
-                    })}
+                                        <span className="font-medium">
+                                            {expense.title}
+                                        </span>
+                                        <p className="text-muted-foreground text-xs mt-0.5">
+                                            Paid by {payerName} ·{" "}
+                                            {expense.splitMode} ·{" "}
+                                            {formatTimestamp(
+                                                expense.updatedAt ??
+                                                    expense.createdAt,
+                                            )}
+                                        </p>
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <span>
+                                            {formatCurrency(expense.total)}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() =>
+                                                setDeletingId(expense.id)
+                                            }
+                                            aria-label={`Delete ${expense.title}`}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </li>
+                            );
+                        })}
                 </ul>
             )}
 

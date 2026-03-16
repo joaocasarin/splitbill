@@ -11,6 +11,7 @@ export const UserSchema = z.object({
         .max(USER_NAME_MAX, {
             error: `Name cannot exceed ${USER_NAME_MAX} characters`,
         }),
+    createdAt: z.number().int().positive(),
 });
 
 export type User = z.infer<typeof UserSchema>;

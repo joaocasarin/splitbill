@@ -294,6 +294,7 @@ describe("GroupScreen", () => {
                 payerId: 1,
                 splitMode: "equal" as const,
                 memberIds: [1, 2],
+                createdAt: 1000000,
             };
             renderScreen(makeHookReturn({ editingExpense }));
             const dialogs = screen.getAllByRole("dialog", {
@@ -358,6 +359,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             };
             renderScreen(makeHookReturn({ editingSettlement }));
             const dialogs = screen.getAllByRole("dialog", {
@@ -380,6 +382,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             };
             renderScreen(
                 makeHookReturn({ editingSettlement, updateSettlement }),
@@ -392,6 +395,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             });
         });
     });

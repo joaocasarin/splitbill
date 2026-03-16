@@ -227,6 +227,7 @@ describe("ExpenseModal", () => {
             payerId: 1,
             splitMode: "equal",
             memberIds: [1, 2],
+            createdAt: 1000000,
         };
 
         test("renders 'Edit expense' title", () => {

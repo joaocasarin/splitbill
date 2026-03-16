@@ -152,6 +152,7 @@ describe("useGroupScreen", () => {
                 payerId: 1,
                 splitMode: "equal" as const,
                 memberIds: [1, 2],
+                createdAt: 1000000,
             };
             act(() => {
                 (result.current as FoundState).openEditExpense(expense);
@@ -171,6 +172,7 @@ describe("useGroupScreen", () => {
                 payerId: 1,
                 splitMode: "equal" as const,
                 memberIds: [1, 2],
+                createdAt: 1000000,
             };
             act(() => {
                 (result.current as FoundState).openEditExpense(expense);
@@ -228,6 +230,7 @@ describe("useGroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 5000,
+                createdAt: 1000000,
             };
             act(() => {
                 (result.current as FoundState).openEditSettlement(settlement);
@@ -245,6 +248,7 @@ describe("useGroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 5000,
+                createdAt: 1000000,
             };
             act(() => {
                 (result.current as FoundState).openEditSettlement(settlement);
@@ -360,6 +364,7 @@ describe("useGroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 5000,
+                createdAt: 1000000,
             };
             act(() => {
                 state.updateSettlement(settlement);

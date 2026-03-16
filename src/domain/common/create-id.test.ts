@@ -45,8 +45,8 @@ describe("createIdGenerator", () => {
             const createId = createIdGenerator({
                 ...emptyGlobal,
                 users: [
-                    { id: 3, name: "Alice" },
-                    { id: 7, name: "Bob" },
+                    { id: 3, name: "Alice", createdAt: 1000000 },
+                    { id: 7, name: "Bob", createdAt: 1000000 },
                 ],
             });
 
@@ -60,6 +60,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 5,
                         name: "Trip",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [],
                         settlements: [],
@@ -77,6 +78,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 1,
                         name: "Group A",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [{ id: 4 } as unknown as Expense],
                         settlements: [],
@@ -84,6 +86,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 2,
                         name: "Group B",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [{ id: 9 } as unknown as Expense],
                         settlements: [],
@@ -101,6 +104,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 1,
                         name: "Group A",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [],
                         settlements: [{ id: 6 } as unknown as Settlement],
@@ -114,11 +118,12 @@ describe("createIdGenerator", () => {
         test("each type counter is independent from others", () => {
             const createId = createIdGenerator({
                 ...emptyGlobal,
-                users: [{ id: 10, name: "Alice" }],
+                users: [{ id: 10, name: "Alice", createdAt: 1000000 }],
                 groups: [
                     {
                         id: 3,
                         name: "Trip",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [{ id: 7 } as unknown as Expense],
                         settlements: [{ id: 2 } as unknown as Settlement],
@@ -136,8 +141,8 @@ describe("createIdGenerator", () => {
             const createId = createIdGenerator({
                 ...emptyGlobal,
                 users: [
-                    { id: 7, name: "Alice" },
-                    { id: 3, name: "Bob" },
+                    { id: 7, name: "Alice", createdAt: 1000000 },
+                    { id: 3, name: "Bob", createdAt: 1000000 },
                 ],
             });
 
@@ -151,6 +156,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 1,
                         name: "Group A",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [
                             { id: 9 } as unknown as Expense,
@@ -171,6 +177,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 1,
                         name: "Group A",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [],
                         settlements: [
@@ -191,6 +198,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 5,
                         name: "Group A",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [],
                         settlements: [],
@@ -198,6 +206,7 @@ describe("createIdGenerator", () => {
                     {
                         id: 2,
                         name: "Group B",
+                        createdAt: 1000000,
                         memberIds: [],
                         expenses: [],
                         settlements: [],

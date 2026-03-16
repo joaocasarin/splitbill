@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-03-10  
+> **Last updated:** 2026-03-16 
 > **Status:** Draft
 
 ---
@@ -57,12 +57,13 @@ Represents a person in the application. Users are **global** — they exist inde
 ```
 UserSchema
 ├── id: EntityId
-└── name: string (min 3, max 25)
+├── name: string (min 3, max 25)
+└── createdAt: number (unix ms)
 ```
 
 **Conceptual note:** A `User` in the global context becomes a `Member` when referenced inside a group. The same real person has two different roles depending on the context they appear in. This is intentional — see [Terminology Glossary](#6-terminology-glossary).
 
-**Pending:** Soft delete (`deletedAt`) is planned but not yet implemented. See [APP_SPEC.md](./APP_SPEC.md).
+**Pending:** Soft delete (`deletedAt`, optional) is planned but not yet implemented. See [APP_SPEC.md](./APP_SPEC.md).
 
 ---
 
@@ -76,6 +77,7 @@ Represents a collection of members sharing expenses.
 GroupSchema
 ├── id: EntityId
 ├── name: string (min 4, max 20)
+├── createdAt: number (unix ms)
 ├── memberIds: EntityId[] (min 2, no duplicates)
 ├── expenses: Expense[]
 └── settlements: Settlement[]
@@ -105,7 +107,9 @@ BaseExpenseFields
 ├── id: EntityId
 ├── title: string (min 3, max 50)
 ├── total: ExpenseTotal (positive int, cents)
-└── payerId: EntityId
+├── payerId: EntityId
+├── createdAt: number (unix ms)
+└── updatedAt?: number (unix ms, set on edit)
 ```
 
 The expense is a **discriminated union** on `splitMode`:
@@ -157,7 +161,9 @@ SettlementSchema
 ├── id: EntityId
 ├── fromMemberId: EntityId (who pays)
 ├── toMemberId: EntityId (who receives)
-└── amount: ShareAmount (positive int, cents)
+├── amount: ShareAmount (positive int, cents)
+├── createdAt: number (unix ms)
+└── updatedAt?: number (unix ms, set on edit)
 ```
 
 **Rules:**

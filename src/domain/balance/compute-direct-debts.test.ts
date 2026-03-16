@@ -15,6 +15,7 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -39,6 +40,7 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -62,6 +64,7 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [2, 3, 4],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -87,6 +90,7 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [2, 3],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -117,6 +121,7 @@ describe("computeDirectDebts", () => {
                             { memberId: 2, value: 100 },
                             { memberId: 3, value: 100 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -144,6 +149,7 @@ describe("computeDirectDebts", () => {
                             { memberId: 2, value: 100 },
                             { memberId: 3, value: 100 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -173,6 +179,7 @@ describe("computeDirectDebts", () => {
                             { memberId: 1, value: 5000 },
                             { memberId: 2, value: 5000 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -200,6 +207,7 @@ describe("computeDirectDebts", () => {
                             { memberId: 2, value: 3333 },
                             { memberId: 3, value: 3333 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -228,6 +236,7 @@ describe("computeDirectDebts", () => {
                             { memberId: 3, value: 3333 },
                             { memberId: 4, value: 3334 },
                         ],
+                        createdAt: 1000000,
                     },
                 ],
             });
@@ -255,10 +264,17 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2],
+                        createdAt: 1000000,
                     },
                 ],
                 settlements: [
-                    { id: 1, fromMemberId: 2, toMemberId: 1, amount: 50 },
+                    {
+                        id: 1,
+                        fromMemberId: 2,
+                        toMemberId: 1,
+                        amount: 50,
+                        createdAt: 1000000,
+                    },
                 ],
             });
 
@@ -280,10 +296,17 @@ describe("computeDirectDebts", () => {
                         payerId: 1,
                         splitMode: "equal",
                         memberIds: [1, 2],
+                        createdAt: 1000000,
                     },
                 ],
                 settlements: [
-                    { id: 1, fromMemberId: 2, toMemberId: 1, amount: 100 },
+                    {
+                        id: 1,
+                        fromMemberId: 2,
+                        toMemberId: 1,
+                        amount: 100,
+                        createdAt: 1000000,
+                    },
                 ],
             });
 

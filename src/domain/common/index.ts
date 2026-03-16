@@ -8,6 +8,7 @@ export {
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
+    SCHEMA_VERSION,
     USER_NAME_MAX,
     USER_NAME_MIN,
 } from "./constants";

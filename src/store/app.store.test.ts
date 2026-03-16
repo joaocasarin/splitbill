@@ -1,5 +1,6 @@
 import { computeBalances } from "@domain/balance";
-import type { EqualExpense } from "@domain/expense";
+import { SCHEMA_VERSION } from "@domain/common";
+import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
@@ -103,7 +104,7 @@ describe("AppStore", () => {
 
             useAppStore.getState().initEmpty();
             expect(useAppStore.getState().global).toEqual({
-                version: 1,
+                version: SCHEMA_VERSION,
                 users: [],
                 groups: [],
             });
@@ -379,6 +380,7 @@ describe("AppStore", () => {
                 payerId: 1,
                 splitMode: "equal",
                 memberIds: [1, 2],
+                createdAt: 1000000,
             } as EqualExpense);
 
             const updated = useAppStore
@@ -398,6 +400,7 @@ describe("AppStore", () => {
                 payerId: 1,
                 splitMode: "equal",
                 memberIds: [1, 2],
+                createdAt: 1000000,
             } as EqualExpense);
 
             expect(result.valid).toBe(false);
@@ -687,6 +690,7 @@ describe("AppStore", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 1000,
+                createdAt: 1000000,
             });
 
             expect(result.valid).toBe(false);
@@ -910,7 +914,7 @@ describe("AppStore", () => {
                 payerId: 1,
                 splitMode: "equal",
                 memberIds: [1, 2, 3],
-            } as unknown as Omit<EqualExpense, "id">);
+            } as unknown as CreateEqualExpense);
 
             const result = useAppStore.getState().removeMemberFromGroup(1, 1);
             expect(result.valid).toBe(false);
