@@ -102,6 +102,29 @@ describe("AppLayout", () => {
         ).toBeInTheDocument();
     });
 
+    test("renders copyright link in footer", () => {
+        render(
+            <AppLayout {...defaultProps} sidebar={<div />}>
+                <div />
+            </AppLayout>,
+        );
+        expect(
+            screen.getByRole("link", { name: /github user/i }),
+        ).toHaveAttribute("href", "https://github.com/joaocasarin");
+        expect(screen.getByText(/© 2025 João Casarin/i)).toBeInTheDocument();
+    });
+
+    test("renders GitHub link in footer", () => {
+        render(
+            <AppLayout {...defaultProps} sidebar={<div />}>
+                <div />
+            </AppLayout>,
+        );
+        expect(
+            screen.getByRole("link", { name: /github repository/i }),
+        ).toHaveAttribute("href", "https://github.com/joaocasarin/splitbill");
+    });
+
     test("calls onCloseSidebar when backdrop is clicked", async () => {
         const onCloseSidebar = vi.fn();
         render(
