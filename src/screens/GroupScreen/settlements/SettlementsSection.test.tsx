@@ -107,6 +107,44 @@ describe("SettlementsSection", () => {
             expect(items).toHaveLength(2);
         });
 
+        test("renders timestamp on settlement item", () => {
+            renderSection([settlement]);
+            expect(
+                screen.getByText(/\d{2}:\d{2} \d{2}\/\d{2}\/\d{2}/),
+            ).toBeInTheDocument();
+        });
+
+        test("sorts settlements by createdAt descending", () => {
+            const older: Settlement = { ...settlement, id: 1, createdAt: 1000 };
+            const newer: Settlement = {
+                ...settlement,
+                id: 2,
+                fromMemberId: 1,
+                toMemberId: 2,
+                createdAt: 2000,
+            };
+            renderSection([older, newer]);
+            const items = screen.getAllByRole("listitem");
+            expect(items[0]).toHaveTextContent(/alice.*bob/i);
+            expect(items[1]).toHaveTextContent(/bob.*alice/i);
+        });
+
+        test("uses updatedAt over createdAt for sorting when present", () => {
+            const s1: Settlement = { ...settlement, id: 1, createdAt: 2000 };
+            const s2: Settlement = {
+                ...settlement,
+                id: 2,
+                fromMemberId: 1,
+                toMemberId: 2,
+                createdAt: 1000,
+                updatedAt: 3000,
+            };
+            renderSection([s1, s2]);
+            const items = screen.getAllByRole("listitem");
+            expect(items[0]).toHaveTextContent(/alice.*bob/i);
+            expect(items[1]).toHaveTextContent(/bob.*alice/i);
+        });
+
         test("renders edit button for each settlement", () => {
             renderSection([settlement]);
             expect(

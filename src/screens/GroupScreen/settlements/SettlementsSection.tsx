@@ -3,7 +3,7 @@ import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import type { Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
-import { formatCurrency } from "@lib/format";
+import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -50,44 +50,62 @@ export function SettlementsSection({
                 </p>
             ) : (
                 <ul className="flex flex-col gap-2">
-                    {settlements.map((settlement) => {
-                        const fromName =
-                            users.find((u) => u.id === settlement.fromMemberId)
-                                ?.name ?? `User ${settlement.fromMemberId}`;
-                        const toName =
-                            users.find((u) => u.id === settlement.toMemberId)
-                                ?.name ?? `User ${settlement.toMemberId}`;
-                        return (
-                            <li
-                                key={settlement.id}
-                                className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
-                            >
-                                <button
-                                    type="button"
-                                    className="flex-1 text-left cursor-pointer"
-                                    onClick={() => onEditSettlement(settlement)}
-                                    aria-label={`Edit settlement ${fromName} to ${toName}`}
+                    {settlements
+                        .sort(
+                            (a, b) =>
+                                (b.updatedAt ?? b.createdAt) -
+                                (a.updatedAt ?? a.createdAt),
+                        )
+                        .map((settlement) => {
+                            const fromName =
+                                users.find(
+                                    (u) => u.id === settlement.fromMemberId,
+                                )?.name ?? `User ${settlement.fromMemberId}`;
+                            const toName =
+                                users.find(
+                                    (u) => u.id === settlement.toMemberId,
+                                )?.name ?? `User ${settlement.toMemberId}`;
+                            return (
+                                <li
+                                    key={settlement.id}
+                                    className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm"
                                 >
-                                    {fromName} → {toName}
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    <span>
-                                        {formatCurrency(settlement.amount)}
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
+                                    <button
+                                        type="button"
+                                        className="flex-1 text-left cursor-pointer"
                                         onClick={() =>
-                                            setDeletingId(settlement.id)
+                                            onEditSettlement(settlement)
                                         }
-                                        aria-label={`Delete settlement ${fromName} to ${toName}`}
+                                        aria-label={`Edit settlement ${fromName} to ${toName}`}
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </li>
-                        );
-                    })}
+                                        <span>
+                                            {fromName} → {toName}
+                                        </span>
+                                        <p className="text-muted-foreground text-xs mt-0.5">
+                                            {formatTimestamp(
+                                                settlement.updatedAt ??
+                                                    settlement.createdAt,
+                                            )}
+                                        </p>
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <span>
+                                            {formatCurrency(settlement.amount)}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() =>
+                                                setDeletingId(settlement.id)
+                                            }
+                                            aria-label={`Delete settlement ${fromName} to ${toName}`}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </li>
+                            );
+                        })}
                 </ul>
             )}
 
