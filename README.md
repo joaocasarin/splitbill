@@ -163,7 +163,6 @@ The system guarantees:
 
 ## 10. Future Roadmap
 
-- Timestamps (`createdAt`, `updatedAt`) on all entities
 - Free payments (settlement between any two members without debt constraint)
 - Debt simplification algorithm (suggested optimized payment paths)
 - Soft delete for users (`deletedAt`)
