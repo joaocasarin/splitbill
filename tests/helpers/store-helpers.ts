@@ -18,3 +18,9 @@ export function setupGroupWithNonMember(): Group {
     useAppStore.getState().addGroup("Trip", [1, 2]);
     return useAppStore.getState().global.groups[0];
 }
+
+export function setupGroupWithInlineMembers(): Group {
+    setupTwoUsers();
+    useAppStore.getState().addGroup("Trip", [1, 2]);
+    return useAppStore.getState().global.groups[0];
+}
