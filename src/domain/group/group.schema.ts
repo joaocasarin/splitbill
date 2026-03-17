@@ -1,6 +1,7 @@
 import z from "zod";
 import {
     EntityIdSchema,
+    GROUP_MEMBERS_MAX,
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
@@ -21,7 +22,10 @@ export const GroupSchema = z
                 error: `Group name cannot exceed ${GROUP_NAME_MAX} characters`,
             }),
         createdAt: z.number().int().positive(),
-        members: z.array(MemberSchema).min(GROUP_MEMBERS_MIN),
+        members: z
+            .array(MemberSchema)
+            .min(GROUP_MEMBERS_MIN)
+            .max(GROUP_MEMBERS_MAX),
         expenses: z.array(ExpenseSchema),
         settlements: z.array(SettlementSchema),
     })

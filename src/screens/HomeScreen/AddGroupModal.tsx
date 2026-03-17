@@ -8,6 +8,7 @@ import {
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
 import {
+    GROUP_MEMBERS_MAX,
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
@@ -155,6 +156,9 @@ export function AddGroupModal({ open, onClose }: Props) {
                                 variant="outline"
                                 size="sm"
                                 type="button"
+                                disabled={
+                                    memberRows.length >= GROUP_MEMBERS_MAX
+                                }
                                 onClick={addMemberRow}
                             >
                                 Add member

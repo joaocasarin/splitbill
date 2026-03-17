@@ -1,6 +1,6 @@
 import type { DirectDebt } from "@domain/balance";
 import { computeBalances, computeDirectDebts } from "@domain/balance";
-import type { EntityId } from "@domain/common";
+import { type EntityId, GROUP_MEMBERS_MAX } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
 import type { CreateSettlement, Settlement } from "@domain/settlement";
@@ -92,7 +92,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         };
     });
 
-    const canAddMember = true;
+    const canAddMember = groupMembers.length < GROUP_MEMBERS_MAX;
     const editDirectDebts = editingSettlement
         ? computeDirectDebts({
               ...group,

@@ -78,13 +78,14 @@ GroupSchema
 ├── id: EntityId
 ├── name: string (min 4, max 20)
 ├── createdAt: number (unix ms)
-├── memberIds: EntityId[] (min 2, no duplicates)
+├── memberIds: EntityId[] (min 2, max 20, no duplicates)
 ├── expenses: Expense[]
 └── settlements: Settlement[]
 ```
 
 **Rules:**
 - Must have at least **2 members** — a group with 1 person has no one to split with.
+- Must have at most **20 members** (`GROUP_MEMBERS_MAX`).
 - `memberIds` must not contain duplicates.
 - Expense IDs must be unique within the group.
 - Settlement IDs must be unique within the group.

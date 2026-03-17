@@ -49,7 +49,7 @@ The system is designed with strong domain consistency and financial determinism.
 - Full state sharing via compressed URL
 - Direct-debt validation on settlement creation
 - Edit and delete expenses and settlements with confirmation dialogs
-- Member removal with balance and minimum-member validation
+- Member removal with balance and minimum/maximum-member validation (min 2, max 20)
 - Multi-user creation (batch add users)
 - Responsive layout with sidebar navigation and mobile drawer support
 

@@ -1,5 +1,6 @@
 import type { DirectDebt } from "@domain/balance";
 import * as balanceDomain from "@domain/balance";
+import { GROUP_MEMBERS_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
@@ -60,11 +61,25 @@ describe("useGroupScreen", () => {
             expect(state.memberCount).toBe(2);
         });
 
-        test("canAddMember is always true", () => {
+        test("canAddMember is true when below GROUP_MEMBERS_MAX", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.canAddMember).toBe(true);
+        });
+
+        test("canAddMember is false when at GROUP_MEMBERS_MAX", () => {
+            useAppStore.getState().addGroupWithMembers(
+                "Trip",
+                Array.from(
+                    { length: GROUP_MEMBERS_MAX },
+                    (_, i) => `Member${i + 1}`,
+                ),
+            );
+            const group = useAppStore.getState().global.groups[0];
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.canAddMember).toBe(false);
         });
     });
 

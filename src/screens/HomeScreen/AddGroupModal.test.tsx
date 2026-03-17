@@ -1,4 +1,4 @@
-import { GROUP_NAME_MAX } from "@domain/common";
+import { GROUP_MEMBERS_MAX, GROUP_NAME_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -151,6 +151,16 @@ describe("AddGroupModal", () => {
             expect(
                 screen.getAllByRole("button", { name: /remove member/i }),
             ).toHaveLength(3);
+        });
+
+        test("Add member button is disabled when at GROUP_MEMBERS_MAX", async () => {
+            renderModal();
+            const addBtn = screen.getByRole("button", { name: /add member/i });
+            // starts at 2 rows, click GROUP_MEMBERS_MAX - 2 times to reach max
+            for (let i = 2; i < GROUP_MEMBERS_MAX; i++) {
+                await userEvent.click(addBtn);
+            }
+            expect(addBtn).toBeDisabled();
         });
 
         test("clicking remove button removes that row", async () => {
