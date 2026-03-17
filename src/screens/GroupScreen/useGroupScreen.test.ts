@@ -42,6 +42,15 @@ describe("useGroupScreen", () => {
             expect(state.users).toHaveLength(2);
         });
 
+        test("returns empty members when group has no inline members", () => {
+            useAppStore.getState().addGroup("Trip", [998, 999]);
+            const group = useAppStore.getState().global.groups[0];
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.members).toEqual([]);
+            expect(state.memberCount).toBe(0);
+        });
+
         test("returns computed members with name and balance", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
@@ -52,7 +61,7 @@ describe("useGroupScreen", () => {
             ]);
         });
 
-        test("returns memberCount matching group memberIds length", () => {
+        test("returns memberCount matching group.members length", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
@@ -416,13 +425,18 @@ describe("useGroupScreen", () => {
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to User {id} name when member has no matching user", () => {
+        test("falls back to 'User {id}' in debt display when debt references unknown member", () => {
+            const mockDebts: DirectDebt[] = [
+                { fromMemberId: 2, toMemberId: 999, amount: 5000 },
+            ];
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
+                mockDebts,
+            );
             const group = setupGroupWithTwoMembers();
-            useAppStore.getState().addMemberToGroup(group.id, 999);
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            const member999 = state.members.find((m) => m.id === 999);
-            expect(member999?.name).toBe("User 999");
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]?.name).toBe("User 999");
         });
 
         test("falls back to amount 0 when computeBalances has no entry for member", () => {
