@@ -6,6 +6,7 @@ import {
     GROUP_NAME_MIN,
 } from "../common";
 import { ExpenseSchema } from "../expense";
+import { MemberSchema } from "../member";
 import { SettlementSchema } from "../settlement";
 
 export const GroupSchema = z
@@ -27,10 +28,22 @@ export const GroupSchema = z
                 error: "Duplicate member IDs in group",
                 path: ["memberIds"],
             }),
+        members: z.array(MemberSchema).min(GROUP_MEMBERS_MIN).optional(),
         expenses: z.array(ExpenseSchema),
         settlements: z.array(SettlementSchema),
     })
     .superRefine((data, ctx) => {
+        if (data.members !== undefined) {
+            const memberIds = data.members.map((m) => m.id);
+            if (new Set(memberIds).size !== memberIds.length) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Duplicate member IDs in group",
+                    path: ["members"],
+                });
+            }
+        }
+
         const expenseIds = data.expenses.map((e) => e.id);
         if (new Set(expenseIds).size !== expenseIds.length) {
             ctx.addIssue({
