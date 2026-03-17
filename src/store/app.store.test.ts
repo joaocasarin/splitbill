@@ -150,6 +150,34 @@ describe("AppStore", () => {
                 3, 1, 2,
             ]);
         });
+
+        test("creates inline members from resolved users", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toHaveLength(2);
+            expect(group.members?.[0].name).toBe("Alice");
+            expect(group.members?.[1].name).toBe("Bob");
+        });
+
+        test("assigns sequential member IDs", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members?.[0].id).toBe(1);
+            expect(group.members?.[1].id).toBe(2);
+        });
+
+        test("sets members to undefined when memberIds do not resolve to users", () => {
+            useAppStore.getState().addGroup("Trip", [3, 1, 2]);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toBeUndefined();
+        });
     });
 
     describe("addExpense", () => {
@@ -854,6 +882,42 @@ describe("AppStore", () => {
 
             const group = useAppStore.getState().global.groups[0];
             expect(group.memberIds.filter((id) => id === 1)).toHaveLength(1);
+        });
+
+        test("also adds inline member when user is found", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addUser("Carol");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+
+            useAppStore.getState().addMemberToGroup(1, 3);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toHaveLength(3);
+            expect(group.members?.[2].name).toBe("Carol");
+        });
+
+        test("does not update members when user is not found", () => {
+            useAppStore.getState().addUser("Alice");
+            useAppStore.getState().addUser("Bob");
+            useAppStore.getState().addGroup("Trip", [1, 2]);
+
+            useAppStore.getState().addMemberToGroup(1, 999);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toHaveLength(2);
+        });
+
+        test("initializes members array when group has no inline members yet", () => {
+            // Group created with unresolvable memberIds → members: undefined
+            useAppStore.getState().addGroup("Trip", [998, 999]);
+            useAppStore.getState().addUser("Alice");
+
+            useAppStore.getState().addMemberToGroup(1, 1);
+
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toHaveLength(1);
+            expect(group.members?.[0].name).toBe("Alice");
         });
     });
 

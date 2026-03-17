@@ -8,6 +8,7 @@ import {
 import type { CreateExpense, Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
+import type { Member } from "@domain/member";
 import {
     type CreateSettlement,
     type Settlement,
@@ -129,11 +130,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     addGroup: (name: string, memberIds: EntityId[]) => {
         const { global, createId, syncToUrl } = get();
+        const resolvedMembers = memberIds
+            .map((id) => global.users.find((u) => u.id === id))
+            .filter((u): u is User => u !== undefined)
+            .map((u) => ({
+                id: createId("member"),
+                name: u.name,
+                createdAt: Date.now(),
+            }));
         const newGroup: Group = {
             id: createId("group"),
             name,
             createdAt: Date.now(),
             memberIds,
+            members:
+                resolvedMembers.length >= GROUP_MEMBERS_MIN
+                    ? resolvedMembers
+                    : undefined,
             expenses: [],
             settlements: [],
         };
@@ -144,16 +157,28 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         syncToUrl();
     },
     addMemberToGroup: (groupId: EntityId, userId: EntityId) => {
-        const { global, syncToUrl } = get();
+        const { global, createId, syncToUrl } = get();
+        const user = global.users.find((u) => u.id === userId);
+        const newMember: Member | undefined = user
+            ? { id: createId("member"), name: user.name, createdAt: Date.now() }
+            : undefined;
         set({
             status: "loaded",
             global: {
                 ...global,
-                groups: global.groups.map((g) =>
-                    g.id === groupId && !g.memberIds.includes(userId)
-                        ? { ...g, memberIds: [...g.memberIds, userId] }
-                        : g,
-                ),
+                groups: global.groups.map((g) => {
+                    if (g.id !== groupId || g.memberIds.includes(userId)) {
+                        return g;
+                    }
+                    return {
+                        ...g,
+                        memberIds: [...g.memberIds, userId],
+                        members:
+                            newMember !== undefined
+                                ? [...(g.members ?? []), newMember]
+                                : g.members,
+                    };
+                }),
             },
         });
         syncToUrl();
