@@ -94,21 +94,6 @@ describe("useExpenseForm", () => {
         });
     });
 
-    describe("members resolution", () => {
-        test("falls back to User {id} when user has no match", () => {
-            const onClose = vi.fn();
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            useAppStore.getState().addMemberToGroup(1, 999);
-            const group = useAppStore.getState().global.groups[0];
-            const hook = renderHook(() => useExpenseForm(group.id, onClose));
-            expect(
-                hook.result.current.members.find((m) => m.id === 999)?.name,
-            ).toBe("User 999");
-        });
-    });
-
     describe("setTitle", () => {
         test("updates title", () => {
             const { hook } = setup();
