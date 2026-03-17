@@ -1,14 +1,19 @@
 import type { Settlement } from "@domain/settlement";
-import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
+import type { MemberRow } from "../members/MembersSection";
 import { SettlementsSection } from "./SettlementsSection";
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
-const users: User[] = testUsers;
+const members: MemberRow[] = testMembers.map((m) => ({
+    ...m,
+    amount: 0,
+    owes: [],
+    receives: [],
+}));
 
 const settlement: Settlement = {
     id: 1,
@@ -36,7 +41,7 @@ function renderSection(
         ...render(
             <SettlementsSection
                 settlements={settlements}
-                users={users}
+                members={members}
                 onAddSettlement={onAddSettlement}
                 onEditSettlement={onEditSettlement}
                 onDeleteSettlement={onDeleteSettlement}
@@ -218,12 +223,12 @@ describe("SettlementsSection", () => {
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to User {id} when fromMemberId has no matching user", () => {
+        test("falls back to User {id} when fromMemberId has no matching member", () => {
             renderSection([{ ...settlement, fromMemberId: 998 }]);
             expect(screen.getByText(/user 998/i)).toBeInTheDocument();
         });
 
-        test("falls back to User {id} when toMemberId has no matching user", () => {
+        test("falls back to User {id} when toMemberId has no matching member", () => {
             renderSection([{ ...settlement, toMemberId: 999 }]);
             expect(screen.getByText(/user 999/i)).toBeInTheDocument();
         });

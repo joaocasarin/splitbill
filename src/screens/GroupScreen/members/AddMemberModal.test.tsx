@@ -1,8 +1,9 @@
+import { USER_NAME_MAX, USER_NAME_MIN } from "@domain/common";
 import { useAppStore } from "@store";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupGroupWithNonMember } from "@tests/helpers";
-import { setupStoreOnly } from "@tests/setup";
+import { setupGroupWithTwoMembers } from "@tests/helpers";
+import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AddMemberModal } from "./AddMemberModal";
 
@@ -35,7 +36,7 @@ vi.mock("@components/ui/button", () => ({
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
 beforeEach(() => {
-    setupStoreOnly();
+    setupStoreAndWindow({ restoreMocks: true });
 });
 
 function renderModal(groupId: number, open = true, onClose = vi.fn()) {
@@ -49,22 +50,14 @@ function renderModal(groupId: number, open = true, onClose = vi.fn()) {
 
 describe("AddMemberModal", () => {
     describe("initial state", () => {
-        test("shows select with non-members only", () => {
-            const group = setupGroupWithNonMember();
+        test("shows name text input", () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            expect(
-                screen.getByRole("option", { name: "Carol" }),
-            ).toBeInTheDocument();
-            expect(
-                screen.queryByRole("option", { name: "Alice" }),
-            ).not.toBeInTheDocument();
-            expect(
-                screen.queryByRole("option", { name: "Bob" }),
-            ).not.toBeInTheDocument();
+            expect(screen.getByRole("textbox")).toBeInTheDocument();
         });
 
-        test("Add button is disabled initially", () => {
-            const group = setupGroupWithNonMember();
+        test("Add button is disabled when name is empty", () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
@@ -72,49 +65,93 @@ describe("AddMemberModal", () => {
         });
     });
 
-    describe("adding member", () => {
-        test("Add button is enabled after selecting a user", async () => {
-            const group = setupGroupWithNonMember();
+    describe("validation", () => {
+        test("Add button is disabled when name is too short", async () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
+            await userEvent.type(
+                screen.getByRole("textbox"),
+                "A".repeat(USER_NAME_MIN - 1),
+            );
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toHaveAttribute("aria-disabled", "true");
+        });
+
+        test("Add button is disabled when name is too long", async () => {
+            const group = setupGroupWithTwoMembers();
+            renderModal(group.id);
+            await userEvent.type(
+                screen.getByRole("textbox"),
+                "A".repeat(USER_NAME_MAX + 1),
+            );
+            expect(
+                screen.getByRole("button", { name: /^add$/i }),
+            ).toHaveAttribute("aria-disabled", "true");
+        });
+
+        test("Add button is enabled when name meets minimum length", async () => {
+            const group = setupGroupWithTwoMembers();
+            renderModal(group.id);
+            await userEvent.type(
+                screen.getByRole("textbox"),
+                "A".repeat(USER_NAME_MIN),
+            );
             expect(
                 screen.getByRole("button", { name: /^add$/i }),
             ).not.toHaveAttribute("aria-disabled");
         });
+    });
 
-        test("adds member to group on confirm", async () => {
-            const group = setupGroupWithNonMember();
+    describe("adding member", () => {
+        test("adds member to group by name on confirm", async () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
+            await userEvent.type(screen.getByRole("textbox"), "Carol");
             await userEvent.click(
                 screen.getByRole("button", { name: /^add$/i }),
             );
             const updated = useAppStore.getState().global.groups[0];
-            expect(updated.memberIds).toContain(3);
+            const carol = updated.members?.find((m) => m.name === "Carol");
+            expect(carol).toBeDefined();
         });
 
         test("calls onClose after adding", async () => {
-            const group = setupGroupWithNonMember();
+            const group = setupGroupWithTwoMembers();
             const { onClose } = renderModal(group.id);
-            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
+            await userEvent.type(screen.getByRole("textbox"), "Carol");
             await userEvent.click(
                 screen.getByRole("button", { name: /^add$/i }),
             );
             expect(onClose).toHaveBeenCalledOnce();
         });
 
-        test("does nothing when Add is clicked without selecting a user", () => {
-            const group = setupGroupWithNonMember();
+        test("resets name input after adding", async () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
+            await userEvent.type(screen.getByRole("textbox"), "Carol");
+            await userEvent.click(
+                screen.getByRole("button", { name: /^add$/i }),
+            );
+            expect(screen.getByRole("textbox")).toHaveValue("");
+        });
+
+        test("trims whitespace from name", async () => {
+            const group = setupGroupWithTwoMembers();
+            renderModal(group.id);
+            await userEvent.type(screen.getByRole("textbox"), "  Carol  ");
+            await userEvent.click(
+                screen.getByRole("button", { name: /^add$/i }),
+            );
             const updated = useAppStore.getState().global.groups[0];
-            expect(updated.memberIds).not.toContain(3);
+            const carol = updated.members?.find((m) => m.name === "Carol");
+            expect(carol).toBeDefined();
         });
     });
 
     describe("cancelling", () => {
         test("calls onClose when Cancel is clicked", async () => {
-            const group = setupGroupWithNonMember();
+            const group = setupGroupWithTwoMembers();
             const { onClose } = renderModal(group.id);
             await userEvent.click(
                 screen.getByRole("button", { name: /cancel/i }),
@@ -123,34 +160,46 @@ describe("AddMemberModal", () => {
         });
 
         test("does not add member when cancelled", async () => {
-            const group = setupGroupWithNonMember();
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
+            await userEvent.type(screen.getByRole("textbox"), "Carol");
             await userEvent.click(
                 screen.getByRole("button", { name: /cancel/i }),
             );
             const updated = useAppStore.getState().global.groups[0];
-            expect(updated.memberIds).not.toContain(3);
+            expect(
+                updated.members?.find((m) => m.name === "Carol"),
+            ).toBeUndefined();
         });
 
-        test("deselecting option re-disables Add button", async () => {
-            const group = setupGroupWithNonMember();
+        test("resets name input when cancelled", async () => {
+            const group = setupGroupWithTwoMembers();
             renderModal(group.id);
-            await userEvent.selectOptions(screen.getByRole("combobox"), "3");
-            await userEvent.selectOptions(screen.getByRole("combobox"), "");
-            expect(
-                screen.getByRole("button", { name: /^add$/i }),
-            ).toHaveAttribute("aria-disabled", "true");
+            await userEvent.type(screen.getByRole("textbox"), "Carol");
+            await userEvent.click(
+                screen.getByRole("button", { name: /cancel/i }),
+            );
+            expect(screen.getByRole("textbox")).toHaveValue("");
         });
     });
 
     describe("handleOpenChange", () => {
         test("calling with true is a no-op", async () => {
-            const group = setupGroupWithNonMember();
+            const group = setupGroupWithTwoMembers();
             const onClose = vi.fn();
             renderModal(group.id, true, onClose);
             await userEvent.click(screen.getByTestId("__dialog_open__"));
             expect(onClose).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("defensive guards (unreachable in valid usage)", () => {
+        test("handleAdd is a no-op when name is empty", () => {
+            const group = setupGroupWithTwoMembers();
+            renderModal(group.id);
+            fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
+            const updated = useAppStore.getState().global.groups[0];
+            expect(updated.members).toHaveLength(2);
         });
     });
 });

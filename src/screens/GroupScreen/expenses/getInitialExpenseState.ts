@@ -1,6 +1,6 @@
 import type { EntityId } from "@domain/common";
 import type { Expense, SplitMode } from "@domain/expense";
-import type { User } from "@domain/user";
+import type { Member } from "@domain/member";
 
 export type ExpenseFormState = {
     title: string;
@@ -13,7 +13,7 @@ export type ExpenseFormState = {
 };
 
 export function getInitialExpenseState(
-    members: User[],
+    members: Member[],
     firstMemberId: EntityId | null,
     expense?: Expense,
 ): ExpenseFormState {

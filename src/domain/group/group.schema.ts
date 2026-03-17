@@ -1,11 +1,13 @@
 import z from "zod";
 import {
     EntityIdSchema,
+    GROUP_MEMBERS_MAX,
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
 } from "../common";
 import { ExpenseSchema } from "../expense";
+import { MemberSchema } from "../member";
 import { SettlementSchema } from "../settlement";
 
 export const GroupSchema = z
@@ -20,17 +22,23 @@ export const GroupSchema = z
                 error: `Group name cannot exceed ${GROUP_NAME_MAX} characters`,
             }),
         createdAt: z.number().int().positive(),
-        memberIds: z
-            .array(EntityIdSchema)
+        members: z
+            .array(MemberSchema)
             .min(GROUP_MEMBERS_MIN)
-            .refine((ids) => new Set(ids).size === ids.length, {
-                error: "Duplicate member IDs in group",
-                path: ["memberIds"],
-            }),
+            .max(GROUP_MEMBERS_MAX),
         expenses: z.array(ExpenseSchema),
         settlements: z.array(SettlementSchema),
     })
     .superRefine((data, ctx) => {
+        const memberIds = data.members.map((m) => m.id);
+        if (new Set(memberIds).size !== memberIds.length) {
+            ctx.addIssue({
+                code: "custom",
+                message: "Duplicate member IDs in group",
+                path: ["members"],
+            });
+        }
+
         const expenseIds = data.expenses.map((e) => e.id);
         if (new Set(expenseIds).size !== expenseIds.length) {
             ctx.addIssue({
@@ -49,9 +57,9 @@ export const GroupSchema = z
             });
         }
 
-        const memberIds = new Set(data.memberIds);
+        const memberIdSet = new Set(memberIds);
         data.expenses.forEach((expense, ei) => {
-            if (!memberIds.has(expense.payerId)) {
+            if (!memberIdSet.has(expense.payerId)) {
                 ctx.addIssue({
                     code: "custom",
                     message: `Expense[${ei}]: payerId ${expense.payerId} is not a member of the group`,
@@ -61,7 +69,7 @@ export const GroupSchema = z
 
             if (expense.splitMode === "equal") {
                 expense.memberIds.forEach((id, mi) => {
-                    if (!memberIds.has(id)) {
+                    if (!memberIdSet.has(id)) {
                         ctx.addIssue({
                             code: "custom",
                             message: `Expense[${ei}]: memberIds[${mi}] ${id} is not a member of the group`,
@@ -76,7 +84,7 @@ export const GroupSchema = z
                 expense.splitMode === "percentage"
             ) {
                 expense.shares.forEach((share, si) => {
-                    if (!memberIds.has(share.memberId)) {
+                    if (!memberIdSet.has(share.memberId)) {
                         ctx.addIssue({
                             code: "custom",
                             message: `Expense[${ei}]: shares[${si}].memberId ${share.memberId} is not a member of the group`,
@@ -88,14 +96,14 @@ export const GroupSchema = z
         });
 
         data.settlements.forEach((settlement, si) => {
-            if (!memberIds.has(settlement.fromMemberId)) {
+            if (!memberIdSet.has(settlement.fromMemberId)) {
                 ctx.addIssue({
                     code: "custom",
                     message: `Settlement[${si}]: fromMemberId ${settlement.fromMemberId} is not a member of the group`,
                     path: ["settlements", si, "fromMemberId"],
                 });
             }
-            if (!memberIds.has(settlement.toMemberId)) {
+            if (!memberIdSet.has(settlement.toMemberId)) {
                 ctx.addIssue({
                     code: "custom",
                     message: `Settlement[${si}]: toMemberId ${settlement.toMemberId} is not a member of the group`,

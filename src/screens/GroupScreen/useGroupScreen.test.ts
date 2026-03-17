@@ -1,5 +1,6 @@
 import type { DirectDebt } from "@domain/balance";
 import * as balanceDomain from "@domain/balance";
+import { GROUP_MEMBERS_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
@@ -34,12 +35,13 @@ describe("useGroupScreen", () => {
             expect(result.current.group?.name).toBe("Trip");
         });
 
-        test("returns users from store", () => {
-            const group = setupGroupWithTwoMembers();
+        test("returns empty members when group has no inline members", () => {
+            useAppStore.getState().addGroupWithMembers("Trip", []);
+            const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
-            expect(result.current).toHaveProperty("users");
             const state = result.current as FoundState;
-            expect(state.users).toHaveLength(2);
+            expect(state.members).toEqual([]);
+            expect(state.memberCount).toBe(0);
         });
 
         test("returns computed members with name and balance", () => {
@@ -52,29 +54,32 @@ describe("useGroupScreen", () => {
             ]);
         });
 
-        test("returns memberCount matching group memberIds length", () => {
+        test("returns memberCount matching group.members length", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.memberCount).toBe(2);
         });
 
-        test("canAddMember is false when all users are members", () => {
+        test("canAddMember is true when below GROUP_MEMBERS_MAX", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.canAddMember).toBe(false);
+            expect(state.canAddMember).toBe(true);
         });
 
-        test("canAddMember is true when non-members exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
+        test("canAddMember is false when at GROUP_MEMBERS_MAX", () => {
+            useAppStore.getState().addGroupWithMembers(
+                "Trip",
+                Array.from(
+                    { length: GROUP_MEMBERS_MAX },
+                    (_, i) => `Member${i + 1}`,
+                ),
+            );
             const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.canAddMember).toBe(true);
+            expect(state.canAddMember).toBe(false);
         });
     });
 
@@ -401,28 +406,34 @@ describe("useGroupScreen", () => {
 
     describe("removeMember", () => {
         test("removes member from group via store", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
             const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             act(() => {
                 (result.current as FoundState).removeMember(1);
             });
             const updatedGroup = useAppStore.getState().global.groups[0];
-            expect(updatedGroup.memberIds).not.toContain(1);
+            expect(
+                updatedGroup.members.find((m) => m.id === 1),
+            ).toBeUndefined();
         });
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to User {id} name when member has no matching user", () => {
+        test("falls back to 'User {id}' in debt display when debt references unknown member", () => {
+            const mockDebts: DirectDebt[] = [
+                { fromMemberId: 2, toMemberId: 999, amount: 5000 },
+            ];
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
+                mockDebts,
+            );
             const group = setupGroupWithTwoMembers();
-            useAppStore.getState().addMemberToGroup(group.id, 999);
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            const member999 = state.members.find((m) => m.id === 999);
-            expect(member999?.name).toBe("User 999");
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]?.name).toBe("User 999");
         });
 
         test("falls back to amount 0 when computeBalances has no entry for member", () => {

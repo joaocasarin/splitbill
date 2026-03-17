@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-03-16 
+> **Last updated:** 2026-03-17
 > **Status:** Draft
 
 ---
@@ -10,11 +10,10 @@
 
 1. [Domain Entities](#1-domain-entities)
    - 1.1 [Global State](#11-global-state)
-   - 1.2 [User](#12-user)
-   - 1.3 [Group](#13-group)
-   - 1.4 [Expense](#14-expense)
-   - 1.5 [Settlement](#15-settlement)
-   - 1.6 [Balance (derived)](#16-balance-derived)
+   - 1.2 [Group](#12-group)
+   - 1.3 [Expense](#13-expense)
+   - 1.4 [Settlement](#14-settlement)
+   - 1.5 [Balance (derived)](#15-balance-derived)
 2. [Money Representation](#2-money-representation)
 3. [Split Modes](#3-split-modes)
 4. [Validation Architecture](#4-validation-architecture)
@@ -30,44 +29,20 @@
 
 **File:** `src/domain/global/global.schema.ts`
 
-The root entity. Contains all users and all groups.
+The root entity. Contains all groups.
 
 ```
 GlobalSchema
 ├── version: int (positive)
-├── users: User[]
 └── groups: Group[]
 ```
 
 **Rules enforced at this level (cross-entity integrity):**
-- User IDs must be unique across all users.
 - Group IDs must be unique across all groups.
-- Every `memberId` referenced inside any group must exist as a `userId` in `users[]`.
-
-> **Why here and not in GroupSchema?** `GroupSchema` has no access to the global `users[]` array. The referential integrity check — "does this member actually exist as a global user?" — can only happen at the `GlobalSchema` level, where both `users` and `groups` are visible.
 
 ---
 
-### 1.2 User
-
-**File:** `src/domain/user/user.schema.ts`
-
-Represents a person in the application. Users are **global** — they exist independently of any group.
-
-```
-UserSchema
-├── id: EntityId
-├── name: string (min 3, max 25)
-└── createdAt: number (unix ms)
-```
-
-**Conceptual note:** A `User` in the global context becomes a `Member` when referenced inside a group. The same real person has two different roles depending on the context they appear in. This is intentional — see [Terminology Glossary](#6-terminology-glossary).
-
-**Pending:** Soft delete (`deletedAt`, optional) is planned but not yet implemented. See [APP_SPEC.md](./APP_SPEC.md).
-
----
-
-### 1.3 Group
+### 1.2 Group
 
 **File:** `src/domain/group/group.schema.ts`
 
@@ -78,25 +53,29 @@ GroupSchema
 ├── id: EntityId
 ├── name: string (min 4, max 20)
 ├── createdAt: number (unix ms)
-├── memberIds: EntityId[] (min 2, no duplicates)
+├── members: Member[] (min 2, max 20, no duplicate ids)
+│   ├── id: EntityId
+│   ├── name: string (min 3, max 25)
+│   └── createdAt: number (unix ms)
 ├── expenses: Expense[]
 └── settlements: Settlement[]
 ```
 
 **Rules:**
 - Must have at least **2 members** — a group with 1 person has no one to split with.
-- `memberIds` must not contain duplicates.
+- Must have at most **20 members** (`GROUP_MEMBERS_MAX`).
+- Member IDs must not contain duplicates within the group.
 - Expense IDs must be unique within the group.
 - Settlement IDs must be unique within the group.
-- Every `payerId` in an expense must be in `memberIds`.
-- Every participant in an expense split must be in `memberIds`.
-- Every `fromMemberId` and `toMemberId` in a settlement must be in `memberIds`.
+- Every `payerId` in an expense must be a member ID in `members`.
+- Every participant in an expense split must be a member ID in `members`.
+- Every `fromMemberId` and `toMemberId` in a settlement must be a member ID in `members`.
 
-**Note:** Groups do not store balances. Balances are derived — see [Balance](#16-balance-derived).
+**Note:** Groups do not store balances. Balances are derived — see [Balance](#15-balance-derived).
 
 ---
 
-### 1.4 Expense
+### 1.3 Expense
 
 **File:** `src/domain/expense/expense.schema.ts`
 
@@ -150,7 +129,7 @@ PercentageExpenseSchema (extends Base)
 
 ---
 
-### 1.5 Settlement
+### 1.4 Settlement
 
 **File:** `src/domain/settlement/settlement.schema.ts`
 
@@ -185,7 +164,7 @@ The schema validates only structural correctness — `fromMemberId ≠ toMemberI
 
 ---
 
-### 1.6 Balance (derived)
+### 1.5 Balance (derived)
 
 **File:** `src/domain/balance/balance.schema.ts`
 
@@ -258,16 +237,15 @@ Validation is layered — each schema only validates what it can see.
 
 ```
 GlobalSchema.superRefine
-└── user IDs unique
 └── group IDs unique
-└── group.memberIds exist in users[]
 
     GroupSchema.superRefine
+    └── member IDs unique within group
     └── expense IDs unique
     └── settlement IDs unique
-    └── expense.payerId in group.memberIds
-    └── expense participants in group.memberIds
-    └── settlement members in group.memberIds
+    └── expense.payerId in group.members
+    └── expense participants in group.members
+    └── settlement members in group.members
 
         FixedExpenseSchema.superRefine
         └── sum(shares) === total
@@ -300,9 +278,9 @@ GlobalSchema.superRefine
 
 ## 5. Key Design Decisions
 
-### `User` vs `Member` terminology
+### Members are group-scoped
 
-The same person is called a `User` in the global context and a `Member` inside a group. This is not an inconsistency — it is an intentional domain modeling decision. `User` is an application-level entity; `Member` is the role that user plays within a group's context. This pattern is common in domain-driven design.
+Members live inside their group — there is no global user registry. When a group is created, its members are created inline. When a member is added to a group via `addMemberByName`, a new `Member` record is created within that group. There is no cross-group identity: the same real person joining two groups is represented as two separate `Member` records.
 
 ### Balance is always derived
 
@@ -314,7 +292,7 @@ Enforced at every level. All division uses `Math.floor` or `Math.round` on integ
 
 ### Divisibility not validated in schema
 
-`equal` split does not require `total % memberIds.length === 0`. Rejecting non-divisible amounts would block valid real-world cases (e.g., R$10 between 3 people). The remainder is handled in the calculation function.
+`equal` split does not require `total % members.length === 0`. Rejecting non-divisible amounts would block valid real-world cases (e.g., R$10 between 3 people). The remainder is handled in the calculation function.
 
 ### `superRefine` for fixed sum validation
 
@@ -341,6 +319,8 @@ The order of arrays in the domain is not arbitrary — it has financial conseque
 - The UI must preserve insertion order — no arbitrary sorting
 - Once expenses exist in a group, member and share order should be treated as immutable
 
+**`group.members[]`** — insertion order is preserved; IDs are stable and never reused within a group.
+
 **`group.expenses[]` and `group.settlements[]`** — order defines the chronological application sequence. `computeBalances` iterates them in array order. Reordering would not change the final balance (addition is commutative), but it would change the semantic meaning of the history.
 
 ---
@@ -349,8 +329,7 @@ The order of arrays in the domain is not arbitrary — it has financial conseque
 
 | Term | Meaning |
 |---|---|
-| `User` | A person in the global application state |
-| `Member` | A `User` referenced within the context of a group |
+| `Member` | A person belonging to a specific group. Members are group-scoped — there is no global user registry |
 | `Expense` | A cost paid by one member, split among participants |
 | `Settlement` | A confirmed payment between two members that reduces debt |
 | `SimplifiedDebt` | A suggested (not yet confirmed) payment, output of the simplification algorithm |
@@ -371,7 +350,7 @@ src/domain/
 │   ├── compute-direct-debts.ts     # computeDirectDebts()
 │   └── index.ts                    # barrel re-exports
 ├── common/
-│   ├── constants.ts                # BPS_TOTAL, BPS_MIN...
+│   ├── constants.ts                # BPS_TOTAL, BPS_MIN, GROUP_MEMBERS_MAX...
 │   ├── create-id.ts                # createIdGenerator()
 │   ├── entity-id.schema.ts         # EntityIdSchema
 │   └── index.ts                    # barrel re-exports
@@ -388,16 +367,16 @@ src/domain/
 ├── group/
 │   ├── group.schema.ts             # GroupSchema
 │   └── index.ts                    # barrel re-exports
+├── member/
+│   ├── member.schema.ts            # MemberSchema
+│   └── index.ts                    # barrel re-exports
 ├── money/
 │   ├── money.schema.ts             # ExpenseTotal, ShareAmount, BalanceAmount
 │   ├── percentage.schema.ts        # PercentageBasePointSchema
 │   └── index.ts                    # barrel re-exports
-├── settlement/
-│   ├── settlement.rules.ts         # validateSettlementCreation(), validateSettlementsStillValid()
-│   ├── settlement.schema.ts        # SettlementSchema
-│   └── index.ts                    # barrel re-exports
-└── user/
-    ├── user.schema.ts              # UserSchema
+└── settlement/
+    ├── settlement.rules.ts         # validateSettlementCreation(), validateSettlementsStillValid()
+    ├── settlement.schema.ts        # SettlementSchema
     └── index.ts                    # barrel re-exports
 src/lib/
 └── format.ts                       # Presentation utilities (formatCurrency — BRL, integer cents)

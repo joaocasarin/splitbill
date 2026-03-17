@@ -139,7 +139,7 @@ function balancesToArray(balances: Map<EntityId, number>): MemberBalance[] {
  * Invariant: sum of all returned amounts === 0.
  */
 export function computeBalances(group: Group): MemberBalance[] {
-    const balances = initializeBalances(group.memberIds);
+    const balances = initializeBalances(group.members.map((m) => m.id));
 
     for (const expense of group.expenses) {
         applyExpense(balances, expense);

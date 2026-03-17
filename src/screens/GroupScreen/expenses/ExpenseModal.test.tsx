@@ -2,7 +2,7 @@ import type { Expense } from "@domain/expense";
 import * as expenseDomain from "@domain/expense";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ExpenseModal } from "./ExpenseModal";
@@ -113,7 +113,7 @@ vi.mock("./SplitModeToggle", () => ({
     ),
 }));
 
-const members = testUsers;
+const members = testMembers;
 
 function makeHookReturn(
     overrides: Partial<

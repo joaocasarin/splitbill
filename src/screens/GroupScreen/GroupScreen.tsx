@@ -30,7 +30,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
     const {
         group,
-        users,
         members,
         memberCount,
         canAddMember,
@@ -85,7 +84,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <ExpensesSection
                 expenses={group.expenses}
-                users={users}
+                members={members}
                 onAddExpense={openAddExpense}
                 onEditExpense={openEditExpense}
                 onDeleteExpense={deleteExpense}
@@ -93,7 +92,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <SettlementsSection
                 settlements={group.settlements}
-                users={users}
+                members={members}
                 onAddSettlement={openAddSettlement}
                 onEditSettlement={openEditSettlement}
                 onDeleteSettlement={deleteSettlement}

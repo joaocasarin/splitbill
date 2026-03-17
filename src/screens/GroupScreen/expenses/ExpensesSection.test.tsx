@@ -1,14 +1,19 @@
 import type { EqualExpense, Expense } from "@domain/expense";
-import type { User } from "@domain/user";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
+import type { MemberRow } from "../members/MembersSection";
 import { ExpensesSection } from "./ExpensesSection";
 
 vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"));
 
-const users: User[] = testUsers;
+const members: MemberRow[] = testMembers.map((m) => ({
+    ...m,
+    amount: 0,
+    owes: [],
+    receives: [],
+}));
 
 const expense: EqualExpense = {
     id: 1,
@@ -38,7 +43,7 @@ function renderSection(
         ...render(
             <ExpensesSection
                 expenses={expenses}
-                users={users}
+                members={members}
                 onAddExpense={onAddExpense}
                 onEditExpense={onEditExpense}
                 onDeleteExpense={onDeleteExpense}
@@ -216,7 +221,7 @@ describe("ExpensesSection", () => {
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to User {id} when payer has no matching user", () => {
+        test("falls back to User {id} when payer has no matching member", () => {
             renderSection([{ ...expense, payerId: 999 }]);
             expect(screen.getByText(/paid by user 999/i)).toBeInTheDocument();
         });

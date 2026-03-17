@@ -17,7 +17,7 @@ tests/
 │   ├── expense.ts            # defaultEqualExpense (without id)
 │   ├── global.ts             # emptyGlobal, validGlobal, validGlobalEncoded
 │   ├── group.ts              # baseGroup for domain tests
-│   ├── users.ts              # testAlice, testBob, testUsers
+│   ├── members.ts            # testMemberAlice, testMemberBob, testMembers
 │   └── ui/
 │       └── dialog.tsx        # centralized mock of @components/ui/dialog
 ├── setup/
@@ -101,23 +101,22 @@ beforeEach(() => {
 
 ## 4. Shared test data and inline factories
 
-### 4.1 Test user constants
+### 4.1 Test member constants
 
-`tests/mocks/users.ts` exports `testAlice`, `testBob`, and `testUsers` — typed `User` objects with fixed IDs (`1` and `2`). Use these instead of defining inline user arrays in component tests that take user props directly.
+`tests/mocks/members.ts` exports `testMemberAlice`, `testMemberBob`, and `testMembers` — typed `Member` objects with fixed IDs (`1` and `2`). Use these instead of defining inline member arrays in component tests that take member props directly.
 
 ```typescript
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 
-const users: User[] = testUsers;
+const members: Member[] = testMembers;
 ```
 
 ### 4.2 Store setup helpers
 
 | Helper | Location | Purpose |
 |---|---|---|
-| `setupTwoUsers()` | `tests/helpers/store-helpers.ts` | Adds Alice (id:1) and Bob (id:2) to the store |
-| `setupGroupWithTwoMembers()` | `tests/helpers/store-helpers.ts` | Calls `setupTwoUsers()` + creates group "Trip" with both |
-| `setupGroupWithNonMember()` | `tests/helpers/store-helpers.ts` | Calls `setupTwoUsers()` + adds Carol (id:3) + creates group with Alice and Bob only |
+| `setupGroupWithTwoMembers()` | `tests/helpers/store-helpers.ts` | Creates group "Trip" with Alice (id:1) and Bob (id:2) as inline members |
+| `setupGroupWithNonMember()` | `tests/helpers/store-helpers.ts` | Creates group "Trip" with Alice and Bob only (Carol is not in the group) |
 
 ### 4.3 Inline factories
 
@@ -164,7 +163,7 @@ render(<Sidebar {...defaultProps} view={{ screen: "group", groupId: 1 }} />);
 
 `vi.mock("@components/ui/dialog", () => import("@tests/mocks/ui/dialog"))`
 
-Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `AddUsersModal.test.tsx`, `ExpenseModal.test.tsx`, `SettlementModal.test.tsx`, `ExpensesSection.test.tsx`, `SettlementsSection.test.tsx`, `ConfirmDeleteDialog.test.tsx`.
+Used in: `AddMemberModal.test.tsx`, `AddGroupModal.test.tsx`, `ExpenseModal.test.tsx`, `SettlementModal.test.tsx`, `ExpensesSection.test.tsx`, `SettlementsSection.test.tsx`, `ConfirmDeleteDialog.test.tsx`.
 
 Centralized because it is identical in all three files. Replaces the library’s headless component with a minimal implementation that: conditionally renders children, exposes a trigger button to open the dialog, and provides passthrough for header/title/footer.
 

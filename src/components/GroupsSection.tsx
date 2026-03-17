@@ -77,7 +77,7 @@ export function GroupsSection({
                                     </span>
 
                                     <span className="text-xs text-muted-foreground">
-                                        {group.memberIds.length} members
+                                        {group.members.length} members
                                     </span>
                                 </button>
                             </li>

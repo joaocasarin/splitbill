@@ -6,7 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@components/ui/dialog";
-import type { EntityId } from "@domain/common";
+import { type EntityId, USER_NAME_MAX, USER_NAME_MIN } from "@domain/common";
 import { useAppStore } from "@store";
 import { useId, useState } from "react";
 
@@ -17,24 +17,23 @@ type Props = {
 };
 
 export function AddMemberModal({ groupId, open, onClose }: Props) {
-    const { global, addMemberToGroup } = useAppStore();
-    const group = global.groups.find((g) => g.id === groupId);
-    const nonMembers = global.users.filter(
-        (u) => !group?.memberIds.includes(u.id),
-    );
+    const { addMemberByName } = useAppStore();
+    const [name, setName] = useState("");
+    const inputId = useId();
 
-    const [selectedId, setSelectedId] = useState<EntityId | null>(null);
-    const selectId = useId();
+    const trimmed = name.trim();
+    const canAdd =
+        trimmed.length >= USER_NAME_MIN && trimmed.length <= USER_NAME_MAX;
 
     function handleAdd() {
-        if (selectedId === null) return;
-        addMemberToGroup(groupId, selectedId);
+        if (!canAdd) return;
+        addMemberByName(groupId, trimmed);
         reset();
         onClose();
     }
 
     function reset() {
-        setSelectedId(null);
+        setName("");
     }
 
     function handleOpenChange(next: boolean) {
@@ -52,26 +51,17 @@ export function AddMemberModal({ groupId, open, onClose }: Props) {
                 </DialogHeader>
 
                 <div className="flex flex-col gap-1.5 py-2">
-                    <label htmlFor={selectId} className="text-sm font-medium">
-                        Select user
+                    <label htmlFor={inputId} className="text-sm font-medium">
+                        Name
                     </label>
-                    <select
-                        id={selectId}
+                    <input
+                        id={inputId}
+                        type="text"
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                        value={selectedId ?? ""}
-                        onChange={(e) =>
-                            setSelectedId(
-                                e.target.value ? Number(e.target.value) : null,
-                            )
-                        }
-                    >
-                        <option value="">Choose a user…</option>
-                        {nonMembers.map((u) => (
-                            <option key={u.id} value={u.id}>
-                                {u.name}
-                            </option>
-                        ))}
-                    </select>
+                        placeholder="Member name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
                 </div>
 
                 <DialogFooter>
@@ -82,11 +72,7 @@ export function AddMemberModal({ groupId, open, onClose }: Props) {
                     >
                         Cancel
                     </Button>
-                    <Button
-                        size="sm"
-                        disabled={selectedId === null}
-                        onClick={handleAdd}
-                    >
+                    <Button size="sm" disabled={!canAdd} onClick={handleAdd}>
                         Add
                     </Button>
                 </DialogFooter>

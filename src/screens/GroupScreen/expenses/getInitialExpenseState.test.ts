@@ -1,9 +1,9 @@
 import type { Expense } from "@domain/expense";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test } from "vitest";
 import { getInitialExpenseState } from "./getInitialExpenseState";
 
-const members = testUsers;
+const members = testMembers;
 
 describe("getInitialExpenseState", () => {
     describe("create mode (no expense)", () => {

@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-03-16 
+> **Last updated:** 2026-03-17
 > **Status:** Draft
 
 ---
@@ -49,9 +49,8 @@ URL (?state=...)
     └── decode + decompress
         └── JSON.parse
             └── GlobalSchema.parse(data)     ← Zod validates entire state
-                ├── users[]                  ← global entities
                 └── groups[]
-                    ├── memberIds[]          ← references to user IDs
+                    ├── members[]            ← inline group members
                     ├── expenses[]
                     └── settlements[]
 ```
@@ -86,20 +85,18 @@ src/
 ├── App.tsx              # root — owns view state and isSidebarOpen state
 ├── AppLayout.tsx        # shell — header, desktop aside, mobile drawer overlay
 ├── components/
-│   ├── Sidebar.tsx      # navigation — users list, groups list, modals
-│   ├── UsersSection.tsx # user list with avatars + "Add user" button
+│   ├── Sidebar.tsx      # navigation — groups list, modals
 │   ├── GroupsSection.tsx# group list with member counts + "Add group" button
 │   ├── CurrencyInput.tsx# cents-based currency input (R$, keyboard-driven)
 │   └── ConfirmDeleteDialog.tsx # reusable delete confirmation dialog
 └── screens/
     ├── HomeScreen/      # empty state — "Select a group from the sidebar"
-    │   ├── AddUsersModal.tsx   # multi-user creation (dynamic row list)
-    │   └── AddGroupModal.tsx   # group creation with member checkboxes
+    │   └── AddGroupModal.tsx   # group creation with inline member name inputs
     ├── GroupScreen/      # main group view — members, expenses, settlements
     │   ├── useGroupScreen.ts   # hook: group data, balances, modal state
     │   ├── members/
     │   │   ├── MembersSection.tsx  # member list with balances + remove buttons
-    │   │   └── AddMemberModal.tsx  # add existing user to group
+    │   │   └── AddMemberModal.tsx  # add new member by name to group
     │   ├── expenses/
     │   │   ├── ExpensesSection.tsx        # expense list with edit/delete actions
     │   │   ├── ExpenseModal.tsx           # dual-purpose add/edit expense modal
@@ -147,12 +144,12 @@ Display an error screen. Do not attempt partial hydration.
 
 ## 5. ID Generation Strategy
 
-IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `user`, `group`, `expense`, and `settlement`.
+IDs are **positive integers** (`int`, up to `Number.MAX_SAFE_INTEGER`). They are generated via `createIdGenerator(global)` — a closure that maintains independent counters per entity type: `member`, `group`, `expense`, and `settlement`.
 
 In practice, URL size limits (see [§6](#6-initial-load-behavior)) will be reached long before integer overflow becomes a concern.
 
 **Why per-type counters?**
-Each domain enforces ID uniqueness within its own scope — user IDs among users, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
+Each domain enforces ID uniqueness within its own scope — member IDs within a group, group IDs among groups, expense IDs within a group. Cross-domain ID uniqueness is never required, so a shared counter would only inflate IDs unnecessarily.
 
 **Counter initialization:**
 When loading state from URL, `createIdGenerator` is called with the loaded `Global` — it scans all existing IDs and initializes each counter to `max(existingIds)` for that type. When starting from empty state, all counters start at `0` and the first generated ID of each type is `1`.
@@ -175,8 +172,7 @@ URL has ?state= param
 
 URL has no ?state= param
     └── start with empty state
-        └── user must create at least one User
-            └── only then can a Group be created
+        └── user creates a Group directly (with inline member names)
 ```
 
 ### URL size considerations
@@ -203,7 +199,7 @@ There is no planned mitigation. This is an accepted architectural tradeoff of th
 
 The `Global` state includes a `version` field — a positive integer that identifies the schema version used to serialize the state.
 
-**Current version:** `2`
+**Current version:** `3`
 
 **Purpose:**
 - Allows future migrations when the schema changes in a breaking way
@@ -221,6 +217,7 @@ State from an older version fails `GlobalSchema.parse()` and renders the error s
 **Version history:**
 - `1` — initial schema (no timestamps)
 - `2` — added `createdAt` (required) to User, Group, Expense, Settlement; added `updatedAt` (optional) to Expense and Settlement
+- `3` — removed global `users[]` array; groups now carry inline `members[]`; removed `memberIds[]` references
 
 ## 8. Roadmap & Pending Decisions
 
@@ -263,9 +260,8 @@ Integer timestamps are smaller in the URL payload, require no parsing, and are d
 
 | Field | Type | Entity | Notes |
 |---|---|---|---|
-| `createdAt` | `number` (unix ms), required | User, Group, Expense, Settlement | Set by store on creation |
+| `createdAt` | `number` (unix ms), required | Member, Group, Expense, Settlement | Set by store on creation |
 | `updatedAt` | `number` (unix ms), optional | Expense, Settlement | Set by store on edit only |
-| `deletedAt` | `number` (unix ms), optional | User only | Planned — see §8.3 |
 
 **Display format:** `hh:mm dd/mm/yy` (24-hour, local time) via `formatTimestamp()` in `src/lib/format.ts`.
 
@@ -273,25 +269,9 @@ Integer timestamps are smaller in the URL payload, require no parsing, and are d
 
 ---
 
-### 8.3 Soft delete for Users (deferred)
+### 8.3 Member removal ✅ Implemented
 
-Users are never permanently removed. Instead, `deletedAt` is set on the `User` entity.
-
-**Rules when implemented:**
-- `deletedAt` can only be set if the user's balance is `0` in **all groups**.
-- A deleted user cannot participate in new expenses or settlements.
-- A deleted user remains visible in all historical records.
-
-**Two distinct operations — not to be confused:**
-
-| Operation | What it means | Where it happens |
-|---|---|---|
-| Remove from group | Remove `memberId` from `group.memberIds` | Group level |
-| Delete from app | Set `deletedAt` on `User` | Global level |
-
-Removing a user from a group does not delete them from the app, and vice versa. Each has its own set of rules.
-
-**Removing a member from a group** follows separate rules from soft deleting a user: ✅ Implemented
+**Removing a member from a group** is validated before it takes effect:
 
 | Rule | Detail |
 |---|---|
@@ -300,18 +280,6 @@ Removing a user from a group does not delete them from the app, and vice versa. 
 | History | Member's past expenses and settlements remain in the group unchanged |
 
 **Implementation:** `removeMemberFromGroup(groupId, memberId)` in the store. Returns `ValidationResult`.
-
-### Referential integrity note
-
-The current schema enforces that all expense and settlement references must exist in `group.memberIds`. Member removal (`removeMemberFromGroup`) is implemented — it validates that the member's balance is zero and that at least 2 members remain, then removes the member from `memberIds`. Historical expenses and settlements referencing the removed member remain unchanged.
-
-When soft delete for users is implemented, the referential integrity model may need to be revised. Two approaches are being considered:
-
-**Option A — Historical roster:** `memberIds` becomes the full historical roster. A separate `activeMemberIds` field tracks current active members. Validation splits: structural references check against `memberIds`, new expense/settlement creation checks against `activeMemberIds`.
-
-**Option B — Relaxed validation:** References in historical expenses and settlements are no longer validated against `memberIds`. Only new expenses and settlements validate against active members.
-
-This decision is deferred until soft delete is implemented.
 
 ---
 
@@ -365,15 +333,14 @@ The application state is managed by a single Zustand store located at `src/store
 | `hydrateFromUrl()` | Reads `?state=` from URL, parses and validates, sets `status` accordingly |
 | `initEmpty()` | Resets store to empty state |
 | `syncToUrl()` | Serializes `global` and writes to `?state=` in URL |
-| `addUser(name)` | Creates a new user and syncs to URL |
-| `addGroup(name, memberIds)` | Creates a new group and syncs to URL |
+| `addGroupWithMembers(name, memberNames)` | Creates a new group with inline members (by name) and syncs to URL |
+| `addMemberByName(groupId, name)` | Creates a new member in the group by name and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
 | `updateExpense(groupId, expense)` | Validates that existing settlements remain valid after the change, updates the expense, and syncs to URL. Returns `ValidationResult`. |
 | `deleteExpense(groupId, expenseId)` | Validates that existing settlements remain valid after removal, deletes the expense, and syncs to URL. Returns `ValidationResult`. |
 | `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
 | `updateSettlement(groupId, settlement)` | Excludes the current settlement from debt calculation, validates with `validateSettlementCreation`, updates the settlement, and syncs to URL. Returns `ValidationResult`. |
 | `deleteSettlement(groupId, settlementId)` | Deletes the settlement from the group and syncs to URL. Returns `ValidationResult`. |
-| `addMemberToGroup(groupId, userId)` | Adds a user to a group's memberIds. Idempotent — no-op if already a member. |
 | `removeMemberFromGroup(groupId, memberId)` | Validates balance, minimum members, and membership, then removes. Returns `ValidationResult`. |
 
 ### Notes

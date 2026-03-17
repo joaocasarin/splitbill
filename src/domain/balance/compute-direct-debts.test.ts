@@ -223,7 +223,12 @@ describe("computeDirectDebts", () => {
         test("remainder goes to first participant when payer is not in shares", () => {
             const debts = computeDirectDebts({
                 ...baseGroup,
-                memberIds: [1, 2, 3, 4],
+                members: [
+                    { id: 1, name: "Alice", createdAt: 1000000 },
+                    { id: 2, name: "Bob", createdAt: 1000000 },
+                    { id: 3, name: "Carol", createdAt: 1000000 },
+                    { id: 4, name: "Dave", createdAt: 1000000 },
+                ],
                 expenses: [
                     {
                         id: 1,

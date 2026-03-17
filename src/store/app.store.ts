@@ -8,6 +8,7 @@ import {
 import type { CreateExpense, Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
+import type { Member } from "@domain/member";
 import {
     type CreateSettlement,
     type Settlement,
@@ -15,7 +16,6 @@ import {
     validateSettlementCreation,
     validateSettlementsStillValid,
 } from "@domain/settlement";
-import type { User } from "@domain/user";
 import lzstring from "lz-string";
 import { create } from "zustand";
 
@@ -31,9 +31,8 @@ type AppActions = {
     hydrateFromUrl: () => void;
     initEmpty: () => void;
     syncToUrl: () => void;
-    addUser: (name: string) => void;
-    addGroup: (name: string, memberIds: EntityId[]) => void;
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
+    addGroupWithMembers: (name: string, memberNames: string[]) => void;
+    addMemberByName: (groupId: EntityId, name: string) => void;
     removeMemberFromGroup: (
         groupId: EntityId,
         userId: EntityId,
@@ -59,7 +58,6 @@ export type AppStore = AppState & AppActions;
 
 const emptyGlobal: Global = {
     version: SCHEMA_VERSION,
-    users: [],
     groups: [],
 };
 
@@ -111,29 +109,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         url.searchParams.set("state", compressedState);
         window.history.replaceState(null, "", url.toString());
     },
-    addUser: (name: string) => {
+    addGroupWithMembers: (name: string, memberNames: string[]) => {
         const { global, createId, syncToUrl } = get();
-        const newUser: User = {
-            id: createId("user"),
-            name,
+        const members: Member[] = memberNames.map((memberName) => ({
+            id: createId("member"),
+            name: memberName,
             createdAt: Date.now(),
-        };
-        set({
-            status: "loaded",
-            global: {
-                ...global,
-                users: [...global.users, newUser],
-            },
-        });
-        syncToUrl();
-    },
-    addGroup: (name: string, memberIds: EntityId[]) => {
-        const { global, createId, syncToUrl } = get();
+        }));
         const newGroup: Group = {
             id: createId("group"),
             name,
             createdAt: Date.now(),
-            memberIds,
+            members,
             expenses: [],
             settlements: [],
         };
@@ -143,15 +130,24 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => {
-        const { global, syncToUrl } = get();
+    addMemberByName: (groupId: EntityId, name: string) => {
+        const { global, createId, syncToUrl } = get();
+        const memberId = createId("member");
+        const newMember: Member = {
+            id: memberId,
+            name,
+            createdAt: Date.now(),
+        };
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId && !g.memberIds.includes(userId)
-                        ? { ...g, memberIds: [...g.memberIds, userId] }
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              members: [...g.members, newMember],
+                          }
                         : g,
                 ),
             },
@@ -169,11 +165,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
-        if (!group.memberIds.includes(userId)) {
+        if (!group.members.some((m) => m.id === userId)) {
             return { valid: false, reason: "member not found in group" };
         }
 
-        if (group.memberIds.length <= GROUP_MEMBERS_MIN) {
+        if (group.members.length <= GROUP_MEMBERS_MIN) {
             return {
                 valid: false,
                 reason: "group must have at least 2 members",
@@ -195,9 +191,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                     g.id === groupId
                         ? {
                               ...g,
-                              memberIds: g.memberIds.filter(
-                                  (id) => id !== userId,
-                              ),
+                              members: g.members.filter((m) => m.id !== userId),
                           }
                         : g,
                 ),

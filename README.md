@@ -28,8 +28,7 @@ Fully shareable via URL.
 
 This application allows users to:
 
-- Create users
-- Create groups with members
+- Create groups with inline members
 - Add expenses with equal, fixed, or percentage splits
 - View member balances per group
 - Register settlements between members
@@ -49,8 +48,7 @@ The system is designed with strong domain consistency and financial determinism.
 - Full state sharing via compressed URL
 - Direct-debt validation on settlement creation
 - Edit and delete expenses and settlements with confirmation dialogs
-- Member removal with balance and minimum-member validation
-- Multi-user creation (batch add users)
+- Member removal with balance and minimum/maximum-member validation (min 2, max 20)
 - Responsive layout with sidebar navigation and mobile drawer support
 
 ---
@@ -93,15 +91,13 @@ The application state is structured as:
 ```
 Global
 ├── version
-├── users[]
 └── groups[]
-    ├── memberIds[]
+    ├── members[]
     ├── expenses[]
     └── settlements[]
 ```
 
-Users are global.
-Groups reference users by ID.
+Members are group-scoped — there is no global user registry.
 Balances are computed dynamically — never stored.
 
 ---
