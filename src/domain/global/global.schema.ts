@@ -27,18 +27,6 @@ export const GlobalSchema = z
                 path: ["groups"],
             });
         }
-
-        data.groups.forEach((group, gi) => {
-            group.memberIds.forEach((memberId, mi) => {
-                if (!userIds.has(memberId)) {
-                    ctx.addIssue({
-                        code: "custom",
-                        message: `Group[${gi}]: memberId ${memberId} does not exist in global users`,
-                        path: ["groups", gi, "memberIds", mi],
-                    });
-                }
-            });
-        });
     });
 
 export type Global = z.infer<typeof GlobalSchema>;

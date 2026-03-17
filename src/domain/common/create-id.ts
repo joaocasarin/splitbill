@@ -17,7 +17,7 @@ export function createIdGenerator(global: Global) {
     for (const group of global.groups) {
         if (group.id > maxGroupId) maxGroupId = group.id;
 
-        for (const member of group.members ?? []) {
+        for (const member of group.members) {
             if (member.id > maxMemberId) maxMemberId = member.id;
         }
 

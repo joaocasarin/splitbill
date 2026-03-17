@@ -65,7 +65,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         return { group: null };
     }
 
-    const groupMembers = group.members ?? [];
+    const groupMembers = group.members;
     const balances = computeBalances(group);
     const directDebts = computeDirectDebts(group);
 

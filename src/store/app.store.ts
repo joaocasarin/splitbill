@@ -144,11 +144,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             id: createId("group"),
             name,
             createdAt: Date.now(),
-            memberIds,
-            members:
-                resolvedMembers.length >= GROUP_MEMBERS_MIN
-                    ? resolvedMembers
-                    : undefined,
+            members: resolvedMembers,
             expenses: [],
             settlements: [],
         };
@@ -160,23 +156,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     addGroupWithMembers: (name: string, memberNames: string[]) => {
         const { global, createId, syncToUrl } = get();
-        const memberIds: EntityId[] = [];
-        const members: Member[] = memberNames.map((memberName) => {
-            const id = createId("member");
-
-            memberIds.push(id);
-
-            return {
-                id,
-                name: memberName,
-                createdAt: Date.now(),
-            };
-        });
+        const members: Member[] = memberNames.map((memberName) => ({
+            id: createId("member"),
+            name: memberName,
+            createdAt: Date.now(),
+        }));
         const newGroup: Group = {
             id: createId("group"),
             name,
             createdAt: Date.now(),
-            memberIds,
             members,
             expenses: [],
             settlements: [],
@@ -198,15 +186,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             global: {
                 ...global,
                 groups: global.groups.map((g) => {
-                    if (g.id !== groupId || g.memberIds.includes(userId)) {
+                    if (
+                        g.id !== groupId ||
+                        g.members.some((m) => m.id === userId)
+                    ) {
                         return g;
                     }
                     return {
                         ...g,
-                        memberIds: [...g.memberIds, userId],
                         members:
                             newMember !== undefined
-                                ? [...(g.members ?? []), newMember]
+                                ? [...g.members, newMember]
                                 : g.members,
                     };
                 }),
@@ -230,8 +220,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                     g.id === groupId
                         ? {
                               ...g,
-                              memberIds: [...g.memberIds, memberId],
-                              members: [...(g.members ?? []), newMember],
+                              members: [...g.members, newMember],
                           }
                         : g,
                 ),
@@ -250,11 +239,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
-        if (!group.memberIds.includes(userId)) {
+        if (!group.members.some((m) => m.id === userId)) {
             return { valid: false, reason: "member not found in group" };
         }
 
-        if (group.memberIds.length <= GROUP_MEMBERS_MIN) {
+        if (group.members.length <= GROUP_MEMBERS_MIN) {
             return {
                 valid: false,
                 reason: "group must have at least 2 members",
@@ -276,9 +265,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                     g.id === groupId
                         ? {
                               ...g,
-                              memberIds: g.memberIds.filter(
-                                  (id) => id !== userId,
-                              ),
+                              members: g.members.filter((m) => m.id !== userId),
                           }
                         : g,
                 ),

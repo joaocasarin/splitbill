@@ -133,7 +133,10 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         group: {
             id: 1,
             name: "Trip",
-            memberIds: [1, 2],
+            members: [
+                { id: 1, name: "Alice", createdAt: 1000000 },
+                { id: 2, name: "Bob", createdAt: 1000000 },
+            ],
             expenses: [],
             settlements: [],
         },
