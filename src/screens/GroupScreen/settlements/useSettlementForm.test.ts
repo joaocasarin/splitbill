@@ -1,13 +1,32 @@
 import type { DirectDebt } from "@domain/balance";
-import type { User } from "@domain/user";
+import type { CreateSettlement, Settlement } from "@domain/settlement";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
+import type { MemberRow } from "../members/MembersSection";
 import { useSettlementForm } from "./useSettlementForm";
 
-const alice: User = { id: 1, name: "Alice" };
-const bob: User = { id: 2, name: "Bob" };
-const charlie: User = { id: 3, name: "Charlie" };
-const members: User[] = [alice, bob, charlie];
+const alice: MemberRow = {
+    id: 1,
+    name: "Alice",
+    amount: 0,
+    owes: [],
+    receives: [],
+};
+const bob: MemberRow = {
+    id: 2,
+    name: "Bob",
+    amount: 0,
+    owes: [],
+    receives: [],
+};
+const charlie: MemberRow = {
+    id: 3,
+    name: "Charlie",
+    amount: 0,
+    owes: [],
+    receives: [],
+};
+const members: MemberRow[] = [alice, bob, charlie];
 
 const directDebts: DirectDebt[] = [
     { fromMemberId: 1, toMemberId: 2, amount: 5000 },
@@ -17,13 +36,11 @@ const directDebts: DirectDebt[] = [
 
 function setup(
     overrides: {
-        members?: User[];
+        members?: MemberRow[];
         directDebts?: DirectDebt[];
-        onSubmit?: (
-            settlement: Omit<import("@domain/settlement").Settlement, "id">,
-        ) => void;
+        onSubmit?: (settlement: CreateSettlement) => void;
         onClose?: () => void;
-        settlement?: import("@domain/settlement").Settlement;
+        settlement?: Settlement;
     } = {},
 ) {
     const onSubmit = overrides.onSubmit ?? vi.fn();
@@ -276,6 +293,7 @@ describe("useSettlementForm", () => {
             fromMemberId: 1,
             toMemberId: 2,
             amount: 3000,
+            createdAt: 1000000,
         };
 
         test("isEditing is true when settlement is provided", () => {

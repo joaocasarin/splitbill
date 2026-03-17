@@ -27,8 +27,8 @@ describe("useExpenseForm", () => {
         test("members are derived from the store", () => {
             const { hook } = setup();
             expect(hook.result.current.members).toEqual([
-                { id: 1, name: "Alice" },
-                { id: 2, name: "Bob" },
+                expect.objectContaining({ id: 1, name: "Alice" }),
+                expect.objectContaining({ id: 2, name: "Bob" }),
             ]);
         });
 

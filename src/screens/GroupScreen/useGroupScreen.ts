@@ -3,7 +3,7 @@ import { computeBalances, computeDirectDebts } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
-import type { Settlement } from "@domain/settlement";
+import type { CreateSettlement, Settlement } from "@domain/settlement";
 import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
@@ -35,7 +35,7 @@ type GroupFound = {
     openEditSettlement: (settlement: Settlement) => void;
     closeEditSettlement: () => void;
     removeMember: (id: EntityId) => void;
-    addSettlement: (settlement: Omit<Settlement, "id">) => void;
+    addSettlement: (settlement: CreateSettlement) => void;
     updateSettlement: (settlement: Settlement) => void;
     deleteExpense: (expenseId: EntityId) => void;
     deleteSettlement: (settlementId: EntityId) => void;
@@ -66,19 +66,36 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
     }
 
     const balances = computeBalances(group);
+    const directDebts = computeDirectDebts(group);
+
+    const getUserName = (id: EntityId) =>
+        users.find((u) => u.id === id)?.name ?? `User ${id}`;
+
     const members: MemberRow[] = group.memberIds.map((id) => {
-        const user = users.find((u) => u.id === id);
         const balance = balances.find((b) => b.memberId === id);
+        const owes = directDebts
+            .filter((d) => d.fromMemberId === id)
+            .map((d) => ({
+                name: getUserName(d.toMemberId),
+                amount: d.amount,
+            }));
+        const receives = directDebts
+            .filter((d) => d.toMemberId === id)
+            .map((d) => ({
+                name: getUserName(d.fromMemberId),
+                amount: d.amount,
+            }));
         return {
             id,
-            name: user?.name ?? `User ${id}`,
+            name: getUserName(id),
             amount: balance?.amount ?? 0,
+            owes,
+            receives,
         };
     });
 
     const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
     const canAddMember = nonMembers.length > 0;
-    const directDebts = computeDirectDebts(group);
     const editDirectDebts = editingSettlement
         ? computeDirectDebts({
               ...group,
@@ -113,7 +130,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
             setEditingSettlement(settlement),
         closeEditSettlement: () => setEditingSettlement(null),
         removeMember: (id: EntityId) => removeMemberFromGroup(groupId, id),
-        addSettlement: (settlement: Omit<Settlement, "id">) =>
+        addSettlement: (settlement: CreateSettlement) =>
             storeAddSettlement(groupId, settlement),
         updateSettlement: (settlement: Settlement) =>
             storeUpdateSettlement(groupId, settlement),

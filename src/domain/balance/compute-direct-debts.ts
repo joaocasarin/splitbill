@@ -20,7 +20,10 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
                 const membersAmount = expense.memberIds.length;
                 const share = Math.floor(expense.total / membersAmount);
                 const remainder = expense.total - share * membersAmount;
-                let remainderAssigned = false;
+                const payerIsParticipant = expense.memberIds.includes(
+                    expense.payerId,
+                );
+                let remainderAssigned = payerIsParticipant;
 
                 for (const memberId of expense.memberIds) {
                     if (memberId === expense.payerId) continue;
@@ -47,7 +50,10 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
                 );
                 const remainder =
                     expense.total - amounts.reduce((a, b) => a + b, 0);
-                let remainderAssigned = false;
+                const payerInShares = expense.shares.some(
+                    (s) => s.memberId === expense.payerId,
+                );
+                let remainderAssigned = payerInShares;
 
                 for (let i = 0; i < expense.shares.length; i++) {
                     const share = expense.shares[i];
@@ -72,6 +78,18 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
             settlement.toMemberId,
             -settlement.amount,
         );
+    }
+
+    for (const [key, amount] of debts.entries()) {
+        const [from, to] = key.split("-").map(Number);
+        const reverseKey = getKey(to, from);
+        const reverseAmount = debts.get(reverseKey) ?? 0;
+        if (reverseAmount > 0 && amount > 0) {
+            if (amount >= reverseAmount) {
+                debts.set(key, amount - reverseAmount);
+                debts.set(reverseKey, 0);
+            }
+        }
     }
 
     return Array.from(debts.entries())

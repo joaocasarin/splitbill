@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-03-10  
+> **Last updated:** 2026-03-16 
 > **Status:** Draft
 
 ---
@@ -57,12 +57,13 @@ Represents a person in the application. Users are **global** — they exist inde
 ```
 UserSchema
 ├── id: EntityId
-└── name: string (min 3, max 25)
+├── name: string (min 3, max 25)
+└── createdAt: number (unix ms)
 ```
 
 **Conceptual note:** A `User` in the global context becomes a `Member` when referenced inside a group. The same real person has two different roles depending on the context they appear in. This is intentional — see [Terminology Glossary](#6-terminology-glossary).
 
-**Pending:** Soft delete (`deletedAt`) is planned but not yet implemented. See [APP_SPEC.md](./APP_SPEC.md).
+**Pending:** Soft delete (`deletedAt`, optional) is planned but not yet implemented. See [APP_SPEC.md](./APP_SPEC.md).
 
 ---
 
@@ -76,6 +77,7 @@ Represents a collection of members sharing expenses.
 GroupSchema
 ├── id: EntityId
 ├── name: string (min 4, max 20)
+├── createdAt: number (unix ms)
 ├── memberIds: EntityId[] (min 2, no duplicates)
 ├── expenses: Expense[]
 └── settlements: Settlement[]
@@ -105,7 +107,9 @@ BaseExpenseFields
 ├── id: EntityId
 ├── title: string (min 3, max 50)
 ├── total: ExpenseTotal (positive int, cents)
-└── payerId: EntityId
+├── payerId: EntityId
+├── createdAt: number (unix ms)
+└── updatedAt?: number (unix ms, set on edit)
 ```
 
 The expense is a **discriminated union** on `splitMode`:
@@ -157,7 +161,9 @@ SettlementSchema
 ├── id: EntityId
 ├── fromMemberId: EntityId (who pays)
 ├── toMemberId: EntityId (who receives)
-└── amount: ShareAmount (positive int, cents)
+├── amount: ShareAmount (positive int, cents)
+├── createdAt: number (unix ms)
+└── updatedAt?: number (unix ms, set on edit)
 ```
 
 **Rules:**
@@ -210,7 +216,7 @@ DirectDebtSchema
 **Invariant:** The sum of all `MemberBalance.amount` values in a group must always equal `0`.
 
 > **Note:** `SimplifiedDebt` is mapped but not part of the initial scope. See [APP_SPEC.md](./APP_SPEC.md).
-> **Note:** Output of computeDirectDebts(). Used by validateSettlementCreation() to enforce direct-payment rules.
+> **Note:** `DirectDebt` is the output of `computeDirectDebts()`. The function applies expense splits and settlement reductions, then **nets cross-pair debts** — if A owes B and B owes A, the two are cancelled against each other and only the net direction survives. Used by `validateSettlementCreation()` to enforce direct-payment rules.
 
 ---
 
@@ -240,9 +246,9 @@ All monetary values are stored as **integers in cents (BRL)**. No floats anywher
 
 | Mode | Data stored | Schema-level validation | Calc-level logic |
 |---|---|---|---|
-| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the first non-payer participant in the list |
+| `equal` | `memberIds[]` | No duplicates, min 2 | Divide total; remainder absorbed by the payer (or first participant if payer is not in the list) |
 | `fixed` | `shares[]{memberId, value}` | No duplicates; sum = total | Direct use |
-| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the first non-payer participant in the list |
+| `percentage` | `shares[]{memberId, value}` | No duplicates; sum = 10000 bps | `Math.round(total * bps / 10000)` per member; remainder from rounding absorbed by the payer (or first participant if payer is not in shares) |
 
 ---
 
@@ -327,9 +333,8 @@ Rules files:
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
 
-- **`group.memberIds[]`** — the first non-payer participant absorbs remainder cents in equal splits
-- **`expense.memberIds[]`** (equal split) — the first member absorbs remainder cents
-- **`expense.shares[]`** (percentage split) — the first non-payer participant's share absorbs rounding remainder
+- **`expense.memberIds[]`** (equal split) — the payer absorbs remainder cents (or first participant if payer is not in the list)
+- **`expense.shares[]`** (percentage split) — the payer's share absorbs rounding remainder (or first participant if payer is not in shares)
 
 **Consequences:**
 - Reordering these arrays changes the financial outcome

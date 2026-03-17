@@ -1,3 +1,5 @@
+export const SCHEMA_VERSION = 2;
+
 export const BPS_TOTAL = 10000;
 export const BPS_MIN = 1;
 

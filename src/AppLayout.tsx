@@ -1,5 +1,6 @@
 import { Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { siGithub } from "simple-icons";
 
 type Props = {
     sidebar: ReactNode;
@@ -51,6 +52,34 @@ export function AppLayout({
                 {/* Main content */}
                 <main className="flex-1 overflow-y-auto">{children}</main>
             </div>
+
+            <footer className="py-2 px-4 flex items-center justify-center gap-2 text-xs text-muted-foreground border-t border-border bg-background shrink-0">
+                <a
+                    href="https://github.com/joaocasarin"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub user"
+                    className="hover:text-foreground transition-colors"
+                >
+                    <span>© 2025 João Casarin</span>
+                </a>
+                <a
+                    href="https://github.com/joaocasarin/splitbill"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub repository"
+                    className="hover:text-foreground transition-colors"
+                >
+                    <svg
+                        role="img"
+                        viewBox="0 0 24 24"
+                        className="w-3 h-3 fill-current"
+                    >
+                        <title>GitHub</title>
+                        <path d={siGithub.path} />
+                    </svg>
+                </a>
+            </footer>
 
             {/* Mobile sidebar overlay */}
             {isSidebarOpen && (

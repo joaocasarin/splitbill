@@ -138,7 +138,12 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
             settlements: [],
         },
         users: testUsers,
-        members: testUsers.map((u) => ({ ...u, amount: 0 })),
+        members: testUsers.map((u) => ({
+            ...u,
+            amount: 0,
+            owes: [],
+            receives: [],
+        })),
         memberCount: 2,
         canAddMember: false,
         directDebts: [],
@@ -289,6 +294,7 @@ describe("GroupScreen", () => {
                 payerId: 1,
                 splitMode: "equal" as const,
                 memberIds: [1, 2],
+                createdAt: 1000000,
             };
             renderScreen(makeHookReturn({ editingExpense }));
             const dialogs = screen.getAllByRole("dialog", {
@@ -353,6 +359,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             };
             renderScreen(makeHookReturn({ editingSettlement }));
             const dialogs = screen.getAllByRole("dialog", {
@@ -375,6 +382,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             };
             renderScreen(
                 makeHookReturn({ editingSettlement, updateSettlement }),
@@ -387,6 +395,7 @@ describe("GroupScreen", () => {
                 fromMemberId: 2,
                 toMemberId: 1,
                 amount: 3000,
+                createdAt: 1000000,
             });
         });
     });

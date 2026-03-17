@@ -63,7 +63,13 @@ describe("validateSettlementsStillValid", () => {
 
     test("returns valid when all settlements are within debt", () => {
         const settlements: Settlement[] = [
-            { id: 1, fromMemberId: 1, toMemberId: 2, amount: 3000 },
+            {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 3000,
+                createdAt: 1000000,
+            },
         ];
         const result = validateSettlementsStillValid(debts, settlements);
         expect(result.valid).toBe(true);
@@ -71,7 +77,13 @@ describe("validateSettlementsStillValid", () => {
 
     test("returns invalid when a settlement exceeds debt", () => {
         const settlements: Settlement[] = [
-            { id: 1, fromMemberId: 1, toMemberId: 2, amount: 6000 },
+            {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 6000,
+                createdAt: 1000000,
+            },
         ];
         const result = validateSettlementsStillValid(debts, settlements);
         expect(result.valid).toBe(false);
@@ -82,7 +94,13 @@ describe("validateSettlementsStillValid", () => {
 
     test("returns invalid when a settlement has no matching debt", () => {
         const settlements: Settlement[] = [
-            { id: 1, fromMemberId: 2, toMemberId: 1, amount: 1000 },
+            {
+                id: 1,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 1000,
+                createdAt: 1000000,
+            },
         ];
         const result = validateSettlementsStillValid(debts, settlements);
         expect(result.valid).toBe(false);
@@ -94,8 +112,20 @@ describe("validateSettlementsStillValid", () => {
             { fromMemberId: 3, toMemberId: 2, amount: 3000 },
         ];
         const settlements: Settlement[] = [
-            { id: 1, fromMemberId: 1, toMemberId: 2, amount: 5000 },
-            { id: 2, fromMemberId: 3, toMemberId: 2, amount: 2000 },
+            {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 5000,
+                createdAt: 1000000,
+            },
+            {
+                id: 2,
+                fromMemberId: 3,
+                toMemberId: 2,
+                amount: 2000,
+                createdAt: 1000000,
+            },
         ];
         const result = validateSettlementsStillValid(multiDebts, settlements);
         expect(result.valid).toBe(true);
@@ -103,8 +133,20 @@ describe("validateSettlementsStillValid", () => {
 
     test("returns invalid when one of multiple settlements is invalid", () => {
         const settlements: Settlement[] = [
-            { id: 1, fromMemberId: 1, toMemberId: 2, amount: 3000 },
-            { id: 2, fromMemberId: 2, toMemberId: 1, amount: 1000 },
+            {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 3000,
+                createdAt: 1000000,
+            },
+            {
+                id: 2,
+                fromMemberId: 2,
+                toMemberId: 1,
+                amount: 1000,
+                createdAt: 1000000,
+            },
         ];
         const result = validateSettlementsStillValid(debts, settlements);
         expect(result.valid).toBe(false);

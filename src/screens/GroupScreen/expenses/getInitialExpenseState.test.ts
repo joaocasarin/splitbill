@@ -66,6 +66,7 @@ describe("getInitialExpenseState", () => {
             payerId: 1,
             splitMode: "equal",
             memberIds: [1, 2],
+            createdAt: 1000000,
         };
 
         test("pre-fills title from expense", () => {
@@ -125,6 +126,7 @@ describe("getInitialExpenseState", () => {
                 { memberId: 1, value: 3000 },
                 { memberId: 2, value: 2000 },
             ],
+            createdAt: 1000000,
         };
 
         test("pre-fills fixedShares from expense shares", () => {
@@ -164,6 +166,7 @@ describe("getInitialExpenseState", () => {
                 { memberId: 1, value: 6000 },
                 { memberId: 2, value: 4000 },
             ],
+            createdAt: 1000000,
         };
 
         test("pre-fills percentageShares from expense shares", () => {
@@ -204,6 +207,7 @@ describe("getInitialExpenseState", () => {
                     { memberId: 1, value: 3000 },
                     { memberId: 2, value: 2000 },
                 ],
+                createdAt: 1000000,
             };
             const state = getInitialExpenseState([], null, fixedExpense);
             expect(state.participantIds).toEqual(new Set());

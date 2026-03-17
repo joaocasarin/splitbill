@@ -1,12 +1,12 @@
 import type { EntityId } from "@domain/common";
-import type { PercentageExpense } from "./expense.schema";
+import type { CreatePercentageExpense } from "./expense.schema";
 
 export function buildPercentageExpense(
     title: string,
     total: number,
     payerId: EntityId | null,
     shares: Map<EntityId, number>,
-): Omit<PercentageExpense, "id"> | null {
+): CreatePercentageExpense | null {
     if (payerId === null) return null;
 
     return {

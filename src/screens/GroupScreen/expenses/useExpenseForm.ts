@@ -18,12 +18,15 @@ export function useExpenseForm(
 ) {
     const { global, addExpense, updateExpense } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
     const members: User[] = group
-        ? group.memberIds.map((id) => ({
-              id,
-              name: users.find((u) => u.id === id)?.name ?? `User ${id}`,
-          }))
+        ? group.memberIds.map(
+              (id) =>
+                  global.users.find((u) => u.id === id) ?? {
+                      id,
+                      name: `User ${id}`,
+                      createdAt: 0,
+                  },
+          )
         : [];
 
     const firstMemberId = members[0]?.id ?? null;
@@ -98,7 +101,11 @@ export function useExpenseForm(
         if (built === null) return;
 
         if (expense) {
-            updateExpense(groupId, { ...built, id: expense.id });
+            updateExpense(groupId, {
+                ...built,
+                id: expense.id,
+                createdAt: expense.createdAt,
+            });
         } else {
             addExpense(groupId, built);
         }

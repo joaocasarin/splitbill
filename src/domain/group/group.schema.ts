@@ -19,6 +19,7 @@ export const GroupSchema = z
             .max(GROUP_NAME_MAX, {
                 error: `Group name cannot exceed ${GROUP_NAME_MAX} characters`,
             }),
+        createdAt: z.number().int().positive(),
         memberIds: z
             .array(EntityIdSchema)
             .min(GROUP_MEMBERS_MIN)

@@ -1,6 +1,6 @@
-import type { EqualExpense } from "@domain/expense";
+import type { CreateEqualExpense } from "@domain/expense";
 
-export const defaultEqualExpense: Omit<EqualExpense, "id"> = {
+export const defaultEqualExpense: CreateEqualExpense = {
     title: "Hotel",
     total: 10000,
     payerId: 1,

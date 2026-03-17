@@ -2,6 +2,10 @@ export { buildEqualExpense } from "./build-equal-expense";
 export { buildFixedExpense } from "./build-fixed-expense";
 export { buildPercentageExpense } from "./build-percentage-expense";
 export type {
+    CreateEqualExpense,
+    CreateExpense,
+    CreateFixedExpense,
+    CreatePercentageExpense,
     EqualExpense,
     Expense,
     FixedExpense,

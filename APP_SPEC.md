@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-03-11  
+> **Last updated:** 2026-03-16 
 > **Status:** Draft
 
 ---
@@ -203,20 +203,24 @@ There is no planned mitigation. This is an accepted architectural tradeoff of th
 
 The `Global` state includes a `version` field — a positive integer that identifies the schema version used to serialize the state.
 
-**Current version:** `1`
+**Current version:** `2`
 
 **Purpose:**
 - Allows future migrations when the schema changes in a breaking way
 - On load, the app can detect outdated state and either migrate or reject it
 
 **Current behavior:**
-The version field is validated as a positive integer but not checked against any expected value. No migration logic exists yet.
+State from an older version fails `GlobalSchema.parse()` and renders the error screen. No migration logic exists — old URLs are intentionally invalidated.
 
 **Future behavior (when migrations are needed):**
 1. Read `version` from the parsed state
 2. If `version < currentVersion` → run migration chain
 3. If `version > currentVersion` → show error (state is from a newer version of the app)
 4. If `version === currentVersion` → hydrate normally
+
+**Version history:**
+- `1` — initial schema (no timestamps)
+- `2` — added `createdAt` (required) to User, Group, Expense, Settlement; added `updatedAt` (optional) to Expense and Settlement
 
 ## 8. Roadmap & Pending Decisions
 
@@ -231,14 +235,17 @@ Two pure functions to implement in `src/domain/balance/`:
   - For each expense: `payer.balance += total`, each participant `balance -= share`
   - For each settlement: `from.balance += amount`, `to.balance -= amount`
   - Handle all three split modes including bps → cents conversion for percentage
-  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the first non-payer participant in the list
-  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the first non-payer participant in the list
+  - Equal split: `Math.floor(total / n)` per member, remainder absorbed by the payer (or first participant if payer is not in the list)
+  - Percentage split: `Math.round(total * bps / 10000)` per member, remainder from rounding absorbed by the payer (or first participant if payer is not in shares)
 
 **`compute-direct-debts.ts`** ✅ _Implemented_
 - Input: `Group`
 - Output: `DirectDebt[]`
-- Logic: for each expense, computes how much each non-payer owes the payer directly. Settlements reduce existing debts. Results with `amount <= 0` are filtered out.
-- Remainder absorption follows the same rule as `compute-balances`: first non-payer participant in the list.
+- Logic:
+  1. For each expense: accumulate how much each non-payer owes the payer directly, using `Math.floor` (equal) or `Math.round` (percentage) per member. Remainder absorption follows the same rule as `compute-balances`: payer absorbs remainder (or first participant if payer is not in the list/shares).
+  2. For each settlement: reduce the corresponding debt edge by `settlement.amount` (adds a negative delta to `from → to`).
+  3. **Cross-pair netting:** after building the full debt map, iterate all pairs and cancel reverse debts against each other. If A→B = 10 and B→A = 6, the result is A→B = 4 and B→A = 0.
+  4. Filter out all edges with `amount <= 0`.
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
@@ -247,18 +254,22 @@ Two pure functions to implement in `src/domain/balance/`:
 
 ---
 
-### 8.2 Timestamps (deferred)
+### 8.2 Timestamps
 
-Timestamps are intentionally omitted from the current version to keep schemas and URL payloads lean while the core logic is being built.
+All entities carry timestamps. The UI displays them on expense and settlement list items and sorts by most recently touched.
 
-**Why `number` (unix ms) and not `z.iso.datetime()` (string)?**  
+**Why `number` (unix ms) and not `z.iso.datetime()` (string)?**
 Integer timestamps are smaller in the URL payload, require no parsing, and are directly comparable for sorting. ISO strings are more human-readable but add unnecessary overhead in a URL-encoded state context.
 
-| Field | Type | Entity |
-|---|---|---|
-| `createdAt` | `number` (unix ms) | User, Group, Expense, Settlement |
-| `updatedAt` | `number` (unix ms) | Expense only |
-| `deletedAt` | `number` (unix ms), optional | User only |
+| Field | Type | Entity | Notes |
+|---|---|---|---|
+| `createdAt` | `number` (unix ms), required | User, Group, Expense, Settlement | Set by store on creation |
+| `updatedAt` | `number` (unix ms), optional | Expense, Settlement | Set by store on edit only |
+| `deletedAt` | `number` (unix ms), optional | User only | Planned — see §8.3 |
+
+**Display format:** `hh:mm dd/mm/yy` (24-hour, local time) via `formatTimestamp()` in `src/lib/format.ts`.
+
+**Sort order:** expenses and settlements are sorted by `updatedAt ?? createdAt` descending (most recently touched first).
 
 ---
 

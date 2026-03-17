@@ -1,12 +1,12 @@
 import type { EntityId } from "@domain/common";
-import type { FixedExpense } from "./expense.schema";
+import type { CreateFixedExpense } from "./expense.schema";
 
 export function buildFixedExpense(
     title: string,
     total: number,
     payerId: EntityId | null,
     shares: Map<EntityId, number>,
-): Omit<FixedExpense, "id"> | null {
+): CreateFixedExpense | null {
     if (payerId === null) return null;
 
     return {

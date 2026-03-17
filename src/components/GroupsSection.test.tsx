@@ -8,6 +8,7 @@ const groups: Group[] = [
     {
         id: 1,
         name: "Trip",
+        createdAt: 1000000,
         memberIds: [1, 2],
         expenses: [],
         settlements: [],
@@ -15,6 +16,7 @@ const groups: Group[] = [
     {
         id: 2,
         name: "Dinner",
+        createdAt: 1000000,
         memberIds: [1, 2, 3],
         expenses: [],
         settlements: [],
