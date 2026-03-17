@@ -216,7 +216,7 @@ DirectDebtSchema
 **Invariant:** The sum of all `MemberBalance.amount` values in a group must always equal `0`.
 
 > **Note:** `SimplifiedDebt` is mapped but not part of the initial scope. See [APP_SPEC.md](./APP_SPEC.md).
-> **Note:** Output of computeDirectDebts(). Used by validateSettlementCreation() to enforce direct-payment rules.
+> **Note:** `DirectDebt` is the output of `computeDirectDebts()`. The function applies expense splits and settlement reductions, then **nets cross-pair debts** — if A owes B and B owes A, the two are cancelled against each other and only the net direction survives. Used by `validateSettlementCreation()` to enforce direct-payment rules.
 
 ---
 

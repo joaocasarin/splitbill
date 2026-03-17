@@ -241,8 +241,11 @@ Two pure functions to implement in `src/domain/balance/`:
 **`compute-direct-debts.ts`** ✅ _Implemented_
 - Input: `Group`
 - Output: `DirectDebt[]`
-- Logic: for each expense, computes how much each non-payer owes the payer directly. Settlements reduce existing debts. Results with `amount <= 0` are filtered out.
-- Remainder absorption follows the same rule as `compute-balances`: payer absorbs remainder (or first participant if payer is not in the list).
+- Logic:
+  1. For each expense: accumulate how much each non-payer owes the payer directly, using `Math.floor` (equal) or `Math.round` (percentage) per member. Remainder absorption follows the same rule as `compute-balances`: payer absorbs remainder (or first participant if payer is not in the list/shares).
+  2. For each settlement: reduce the corresponding debt edge by `settlement.amount` (adds a negative delta to `from → to`).
+  3. **Cross-pair netting:** after building the full debt map, iterate all pairs and cancel reverse debts against each other. If A→B = 10 and B→A = 6, the result is A→B = 4 and B→A = 0.
+  4. Filter out all edges with `amount <= 0`.
 
 **`simplify-debts.ts`** — _Status: Mapped, not in initial scope_
 - Input: `MemberBalance[]`
