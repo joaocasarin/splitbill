@@ -1,13 +1,14 @@
 import type { Global } from "../global";
 import type { EntityId } from "./entity-id.schema";
 
-type EntityType = "user" | "group" | "expense" | "settlement";
+type EntityType = "user" | "group" | "expense" | "settlement" | "member";
 
 export function createIdGenerator(global: Global) {
     let maxUserId = 0;
     let maxGroupId = 0;
     let maxExpenseId = 0;
     let maxSettlementId = 0;
+    let maxMemberId = 0;
 
     for (const user of global.users) {
         if (user.id > maxUserId) maxUserId = user.id;
@@ -15,6 +16,10 @@ export function createIdGenerator(global: Global) {
 
     for (const group of global.groups) {
         if (group.id > maxGroupId) maxGroupId = group.id;
+
+        for (const member of group.members ?? []) {
+            if (member.id > maxMemberId) maxMemberId = member.id;
+        }
 
         for (const expense of group.expenses) {
             if (expense.id > maxExpenseId) maxExpenseId = expense.id;
@@ -31,6 +36,7 @@ export function createIdGenerator(global: Global) {
         group: maxGroupId,
         expense: maxExpenseId,
         settlement: maxSettlementId,
+        member: maxMemberId,
     };
 
     return function createId(type: EntityType): EntityId {
