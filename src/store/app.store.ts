@@ -16,7 +16,6 @@ import {
     validateSettlementCreation,
     validateSettlementsStillValid,
 } from "@domain/settlement";
-import type { User } from "@domain/user";
 import lzstring from "lz-string";
 import { create } from "zustand";
 
@@ -32,10 +31,7 @@ type AppActions = {
     hydrateFromUrl: () => void;
     initEmpty: () => void;
     syncToUrl: () => void;
-    addUser: (name: string) => void;
-    addGroup: (name: string, memberIds: EntityId[]) => void;
     addGroupWithMembers: (name: string, memberNames: string[]) => void;
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
     addMemberByName: (groupId: EntityId, name: string) => void;
     removeMemberFromGroup: (
         groupId: EntityId,
@@ -62,7 +58,6 @@ export type AppStore = AppState & AppActions;
 
 const emptyGlobal: Global = {
     version: SCHEMA_VERSION,
-    users: [],
     groups: [],
 };
 
@@ -114,46 +109,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         url.searchParams.set("state", compressedState);
         window.history.replaceState(null, "", url.toString());
     },
-    addUser: (name: string) => {
-        const { global, createId, syncToUrl } = get();
-        const newUser: User = {
-            id: createId("user"),
-            name,
-            createdAt: Date.now(),
-        };
-        set({
-            status: "loaded",
-            global: {
-                ...global,
-                users: [...global.users, newUser],
-            },
-        });
-        syncToUrl();
-    },
-    addGroup: (name: string, memberIds: EntityId[]) => {
-        const { global, createId, syncToUrl } = get();
-        const resolvedMembers = memberIds
-            .map((id) => global.users.find((u) => u.id === id))
-            .filter((u): u is User => u !== undefined)
-            .map((u) => ({
-                id: createId("member"),
-                name: u.name,
-                createdAt: Date.now(),
-            }));
-        const newGroup: Group = {
-            id: createId("group"),
-            name,
-            createdAt: Date.now(),
-            members: resolvedMembers,
-            expenses: [],
-            settlements: [],
-        };
-        set({
-            status: "loaded",
-            global: { ...global, groups: [...global.groups, newGroup] },
-        });
-        syncToUrl();
-    },
     addGroupWithMembers: (name: string, memberNames: string[]) => {
         const { global, createId, syncToUrl } = get();
         const members: Member[] = memberNames.map((memberName) => ({
@@ -172,35 +127,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         set({
             status: "loaded",
             global: { ...global, groups: [...global.groups, newGroup] },
-        });
-        syncToUrl();
-    },
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => {
-        const { global, createId, syncToUrl } = get();
-        const user = global.users.find((u) => u.id === userId);
-        const newMember: Member | undefined = user
-            ? { id: createId("member"), name: user.name, createdAt: Date.now() }
-            : undefined;
-        set({
-            status: "loaded",
-            global: {
-                ...global,
-                groups: global.groups.map((g) => {
-                    if (
-                        g.id !== groupId ||
-                        g.members.some((m) => m.id === userId)
-                    ) {
-                        return g;
-                    }
-                    return {
-                        ...g,
-                        members:
-                            newMember !== undefined
-                                ? [...g.members, newMember]
-                                : g.members,
-                    };
-                }),
-            },
         });
         syncToUrl();
     },

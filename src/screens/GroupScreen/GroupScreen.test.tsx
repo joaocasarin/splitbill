@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
@@ -140,9 +140,8 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
             expenses: [],
             settlements: [],
         },
-        users: testUsers,
-        members: testUsers.map((u) => ({
-            ...u,
+        members: testMembers.map((m) => ({
+            ...m,
             amount: 0,
             owes: [],
             receives: [],

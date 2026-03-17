@@ -4,7 +4,6 @@ import type { EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
 import type { CreateSettlement, Settlement } from "@domain/settlement";
-import type { User } from "@domain/user";
 import { useAppStore } from "@store";
 import { useState } from "react";
 import type { MemberRow } from "./members/MembersSection";
@@ -13,7 +12,6 @@ type GroupNotFound = { group: null };
 
 type GroupFound = {
     group: Group;
-    users: User[];
     members: MemberRow[];
     memberCount: number;
     canAddMember: boolean;
@@ -53,7 +51,6 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         deleteSettlement: storeDeleteSettlement,
     } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -107,7 +104,6 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
 
     return {
         group,
-        users,
         members,
         memberCount: groupMembers.length,
         canAddMember,

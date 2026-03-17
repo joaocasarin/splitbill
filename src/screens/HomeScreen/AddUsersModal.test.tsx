@@ -1,4 +1,3 @@
-import { useAppStore } from "@store";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupStoreOnly } from "@tests/setup";
@@ -108,23 +107,8 @@ describe("AddUsersModal", () => {
         });
     });
 
-    describe("creating users", () => {
-        test("clicking Create calls addUser for each valid entry", async () => {
-            renderModal();
-            await userEvent.type(screen.getByPlaceholderText("Name"), "Alice");
-            await userEvent.click(screen.getByText(/add another/i));
-            const inputs = screen.getAllByPlaceholderText("Name");
-            await userEvent.type(inputs[1], "Bob");
-            await userEvent.click(
-                screen.getByRole("button", { name: /create/i }),
-            );
-            const users = useAppStore.getState().global.users;
-            expect(users).toHaveLength(2);
-            expect(users[0].name).toBe("Alice");
-            expect(users[1].name).toBe("Bob");
-        });
-
-        test("calls onClose after creating users", async () => {
+    describe("creating", () => {
+        test("calls onClose after clicking Create", async () => {
             const { onClose } = renderModal();
             await userEvent.type(screen.getByPlaceholderText("Name"), "Alice");
             await userEvent.click(
@@ -133,16 +117,20 @@ describe("AddUsersModal", () => {
             expect(onClose).toHaveBeenCalledOnce();
         });
 
-        test("trims whitespace from names on create", async () => {
+        test("resets entries to one empty input after creating", async () => {
             renderModal();
-            await userEvent.type(
-                screen.getByPlaceholderText("Name"),
-                "  Alice  ",
-            );
+            await userEvent.type(screen.getByPlaceholderText("Name"), "Alice");
+            await userEvent.click(screen.getByText(/add another/i));
+            expect(screen.getAllByPlaceholderText("Name")).toHaveLength(2);
+            // Type in second entry to enable create
+            const inputs = screen.getAllByPlaceholderText("Name");
+            await userEvent.type(inputs[1], "Bob");
             await userEvent.click(
                 screen.getByRole("button", { name: /create/i }),
             );
-            expect(useAppStore.getState().global.users[0].name).toBe("Alice");
+            // After creation, reset() runs → back to a single empty entry
+            expect(screen.getAllByPlaceholderText("Name")).toHaveLength(1);
+            expect(screen.getByPlaceholderText("Name")).toHaveValue("");
         });
     });
 

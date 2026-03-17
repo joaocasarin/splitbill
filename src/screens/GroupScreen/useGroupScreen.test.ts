@@ -34,16 +34,8 @@ describe("useGroupScreen", () => {
             expect(result.current.group?.name).toBe("Trip");
         });
 
-        test("returns users from store", () => {
-            const group = setupGroupWithTwoMembers();
-            const { result } = renderHook(() => useGroupScreen(group.id));
-            expect(result.current).toHaveProperty("users");
-            const state = result.current as FoundState;
-            expect(state.users).toHaveLength(2);
-        });
-
         test("returns empty members when group has no inline members", () => {
-            useAppStore.getState().addGroup("Trip", [998, 999]);
+            useAppStore.getState().addGroupWithMembers("Trip", []);
             const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
@@ -399,10 +391,9 @@ describe("useGroupScreen", () => {
 
     describe("removeMember", () => {
         test("removes member from group via store", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
             const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             act(() => {

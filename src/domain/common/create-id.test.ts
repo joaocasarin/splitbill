@@ -12,10 +12,6 @@ describe("createIdGenerator", () => {
             createId = createIdGenerator(emptyGlobal);
         });
 
-        test("starts user counter at 1", () => {
-            expect(createId("user")).toBe(1);
-        });
-
         test("starts group counter at 1", () => {
             expect(createId("group")).toBe(1);
         });
@@ -33,8 +29,6 @@ describe("createIdGenerator", () => {
         });
 
         test("increments independently per type", () => {
-            expect(createId("user")).toBe(1);
-            expect(createId("user")).toBe(2);
             expect(createId("group")).toBe(1);
             expect(createId("group")).toBe(2);
             expect(createId("expense")).toBe(1);
@@ -47,18 +41,6 @@ describe("createIdGenerator", () => {
     });
 
     describe("hydrated state", () => {
-        test("continues user counter after max existing id", () => {
-            const createId = createIdGenerator({
-                ...emptyGlobal,
-                users: [
-                    { id: 3, name: "Alice", createdAt: 1000000 },
-                    { id: 7, name: "Bob", createdAt: 1000000 },
-                ],
-            });
-
-            expect(createId("user")).toBe(8);
-        });
-
         test("continues group counter after max existing id", () => {
             const createId = createIdGenerator({
                 ...emptyGlobal,
@@ -189,7 +171,6 @@ describe("createIdGenerator", () => {
         test("each type counter is independent from others", () => {
             const createId = createIdGenerator({
                 ...emptyGlobal,
-                users: [{ id: 10, name: "Alice", createdAt: 1000000 }],
                 groups: [
                     {
                         id: 3,
@@ -202,23 +183,10 @@ describe("createIdGenerator", () => {
                 ],
             });
 
-            expect(createId("user")).toBe(11);
             expect(createId("group")).toBe(4);
             expect(createId("expense")).toBe(8);
             expect(createId("settlement")).toBe(3);
             expect(createId("member")).toBe(6);
-        });
-
-        test("uses the highest user id when unsorted", () => {
-            const createId = createIdGenerator({
-                ...emptyGlobal,
-                users: [
-                    { id: 7, name: "Alice", createdAt: 1000000 },
-                    { id: 3, name: "Bob", createdAt: 1000000 },
-                ],
-            });
-
-            expect(createId("user")).toBe(8);
         });
 
         test("uses the highest expense id when unsorted across groups", () => {
@@ -295,12 +263,12 @@ describe("createIdGenerator", () => {
             const createIdA = createIdGenerator(emptyGlobal);
             const createIdB = createIdGenerator(emptyGlobal);
 
-            expect(createIdA("user")).toBe(1);
-            expect(createIdA("user")).toBe(2);
-            expect(createIdB("user")).toBe(1);
             expect(createIdA("member")).toBe(1);
             expect(createIdA("member")).toBe(2);
             expect(createIdB("member")).toBe(1);
+            expect(createIdA("group")).toBe(1);
+            expect(createIdA("group")).toBe(2);
+            expect(createIdB("group")).toBe(1);
         });
     });
 });

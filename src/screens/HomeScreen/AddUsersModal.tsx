@@ -8,7 +8,6 @@ import {
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
 import { USER_NAME_MIN } from "@domain/common";
-import { useAppStore } from "@store";
 import { Plus, X } from "lucide-react";
 import { useId, useState } from "react";
 
@@ -24,7 +23,6 @@ function makeEntry(value = ""): NameEntry {
 }
 
 export function AddUsersModal({ open, onClose }: Props) {
-    const addUser = useAppStore((s) => s.addUser);
     const [entries, setEntries] = useState<NameEntry[]>([makeEntry()]);
     const inputBaseId = useId();
 
@@ -47,9 +45,6 @@ export function AddUsersModal({ open, onClose }: Props) {
     }
 
     function handleCreate() {
-        for (const entry of entries) {
-            addUser(entry.value.trim());
-        }
         reset();
         onClose();
     }
