@@ -35,6 +35,7 @@ type AppActions = {
     addUser: (name: string) => void;
     addGroup: (name: string, memberIds: EntityId[]) => void;
     addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
+    addMemberByName: (groupId: EntityId, name: string) => void;
     removeMemberFromGroup: (
         groupId: EntityId,
         userId: EntityId,
@@ -179,6 +180,31 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                                 : g.members,
                     };
                 }),
+            },
+        });
+        syncToUrl();
+    },
+    addMemberByName: (groupId: EntityId, name: string) => {
+        const { global, createId, syncToUrl } = get();
+        const memberId = createId("member");
+        const newMember: Member = {
+            id: memberId,
+            name,
+            createdAt: Date.now(),
+        };
+        set({
+            status: "loaded",
+            global: {
+                ...global,
+                groups: global.groups.map((g) =>
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              memberIds: [...g.memberIds, memberId],
+                              members: [...(g.members ?? []), newMember],
+                          }
+                        : g,
+                ),
             },
         });
         syncToUrl();

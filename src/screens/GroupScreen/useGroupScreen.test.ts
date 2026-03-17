@@ -68,19 +68,8 @@ describe("useGroupScreen", () => {
             expect(state.memberCount).toBe(2);
         });
 
-        test("canAddMember is false when all users are members", () => {
+        test("canAddMember is always true", () => {
             const group = setupGroupWithTwoMembers();
-            const { result } = renderHook(() => useGroupScreen(group.id));
-            const state = result.current as FoundState;
-            expect(state.canAddMember).toBe(false);
-        });
-
-        test("canAddMember is true when non-members exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
-            const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.canAddMember).toBe(true);

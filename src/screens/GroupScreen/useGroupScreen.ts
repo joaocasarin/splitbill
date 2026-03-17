@@ -95,8 +95,7 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         };
     });
 
-    const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
-    const canAddMember = nonMembers.length > 0;
+    const canAddMember = true;
     const editDirectDebts = editingSettlement
         ? computeDirectDebts({
               ...group,
