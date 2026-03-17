@@ -34,6 +34,7 @@ type AppActions = {
     syncToUrl: () => void;
     addUser: (name: string) => void;
     addGroup: (name: string, memberIds: EntityId[]) => void;
+    addGroupWithMembers: (name: string, memberNames: string[]) => void;
     addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
     addMemberByName: (groupId: EntityId, name: string) => void;
     removeMemberFromGroup: (
@@ -148,6 +149,35 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                 resolvedMembers.length >= GROUP_MEMBERS_MIN
                     ? resolvedMembers
                     : undefined,
+            expenses: [],
+            settlements: [],
+        };
+        set({
+            status: "loaded",
+            global: { ...global, groups: [...global.groups, newGroup] },
+        });
+        syncToUrl();
+    },
+    addGroupWithMembers: (name: string, memberNames: string[]) => {
+        const { global, createId, syncToUrl } = get();
+        const memberIds: EntityId[] = [];
+        const members: Member[] = memberNames.map((memberName) => {
+            const id = createId("member");
+
+            memberIds.push(id);
+
+            return {
+                id,
+                name: memberName,
+                createdAt: Date.now(),
+            };
+        });
+        const newGroup: Group = {
+            id: createId("group"),
+            name,
+            createdAt: Date.now(),
+            memberIds,
+            members,
             expenses: [],
             settlements: [],
         };

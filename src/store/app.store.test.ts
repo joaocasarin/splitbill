@@ -966,6 +966,61 @@ describe("AppStore", () => {
         });
     });
 
+    describe("addGroupWithMembers", () => {
+        test("creates group with inline members", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob"]);
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.name).toBe("Trip");
+            expect(group.members).toHaveLength(2);
+            expect(group.members?.[0].name).toBe("Alice");
+            expect(group.members?.[1].name).toBe("Bob");
+        });
+
+        test("populates memberIds from created member ids", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob"]);
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.memberIds).toHaveLength(2);
+            expect(group.memberIds[0]).toBe(group.members?.[0].id);
+            expect(group.memberIds[1]).toBe(group.members?.[1].id);
+        });
+
+        test("assigns sequential member ids", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob"]);
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members?.[0].id).toBe(1);
+            expect(group.members?.[1].id).toBe(2);
+        });
+
+        test("does not affect other groups", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob"]);
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Dinner", ["Carol", "Dave"]);
+            const groups = useAppStore.getState().global.groups;
+            expect(groups[0].name).toBe("Trip");
+            expect(groups[1].name).toBe("Dinner");
+            expect(groups[0].members).toHaveLength(2);
+            expect(groups[1].members).toHaveLength(2);
+        });
+
+        test("creates group with more than 2 members", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+            const group = useAppStore.getState().global.groups[0];
+            expect(group.members).toHaveLength(3);
+            expect(group.members?.[2].name).toBe("Carol");
+        });
+    });
+
     describe("removeMemberFromGroup", () => {
         test("removes member with zero balance from group with 3+ members", () => {
             useAppStore.getState().addUser("Alice");
