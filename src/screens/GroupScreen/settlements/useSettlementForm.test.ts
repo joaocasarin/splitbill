@@ -1,4 +1,3 @@
-import type { DirectDebt } from "@domain/balance";
 import type { CreateSettlement, Settlement } from "@domain/settlement";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
@@ -28,16 +27,9 @@ const charlie: MemberRow = {
 };
 const members: MemberRow[] = [alice, bob, charlie];
 
-const directDebts: DirectDebt[] = [
-    { fromMemberId: 1, toMemberId: 2, amount: 5000 },
-    { fromMemberId: 1, toMemberId: 3, amount: 3000 },
-    { fromMemberId: 3, toMemberId: 2, amount: 1000 },
-];
-
 function setup(
     overrides: {
         members?: MemberRow[];
-        directDebts?: DirectDebt[];
         onSubmit?: (settlement: CreateSettlement) => void;
         onClose?: () => void;
         settlement?: Settlement;
@@ -48,7 +40,6 @@ function setup(
     const hook = renderHook(() =>
         useSettlementForm({
             members: overrides.members ?? members,
-            directDebts: overrides.directDebts ?? directDebts,
             onSubmit,
             onClose,
             settlement: overrides.settlement,
@@ -79,67 +70,25 @@ describe("useSettlementForm", () => {
             expect(hook.result.current.canSubmit).toBe(false);
         });
 
-        test("maxAmount is 0", () => {
+        test("membersExceptFrom returns all members when fromMemberId is null", () => {
             const { hook } = setup();
-            expect(hook.result.current.maxAmount).toBe(0);
-        });
-
-        test("creditorsForDebtor is empty", () => {
-            const { hook } = setup();
-            expect(hook.result.current.creditorsForDebtor).toEqual([]);
+            expect(hook.result.current.membersExceptFrom).toEqual(members);
         });
     });
 
-    describe("debtorsWithDebts", () => {
-        test("returns only members who owe someone", () => {
+    describe("membersExceptFrom", () => {
+        test("returns all members except selected From member", () => {
             const { hook } = setup();
-            expect(hook.result.current.debtorsWithDebts).toEqual([
-                alice,
+            act(() => hook.result.current.handleFromChange(1));
+            expect(hook.result.current.membersExceptFrom).toEqual([
+                bob,
                 charlie,
             ]);
         });
 
-        test("returns empty when no debts exist", () => {
-            const { hook } = setup({ directDebts: [] });
-            expect(hook.result.current.debtorsWithDebts).toEqual([]);
-        });
-    });
-
-    describe("creditorsForDebtor", () => {
-        test("returns creditors with maxAmount when fromMemberId is set", () => {
+        test("returns all members when fromMemberId is null", () => {
             const { hook } = setup();
-            act(() => hook.result.current.handleFromChange(1));
-            expect(hook.result.current.creditorsForDebtor).toEqual([
-                { id: 2, name: "Bob", maxAmount: 5000 },
-                { id: 3, name: "Charlie", maxAmount: 3000 },
-            ]);
-        });
-
-        test("falls back to User {id} when member not found", () => {
-            const debts: DirectDebt[] = [
-                { fromMemberId: 1, toMemberId: 99, amount: 1000 },
-            ];
-            const { hook } = setup({ directDebts: debts });
-            act(() => hook.result.current.handleFromChange(1));
-            expect(hook.result.current.creditorsForDebtor).toEqual([
-                { id: 99, name: "User 99", maxAmount: 1000 },
-            ]);
-        });
-    });
-
-    describe("maxAmount", () => {
-        test("returns debt amount when both from and to are selected", () => {
-            const { hook } = setup();
-            act(() => hook.result.current.handleFromChange(1));
-            act(() => hook.result.current.handleToChange(2));
-            expect(hook.result.current.maxAmount).toBe(5000);
-        });
-
-        test("returns 0 when no matching debt exists", () => {
-            const { hook } = setup();
-            act(() => hook.result.current.handleFromChange(2));
-            act(() => hook.result.current.handleToChange(1));
-            expect(hook.result.current.maxAmount).toBe(0);
+            expect(hook.result.current.membersExceptFrom).toEqual(members);
         });
     });
 
@@ -186,7 +135,7 @@ describe("useSettlementForm", () => {
     });
 
     describe("canSubmit", () => {
-        test("true when valid from, to, and amount within debt", () => {
+        test("true when from, to, and amount are set", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
             act(() => hook.result.current.handleToChange(2));
@@ -201,14 +150,6 @@ describe("useSettlementForm", () => {
             expect(hook.result.current.canSubmit).toBe(false);
         });
 
-        test("false when amount exceeds debt", () => {
-            const { hook } = setup();
-            act(() => hook.result.current.handleFromChange(1));
-            act(() => hook.result.current.handleToChange(2));
-            act(() => hook.result.current.setAmount(9999));
-            expect(hook.result.current.canSubmit).toBe(false);
-        });
-
         test("false when fromMemberId is null", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleToChange(2));
@@ -219,14 +160,6 @@ describe("useSettlementForm", () => {
         test("false when toMemberId is null", () => {
             const { hook } = setup();
             act(() => hook.result.current.handleFromChange(1));
-            act(() => hook.result.current.setAmount(1000));
-            expect(hook.result.current.canSubmit).toBe(false);
-        });
-
-        test("false when no matching debt exists", () => {
-            const { hook } = setup();
-            act(() => hook.result.current.handleFromChange(2));
-            act(() => hook.result.current.handleToChange(1));
             act(() => hook.result.current.setAmount(1000));
             expect(hook.result.current.canSubmit).toBe(false);
         });

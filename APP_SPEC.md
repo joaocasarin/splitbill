@@ -1,7 +1,7 @@
 # Application Specification – Expense Sharing App
 
 > **Scope:** Application-level concerns — tech stack, architecture, state persistence, roadmap, and pending decisions.  
-> **Last updated:** 2026-03-17
+> **Last updated:** 2026-03-18
 > **Status:** Draft
 
 ---
@@ -293,26 +293,19 @@ Business rules are enforced at the UI and store layer — not at the schema laye
 
 ### 9.1 Settlement creation
 
-Currently, a settlement can only be created between two members with a **direct debt** — i.e., one member owes the other as a result of expense splits, net of any prior settlements.
+Any member can create a settlement to any other member in any positive amount — there is no debt constraint. Validation is structural only: `fromMemberId ≠ toMemberId` and `amount > 0`, enforced by `SettlementSchema`.
 
-These rules are enforced by computing `computeDirectDebts(group)` before the settlement is created. The result is passed to `validateSettlementCreation()`, which checks:
+The `SettlementModal` allows selecting any member as payer (From) and any other member as recipient (To). No debt calculation is required at creation time.
 
-- A direct debt exists from `fromMemberId` to `toMemberId`
-- The `amount` does not exceed that debt
+> **Why no debt constraint?** Real-world payments don't always match the computed debt exactly — people may overpay, pay in installments, or settle debts outside the app. Restricting settlements to computed debts would make the tool less useful in practice.
 
-**Implementation:** `src/domain/settlement/settlement.rules.ts` — `validateSettlementCreation(directDebts, fromMemberId, toMemberId, amount)`
+### 9.2 Debt display
 
-The store (`addSettlement`) calls this validation before mutating state. If invalid, it returns `{ valid: false, reason: string }` without modifying the state or syncing to URL.
+`computeDirectDebts(group)` is still computed and displayed per member in `MembersSection` (the `owes` and `receives` fields on each `MemberRow`). This gives users a live view of who owes whom based on expenses and settlements, without restricting what payments can be recorded.
 
-> **Why not in the schema?** Direct debt is derived state — it requires running `computeDirectDebts`, which the schema has no access to. Schema validation is pure structure; business rule validation happens at action time.
+### 9.3 Future — simplified debts
 
-### 9.2 Settlement creation — future iterations
-
-**Next step — free payments:**
-Any member can create a settlement to any other member in any amount. `validateSettlementCreation` is removed from the `addSettlement` flow. Validation becomes structural only — `fromMemberId ≠ toMemberId` and `amount > 0`, already enforced by `SettlementSchema`.
-
-**Future — simplified debts:**
-A UI toggle suggests optimized payment paths via `simplify-debts`. This does not affect settlement creation or validation — it only changes what suggestions are shown to the user. Settlements remain free-form user-initiated records.
+A UI toggle will suggest optimized payment paths via `simplify-debts`. This does not affect settlement creation — it only changes what suggestions are shown to the user. Settlements remain free-form user-initiated records.
 
 ## 10. Store
 
@@ -336,11 +329,11 @@ The application state is managed by a single Zustand store located at `src/store
 | `addGroupWithMembers(name, memberNames)` | Creates a new group with inline members (by name) and syncs to URL |
 | `addMemberByName(groupId, name)` | Creates a new member in the group by name and syncs to URL |
 | `addExpense(groupId, expense)` | Adds an expense to the specified group and syncs to URL |
-| `updateExpense(groupId, expense)` | Validates that existing settlements remain valid after the change, updates the expense, and syncs to URL. Returns `ValidationResult`. |
-| `deleteExpense(groupId, expenseId)` | Validates that existing settlements remain valid after removal, deletes the expense, and syncs to URL. Returns `ValidationResult`. |
-| `addSettlement(groupId, settlement)` | Validates the settlement against current direct debts, adds it to the specified group if valid, and syncs to URL. Returns `ValidationResult`. |
-| `updateSettlement(groupId, settlement)` | Excludes the current settlement from debt calculation, validates with `validateSettlementCreation`, updates the settlement, and syncs to URL. Returns `ValidationResult`. |
-| `deleteSettlement(groupId, settlementId)` | Deletes the settlement from the group and syncs to URL. Returns `ValidationResult`. |
+| `updateExpense(groupId, expense)` | Updates the expense in the specified group and syncs to URL |
+| `deleteExpense(groupId, expenseId)` | Deletes the expense from the specified group and syncs to URL |
+| `addSettlement(groupId, settlement)` | Adds a settlement between any two members in any amount and syncs to URL |
+| `updateSettlement(groupId, settlement)` | Updates the settlement in the specified group and syncs to URL |
+| `deleteSettlement(groupId, settlementId)` | Deletes the settlement from the group and syncs to URL |
 | `removeMemberFromGroup(groupId, memberId)` | Validates balance, minimum members, and membership, then removes. Returns `ValidationResult`. |
 
 ### Notes

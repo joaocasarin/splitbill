@@ -23,6 +23,7 @@ export default defineConfig({
                 "**/index.ts",
                 "**/constants.ts",
                 "**/*.schema.ts",
+                "**/settlement.rules.ts",
                 "src/main.tsx",
                 "src/lib/utils.ts",
                 "**/*.d.ts",

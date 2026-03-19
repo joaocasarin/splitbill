@@ -33,8 +33,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         members,
         memberCount,
         canAddMember,
-        directDebts,
-        editDirectDebts,
         editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
@@ -123,7 +121,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
             <SettlementModal
                 open={isAddSettlementOpen}
                 members={members}
-                directDebts={directDebts}
                 onSubmit={addSettlement}
                 onClose={closeAddSettlement}
             />
@@ -132,7 +129,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 <SettlementModal
                     open
                     members={members}
-                    directDebts={editDirectDebts}
                     settlement={editingSettlement}
                     onSubmit={(data) =>
                         updateSettlement({

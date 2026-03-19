@@ -1,7 +1,7 @@
 # Domain Specification – Expense Sharing App
 
 > **Scope:** Domain layer only — schemas, business rules, modeling decisions, and validation architecture.  
-> **Last updated:** 2026-03-17
+> **Last updated:** 2026-03-18
 > **Status:** Draft
 
 ---
@@ -150,7 +150,7 @@ SettlementSchema
 - Amount must be positive.
 
 **Note on financial validity:**
-The schema validates only structural correctness — `fromMemberId ≠ toMemberId` and `amount > 0`. It does not validate whether the settlement reflects an actual debt, nor whether the amount exceeds the outstanding balance. This is intentional: settlements are user-initiated records of real-world payments, and the domain does not restrict them beyond structural rules.
+The schema validates only structural correctness — `fromMemberId ≠ toMemberId` and `amount > 0`. There is no constraint on whether the settlement reflects an actual debt or whether the amount exceeds the outstanding balance. Settlements are free-form user-initiated records of real-world payments; the domain does not restrict them beyond structural rules.
 
 **Conceptual distinction between `SimplifiedDebt` and `Settlement`:**
 
@@ -195,7 +195,7 @@ DirectDebtSchema
 **Invariant:** The sum of all `MemberBalance.amount` values in a group must always equal `0`.
 
 > **Note:** `SimplifiedDebt` is mapped but not part of the initial scope. See [APP_SPEC.md](./APP_SPEC.md).
-> **Note:** `DirectDebt` is the output of `computeDirectDebts()`. The function applies expense splits and settlement reductions, then **nets cross-pair debts** — if A owes B and B owes A, the two are cancelled against each other and only the net direction survives. Used by `validateSettlementCreation()` to enforce direct-payment rules.
+> **Note:** `DirectDebt` is the output of `computeDirectDebts()`. The function applies expense splits and settlement reductions, then **nets cross-pair debts** — if A owes B and B owes A, the two are cancelled against each other and only the net direction survives. Used for display purposes (member `owes`/`receives` rows) — not used to restrict settlement creation.
 
 ---
 
@@ -307,6 +307,8 @@ Rules files:
 - Return structured results (`{ valid: true } | { valid: false; reason: string }`) rather than throwing
 - Are called by the store or UI layer, never by schemas
 
+Currently, `settlement.rules.ts` only exports the `ValidationResult` type (used by `removeMemberFromGroup`). Settlement creation validation was removed as part of the free-payments feature — settlements are now unrestricted beyond schema-level structural rules.
+
 ### Array order is domain-significant
 
 The order of arrays in the domain is not arbitrary — it has financial consequences:
@@ -375,7 +377,7 @@ src/domain/
 │   ├── percentage.schema.ts        # PercentageBasePointSchema
 │   └── index.ts                    # barrel re-exports
 └── settlement/
-    ├── settlement.rules.ts         # validateSettlementCreation(), validateSettlementsStillValid()
+    ├── settlement.rules.ts         # ValidationResult type
     ├── settlement.schema.ts        # SettlementSchema
     └── index.ts                    # barrel re-exports
 src/lib/

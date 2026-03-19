@@ -4,7 +4,6 @@ import { GROUP_MEMBERS_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
-import { defaultEqualExpense } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
@@ -284,56 +283,6 @@ describe("useGroupScreen", () => {
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.directDebts).toEqual(mockDebts);
-        });
-    });
-
-    describe("editDirectDebts", () => {
-        test("equals directDebts when editingSettlement is null", () => {
-            const group = setupGroupWithTwoMembers();
-            const { result } = renderHook(() => useGroupScreen(group.id));
-            const state = result.current as FoundState;
-            expect(state.editDirectDebts).toEqual(state.directDebts);
-        });
-
-        test("excludes edited settlement from debt calculation", () => {
-            const group = setupGroupWithTwoMembers();
-            useAppStore.getState().addExpense(group.id, {
-                ...defaultEqualExpense,
-                title: "Lunch",
-                total: 2500,
-            });
-            useAppStore.getState().addSettlement(group.id, {
-                fromMemberId: 2,
-                toMemberId: 1,
-                amount: 1000,
-            });
-            const { result } = renderHook(() => useGroupScreen(group.id));
-
-            // Before editing: directDebts reflects remaining debt (1250 - 1000 = 250)
-            const stateBefore = result.current as FoundState;
-            expect(stateBefore.directDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 250 },
-            ]);
-            expect(stateBefore.editDirectDebts).toEqual(
-                stateBefore.directDebts,
-            );
-
-            // Open edit on the settlement
-            const settlement =
-                useAppStore.getState().global.groups[0].settlements[0];
-            act(() => {
-                (result.current as FoundState).openEditSettlement(settlement);
-            });
-
-            // After editing: editDirectDebts excludes the settlement (full debt = 1250)
-            const stateAfter = result.current as FoundState;
-            expect(stateAfter.editDirectDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 1250 },
-            ]);
-            // directDebts is still the same (includes the settlement)
-            expect(stateAfter.directDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 250 },
-            ]);
         });
     });
 

@@ -43,10 +43,9 @@ The system is designed with strong domain consistency and financial determinism.
 
 - Integer-based money system (cents only)
 - Equal, fixed, and percentage split modes
-- Partial settlements supported
+- Free-form settlements — pay any member any amount, no debt constraint
 - Deterministic balance computation
 - Full state sharing via compressed URL
-- Direct-debt validation on settlement creation
 - Edit and delete expenses and settlements with confirmation dialogs
 - Member removal with balance and minimum/maximum-member validation (min 2, max 20)
 - Responsive layout with sidebar navigation and mobile drawer support
@@ -159,9 +158,8 @@ The system guarantees:
 
 ## 10. Future Roadmap
 
-- Free payments (settlement between any two members without debt constraint)
 - Debt simplification algorithm (suggested optimized payment paths)
-- Soft delete for users (`deletedAt`)
+- Soft delete for members (`deletedAt`)
 - Migration system for version upgrades
 
 ---
