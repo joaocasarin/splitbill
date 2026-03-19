@@ -7,7 +7,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@components/ui/dialog";
-import type { DirectDebt } from "@domain/balance";
 import type { EntityId } from "@domain/common";
 import type { CreateSettlement, Settlement } from "@domain/settlement";
 import { useId } from "react";
@@ -17,7 +16,6 @@ import { useSettlementForm } from "./useSettlementForm";
 type Props = {
     open: boolean;
     members: MemberRow[];
-    directDebts: DirectDebt[];
     onSubmit: (settlement: CreateSettlement) => void;
     onClose: () => void;
     settlement?: Settlement;
@@ -27,7 +25,6 @@ type Props = {
 export function SettlementModal({
     open,
     members,
-    directDebts,
     onSubmit,
     onClose,
     settlement,
@@ -39,9 +36,7 @@ export function SettlementModal({
         toMemberId,
         amount,
         setAmount,
-        debtorsWithDebts,
-        creditorsForDebtor,
-        maxAmount,
+        membersExceptFrom,
         canSubmit,
         handleFromChange,
         handleToChange,
@@ -49,7 +44,6 @@ export function SettlementModal({
         handleOpenChange,
     } = useSettlementForm({
         members,
-        directDebts,
         onSubmit,
         onClose,
         settlement,
@@ -85,9 +79,9 @@ export function SettlementModal({
                             }
                         >
                             <option value="" disabled>
-                                Select debtor
+                                Select member
                             </option>
-                            {debtorsWithDebts.map((m) => (
+                            {members.map((m) => (
                                 <option key={m.id} value={m.id}>
                                     {m.name}
                                 </option>
@@ -107,11 +101,11 @@ export function SettlementModal({
                             disabled={fromMemberId === null}
                         >
                             <option value="" disabled>
-                                Select creditor
+                                Select member
                             </option>
-                            {creditorsForDebtor.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
+                            {membersExceptFrom.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name}
                                 </option>
                             ))}
                         </select>
@@ -122,13 +116,6 @@ export function SettlementModal({
                         value={amount}
                         onChange={setAmount}
                     />
-
-                    {maxAmount > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                            Max: R${" "}
-                            {(maxAmount / 100).toFixed(2).replace(".", ",")}
-                        </p>
-                    )}
                 </div>
 
                 <DialogFooter>
