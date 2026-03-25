@@ -10,3 +10,4 @@ export {
 } from "./balance.schema";
 export { computeBalances } from "./compute-balances";
 export { computeDirectDebts } from "./compute-direct-debts";
+export { simplifyDebts } from "./simplify-debts";
