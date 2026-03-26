@@ -1,7 +1,7 @@
 import { Button } from "@components/ui/button";
 import { type EntityId, GROUP_MEMBERS_MIN } from "@domain/common";
 import { formatCurrency } from "@lib/format";
-import { Plus, X } from "lucide-react";
+import { Plus, Shuffle, X } from "lucide-react";
 
 export type DebtDetail = {
     name: string;
@@ -20,16 +20,20 @@ type Props = {
     members: MemberRow[];
     memberCount: number;
     canAddMember: boolean;
+    isSimplifiedView: boolean;
     onAddMember: () => void;
     onRemoveMember: (id: EntityId) => void;
+    onToggleSimplifiedView: () => void;
 };
 
 export function MembersSection({
     members,
     memberCount,
     canAddMember,
+    isSimplifiedView,
     onAddMember,
     onRemoveMember,
+    onToggleSimplifiedView,
 }: Props) {
     return (
         <section className="flex flex-col gap-4">
@@ -37,15 +41,27 @@ export function MembersSection({
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
                     Members
                 </h2>
-                <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!canAddMember}
-                    onClick={onAddMember}
-                >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add member
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        variant={isSimplifiedView ? "default" : "outline"}
+                        onClick={onToggleSimplifiedView}
+                        aria-label="Toggle simplified view"
+                        aria-pressed={isSimplifiedView}
+                    >
+                        <Shuffle className="w-4 h-4 mr-1" />
+                        Simplify
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canAddMember}
+                        onClick={onAddMember}
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add member
+                    </Button>
+                </div>
             </div>
             <ul className="flex flex-col gap-2">
                 {members.map((member) => {

@@ -264,25 +264,61 @@ describe("useGroupScreen", () => {
         });
     });
 
-    describe("directDebts", () => {
-        test("returns empty array when group has no expenses", () => {
+    describe("isSimplifiedView", () => {
+        test("defaults to false", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.directDebts).toEqual([]);
+            expect(state.isSimplifiedView).toBe(false);
         });
 
-        test("returns computed direct debts from group", () => {
-            const mockDebts: DirectDebt[] = [
+        test("toggleSimplifiedView sets isSimplifiedView to true", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            expect((result.current as FoundState).isSimplifiedView).toBe(true);
+        });
+
+        test("toggleSimplifiedView toggles back to false on second call", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            expect((result.current as FoundState).isSimplifiedView).toBe(false);
+        });
+
+        test("members owes come from directDebts when isSimplifiedView is false", () => {
+            const mockDirect: DirectDebt[] = [
                 { fromMemberId: 2, toMemberId: 1, amount: 5000 },
             ];
-            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
-                mockDebts,
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValue(
+                mockDirect,
             );
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.directDebts).toEqual(mockDebts);
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]).toEqual({ name: "Alice", amount: 5000 });
+        });
+
+        test("members owes come from simplifiedDebts when isSimplifiedView is true", () => {
+            vi.spyOn(balanceDomain, "simplifyDebts").mockReturnValue([
+                { fromMemberId: 1, toMemberId: 2, amount: 3000 },
+            ]);
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            const state = result.current as FoundState;
+            const aliceRow = state.members.find((m) => m.name === "Alice");
+            expect(aliceRow?.owes[0]).toEqual({ name: "Bob", amount: 3000 });
         });
     });
 
@@ -371,11 +407,11 @@ describe("useGroupScreen", () => {
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to 'User {id}' in debt display when debt references unknown member", () => {
+        test("falls back to 'User {id}' in direct debt display when member is unknown", () => {
             const mockDebts: DirectDebt[] = [
                 { fromMemberId: 2, toMemberId: 999, amount: 5000 },
             ];
-            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValue(
                 mockDebts,
             );
             const group = setupGroupWithTwoMembers();
@@ -385,8 +421,22 @@ describe("useGroupScreen", () => {
             expect(bobRow?.owes[0]?.name).toBe("User 999");
         });
 
+        test("falls back to 'User {id}' in simplified debt display when member is unknown", () => {
+            vi.spyOn(balanceDomain, "simplifyDebts").mockReturnValue([
+                { fromMemberId: 2, toMemberId: 999, amount: 5000 },
+            ]);
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            const state = result.current as FoundState;
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]?.name).toBe("User 999");
+        });
+
         test("falls back to amount 0 when computeBalances has no entry for member", () => {
-            vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce([]);
+            vi.spyOn(balanceDomain, "computeBalances").mockReturnValue([]);
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;

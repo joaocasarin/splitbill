@@ -52,9 +52,9 @@ SplitBill is built to be simple to use, yet scalable inside the browser. If you 
 - **Dark Mode**: Integrate a dark theme across all UI components.
 - **Stateful Forms**: Expand the current architecture by integrating `React Hook Form` robustly across any new complex inputs dynamically introduced to the app.
 
-### 5. Debt Simplification
-- An algorithmic enhancement avoiding redundant payments (e.g., if A owes B $10, and B owes C $10 -> prompt A to just pay C $10 directly).
-- *If you enjoy working with algorithms and graphs, we'd love your help implementing this logic!*
+### 5. Debt Simplification ✅ Implemented
+- A greedy two-pointer algorithm (`simplifyDebts` in `src/domain/balance/simplify-debts.ts`) that minimizes the number of transactions needed to settle a group.
+- Exposed in the UI via a **Simplify** toggle on the Members section — switching it replaces direct debts with simplified ones in each member card, with no recalculation (both arrays are pre-computed and memoized).
 
 ### 6. Soft Delete for Members
 - Currently, removing a member from a group permanently erases them from the member list (hard delete), subject to balance and minimum-member guards.
