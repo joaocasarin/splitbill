@@ -5,11 +5,10 @@ import type { Settlement } from "@domain/settlement";
 import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import type { MemberRow } from "../members/MembersSection";
 
 type Props = {
     settlements: Settlement[];
-    members: MemberRow[];
+    members: { id: EntityId; name: string }[];
     onAddSettlement: () => void;
     onEditSettlement: (settlement: Settlement) => void;
     onDeleteSettlement: (settlementId: EntityId) => void;

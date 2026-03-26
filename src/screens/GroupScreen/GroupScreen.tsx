@@ -86,7 +86,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <ExpensesSection
                 expenses={group.expenses}
-                members={members}
+                members={group.members}
                 onAddExpense={openAddExpense}
                 onEditExpense={openEditExpense}
                 onDeleteExpense={deleteExpense}
@@ -94,7 +94,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <SettlementsSection
                 settlements={group.settlements}
-                members={members}
+                members={group.members}
                 onAddSettlement={openAddSettlement}
                 onEditSettlement={openEditSettlement}
                 onDeleteSettlement={deleteSettlement}

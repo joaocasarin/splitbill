@@ -78,56 +78,60 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         if (!group) return [];
         const getMemberName = (id: EntityId) =>
             group.members.find((m) => m.id === id)?.name ?? `User ${id}`;
-        return group.members.map((member) => {
-            const balance = balances.find((b) => b.memberId === member.id);
-            const owes = directDebts
-                .filter((d) => d.fromMemberId === member.id)
-                .map((d) => ({
-                    name: getMemberName(d.toMemberId),
-                    amount: d.amount,
-                }));
-            const receives = directDebts
-                .filter((d) => d.toMemberId === member.id)
-                .map((d) => ({
-                    name: getMemberName(d.fromMemberId),
-                    amount: d.amount,
-                }));
-            return {
-                id: member.id,
-                name: member.name,
-                amount: balance?.amount ?? 0,
-                owes,
-                receives,
-            };
-        });
+        return group.members
+            .filter((m) => !m.deletedAt)
+            .map((member) => {
+                const balance = balances.find((b) => b.memberId === member.id);
+                const owes = directDebts
+                    .filter((d) => d.fromMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.toMemberId),
+                        amount: d.amount,
+                    }));
+                const receives = directDebts
+                    .filter((d) => d.toMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.fromMemberId),
+                        amount: d.amount,
+                    }));
+                return {
+                    id: member.id,
+                    name: member.name,
+                    amount: balance?.amount ?? 0,
+                    owes,
+                    receives,
+                };
+            });
     }, [group, balances, directDebts]);
 
     const membersWithSimplifiedDebts = useMemo<MemberRow[]>(() => {
         if (!group) return [];
         const getMemberName = (id: EntityId) =>
             group.members.find((m) => m.id === id)?.name ?? `User ${id}`;
-        return group.members.map((member) => {
-            const balance = balances.find((b) => b.memberId === member.id);
-            const owes = simplifiedDebts
-                .filter((d) => d.fromMemberId === member.id)
-                .map((d) => ({
-                    name: getMemberName(d.toMemberId),
-                    amount: d.amount,
-                }));
-            const receives = simplifiedDebts
-                .filter((d) => d.toMemberId === member.id)
-                .map((d) => ({
-                    name: getMemberName(d.fromMemberId),
-                    amount: d.amount,
-                }));
-            return {
-                id: member.id,
-                name: member.name,
-                amount: balance?.amount ?? 0,
-                owes,
-                receives,
-            };
-        });
+        return group.members
+            .filter((m) => !m.deletedAt)
+            .map((member) => {
+                const balance = balances.find((b) => b.memberId === member.id);
+                const owes = simplifiedDebts
+                    .filter((d) => d.fromMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.toMemberId),
+                        amount: d.amount,
+                    }));
+                const receives = simplifiedDebts
+                    .filter((d) => d.toMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.fromMemberId),
+                        amount: d.amount,
+                    }));
+                return {
+                    id: member.id,
+                    name: member.name,
+                    amount: balance?.amount ?? 0,
+                    owes,
+                    receives,
+                };
+            });
     }, [group, balances, simplifiedDebts]);
 
     if (!group) {
@@ -138,12 +142,13 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         ? membersWithSimplifiedDebts
         : membersWithDirectDebts;
 
-    const canAddMember = group.members.length < GROUP_MEMBERS_MAX;
+    const activeCount = group.members.filter((m) => !m.deletedAt).length;
+    const canAddMember = activeCount < GROUP_MEMBERS_MAX;
 
     return {
         group,
         members,
-        memberCount: group.members.length,
+        memberCount: activeCount,
         canAddMember,
         isSimplifiedView,
         toggleSimplifiedView: () => setIsSimplifiedView((v) => !v),

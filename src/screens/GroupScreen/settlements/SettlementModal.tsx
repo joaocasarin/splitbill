@@ -32,6 +32,7 @@ export function SettlementModal({
 }: Props) {
     const {
         isEditing,
+        isReadOnly,
         fromMemberId,
         toMemberId,
         amount,
@@ -68,6 +69,13 @@ export function SettlementModal({
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-2">
+                    {isReadOnly && (
+                        <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                            This settlement involves a removed member and cannot
+                            be edited.
+                        </p>
+                    )}
+
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor={`${baseId}-from`}>From</label>
                         <select
@@ -137,7 +145,7 @@ export function SettlementModal({
                     </Button>
                     <Button
                         size="sm"
-                        disabled={!canSubmit}
+                        disabled={!canSubmit || isReadOnly}
                         onClick={handleSubmit}
                     >
                         {isEditing ? "Save" : "Add"}

@@ -12,9 +12,11 @@ The domain is broken down into several core entities, primarily located in `src/
 ### 2. Member
 - Participants of a group.
 - Can be added to a group at any time by name.
-- Can be removed from a group, subject to two constraints:
+- Can be **soft-deleted** from a group, subject to two constraints:
   - The member's **net balance must be zero** — they can neither owe nor be owed money.
   - The group must retain at least **2 active members** after the removal.
+- Soft deletion stamps a `deletedAt` timestamp on the member record instead of removing it from the array, preserving historical expense and settlement data integrity.
+- Soft-deleted members are hidden from all active UI (member list, expense payer/split selects, settlement from/to selects). Expenses and settlements that involve a deleted member are shown in read-only mode with a banner explaining the restriction.
 
 ### 3. Expense
 - Financial records mapped to specific participants.

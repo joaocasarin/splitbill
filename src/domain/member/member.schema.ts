@@ -12,6 +12,7 @@ export const MemberSchema = z.object({
             error: `Name cannot exceed ${USER_NAME_MAX} characters`,
         }),
     createdAt: z.number().int().positive(),
+    deletedAt: z.number().int().positive().optional(),
 });
 
 export type Member = z.infer<typeof MemberSchema>;

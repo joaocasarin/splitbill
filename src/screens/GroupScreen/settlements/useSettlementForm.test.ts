@@ -272,6 +272,49 @@ describe("useSettlementForm", () => {
         });
     });
 
+    describe("isReadOnly", () => {
+        test("is false when no settlement is provided", () => {
+            const { hook } = setup();
+            expect(hook.result.current.isReadOnly).toBe(false);
+        });
+
+        test("is false when both members are in the active members list", () => {
+            const settlement = {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 2,
+                amount: 1000,
+                createdAt: 1000000,
+            };
+            const { hook } = setup({ settlement });
+            expect(hook.result.current.isReadOnly).toBe(false);
+        });
+
+        test("is true when fromMember is not in active members list", () => {
+            const settlement = {
+                id: 1,
+                fromMemberId: 99,
+                toMemberId: 1,
+                amount: 1000,
+                createdAt: 1000000,
+            };
+            const { hook } = setup({ members: [alice, bob], settlement });
+            expect(hook.result.current.isReadOnly).toBe(true);
+        });
+
+        test("is true when toMember is not in active members list", () => {
+            const settlement = {
+                id: 1,
+                fromMemberId: 1,
+                toMemberId: 99,
+                amount: 1000,
+                createdAt: 1000000,
+            };
+            const { hook } = setup({ members: [alice, bob], settlement });
+            expect(hook.result.current.isReadOnly).toBe(true);
+        });
+    });
+
     describe("defensive guards (unreachable in valid usage)", () => {
         test("handleSubmit is a no-op when canSubmit is false", () => {
             const { onSubmit, onClose, hook } = setup();

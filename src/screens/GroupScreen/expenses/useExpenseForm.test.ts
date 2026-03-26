@@ -92,6 +92,18 @@ describe("useExpenseForm", () => {
             const hook = renderHook(() => useExpenseForm(999, onClose));
             expect(hook.result.current.members).toEqual([]);
         });
+
+        test("excludes deleted members from members list", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
+            const onClose = vi.fn();
+            const hook = renderHook(() => useExpenseForm(group.id, onClose));
+            expect(hook.result.current.members).toHaveLength(2);
+            expect(
+                hook.result.current.members.find((m) => m.name === "Carol"),
+            ).toBeUndefined();
+        });
     });
 
     describe("setTitle", () => {
@@ -547,6 +559,181 @@ describe("useExpenseForm", () => {
             const { onClose, hook } = setup();
             act(() => hook.result.current.handleOpenChange(true));
             expect(onClose).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("isReadOnly", () => {
+        test("is false when creating (no expense provided)", () => {
+            const { hook } = setup();
+            expect(hook.result.current.isReadOnly).toBe(false);
+        });
+
+        test("is false when editing and all members are active", () => {
+            const group = setupGroupWithTwoMembers();
+            const built = expenseDomain.buildEqualExpense(
+                "Hotel",
+                10000,
+                1,
+                new Set([1, 2]),
+            );
+            if (!built) throw new Error("buildEqualExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, vi.fn(), storedExpense),
+            );
+            expect(hook.result.current.isReadOnly).toBe(false);
+        });
+
+        test("is true when expense payer is soft-deleted", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            const built = expenseDomain.buildEqualExpense(
+                "Hotel",
+                10000,
+                3,
+                new Set([1, 3]),
+            );
+            if (!built) throw new Error("buildEqualExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            useAppStore.setState((s) => ({
+                global: {
+                    ...s.global,
+                    groups: s.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  members: g.members.map((m) =>
+                                      m.id === 3
+                                          ? { ...m, deletedAt: Date.now() }
+                                          : m,
+                                  ),
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, vi.fn(), storedExpense),
+            );
+            expect(hook.result.current.isReadOnly).toBe(true);
+        });
+
+        test("is true when equal expense participant is soft-deleted", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            const built = expenseDomain.buildEqualExpense(
+                "Hotel",
+                10000,
+                1,
+                new Set([1, 3]),
+            );
+            if (!built) throw new Error("buildEqualExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            useAppStore.setState((s) => ({
+                global: {
+                    ...s.global,
+                    groups: s.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  members: g.members.map((m) =>
+                                      m.id === 3
+                                          ? { ...m, deletedAt: Date.now() }
+                                          : m,
+                                  ),
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, vi.fn(), storedExpense),
+            );
+            expect(hook.result.current.isReadOnly).toBe(true);
+        });
+
+        test("is true when fixed expense share member is soft-deleted", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            const built = expenseDomain.buildFixedExpense(
+                "Dinner",
+                9000,
+                1,
+                new Map([
+                    [1, 5000],
+                    [3, 4000],
+                ]),
+            );
+            if (!built) throw new Error("buildFixedExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            useAppStore.setState((s) => ({
+                global: {
+                    ...s.global,
+                    groups: s.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  members: g.members.map((m) =>
+                                      m.id === 3
+                                          ? { ...m, deletedAt: Date.now() }
+                                          : m,
+                                  ),
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, vi.fn(), storedExpense),
+            );
+            expect(hook.result.current.isReadOnly).toBe(true);
+        });
+
+        test("is true when percentage expense share member is soft-deleted", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            const built = expenseDomain.buildPercentageExpense(
+                "Taxi",
+                5000,
+                1,
+                new Map([
+                    [1, 5000],
+                    [3, 5000],
+                ]),
+            );
+            if (!built) throw new Error("buildPercentageExpense returned null");
+            useAppStore.getState().addExpense(group.id, built);
+            const storedExpense =
+                useAppStore.getState().global.groups[0].expenses[0];
+            useAppStore.setState((s) => ({
+                global: {
+                    ...s.global,
+                    groups: s.global.groups.map((g) =>
+                        g.id === group.id
+                            ? {
+                                  ...g,
+                                  members: g.members.map((m) =>
+                                      m.id === 3
+                                          ? { ...m, deletedAt: Date.now() }
+                                          : m,
+                                  ),
+                              }
+                            : g,
+                    ),
+                },
+            }));
+            const hook = renderHook(() =>
+                useExpenseForm(group.id, vi.fn(), storedExpense),
+            );
+            expect(hook.result.current.isReadOnly).toBe(true);
         });
     });
 

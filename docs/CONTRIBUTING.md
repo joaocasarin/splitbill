@@ -56,11 +56,10 @@ SplitBill is built to be simple to use, yet scalable inside the browser. If you 
 - A greedy two-pointer algorithm (`simplifyDebts` in `src/domain/balance/simplify-debts.ts`) that minimizes the number of transactions needed to settle a group.
 - Exposed in the UI via a **Simplify** toggle on the Members section — switching it replaces direct debts with simplified ones in each member card, with no recalculation (both arrays are pre-computed and memoized).
 
-### 6. Soft Delete for Members
-- Currently, removing a member from a group permanently erases them from the member list (hard delete), subject to balance and minimum-member guards.
-- This feature would migrate member removal to a **soft delete** — stamping a `deletedAt` timestamp instead of filtering the member out of the array.
-- Soft-deleted members would be hidden from all active UI (member list, expense selects, settlement selects) while remaining visible in historical expense and settlement records, preserving data integrity.
-- *A good first issue for contributors familiar with Zustand state management and domain modeling.*
+### 6. Soft Delete for Members ✅ Implemented
+- Member removal now stamps a `deletedAt` timestamp on the member record instead of filtering them out of the array (soft delete).
+- Soft-deleted members are hidden from all active UI (member list, expense payer/split selects, settlement from/to selects) while remaining visible in historical expense and settlement records, preserving data integrity.
+- Expenses and settlements that involve a deleted member are displayed in **read-only mode** — a banner is shown and the Save button is disabled. Delete still works.
 
 ### 7. Backend Integration (V2 / V3)
 While SplitBill is currently fully serverless via the URL, a major future milestone is to introduce an optional backend architecture for registered users. This will allow for cross-device syncing without relying solely on large URLs, while offering user authentication and permanent friend lists.

@@ -35,6 +35,7 @@ export function ExpenseModal({
     const {
         members,
         isEditing,
+        isReadOnly,
         title,
         setTitle,
         total,
@@ -73,6 +74,13 @@ export function ExpenseModal({
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-2">
+                    {isReadOnly && (
+                        <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                            This expense involves a removed member and cannot be
+                            edited.
+                        </p>
+                    )}
+
                     <div className="flex flex-col gap-1.5">
                         <label htmlFor={`${checkboxBaseId}-title`}>Title</label>
                         <Input
@@ -160,7 +168,7 @@ export function ExpenseModal({
                     </Button>
                     <Button
                         size="sm"
-                        disabled={!canSubmit}
+                        disabled={!canSubmit || isReadOnly}
                         onClick={handleSubmit}
                     >
                         {isEditing ? "Save" : "Add"}

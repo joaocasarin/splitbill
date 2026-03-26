@@ -155,6 +155,20 @@ describe("ExpensesSection", () => {
                 screen.getByRole("button", { name: /delete hotel/i }),
             ).toBeInTheDocument();
         });
+
+        test("resolves payer name for a soft-deleted member included in members list", () => {
+            const allMembers = [...members, { id: 3, name: "Carol" }];
+            render(
+                <ExpensesSection
+                    expenses={[{ ...expense, id: 2, payerId: 3 }]}
+                    members={allMembers}
+                    onAddExpense={vi.fn()}
+                    onEditExpense={vi.fn()}
+                    onDeleteExpense={vi.fn()}
+                />,
+            );
+            expect(screen.getByText(/paid by carol/i)).toBeInTheDocument();
+        });
     });
 
     describe("onAddExpense", () => {

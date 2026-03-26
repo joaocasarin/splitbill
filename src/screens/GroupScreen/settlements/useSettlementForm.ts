@@ -17,6 +17,10 @@ export function useSettlementForm({
     settlement,
 }: UseSettlementFormParams) {
     const isEditing = settlement !== undefined;
+    const isReadOnly =
+        settlement !== undefined &&
+        (!members.some((m) => m.id === settlement.fromMemberId) ||
+            !members.some((m) => m.id === settlement.toMemberId));
 
     const [fromMemberId, setFromMemberId] = useState<EntityId | null>(
         settlement?.fromMemberId ?? null,
@@ -67,6 +71,7 @@ export function useSettlementForm({
 
     return {
         isEditing,
+        isReadOnly,
         fromMemberId,
         toMemberId,
         amount,

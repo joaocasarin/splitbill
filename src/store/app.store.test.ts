@@ -1,5 +1,5 @@
 import { computeBalances } from "@domain/balance";
-import { SCHEMA_VERSION } from "@domain/common";
+import { GROUP_MEMBERS_MIN, SCHEMA_VERSION } from "@domain/common";
 import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
@@ -712,7 +712,7 @@ describe("AppStore", () => {
     });
 
     describe("removeMemberFromGroup", () => {
-        test("removes member with zero balance from group with 3+ members", () => {
+        test("soft-deletes member with zero balance from group with 3+ members", () => {
             useAppStore
                 .getState()
                 .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
@@ -721,7 +721,9 @@ describe("AppStore", () => {
 
             expect(result.valid).toBe(true);
             const group = useAppStore.getState().global.groups[0];
-            expect(group.members.find((m) => m.id === 3)).toBeUndefined();
+            expect(
+                group.members.find((m) => m.id === 3)?.deletedAt,
+            ).toBeDefined();
         });
 
         test("returns invalid when group not found", () => {
@@ -741,7 +743,7 @@ describe("AppStore", () => {
                 expect(result.reason).toBe("member not found in group");
         });
 
-        test("returns invalid when group would drop below 2 members", () => {
+        test("returns invalid when active member count would drop below GROUP_MEMBERS_MIN", () => {
             useAppStore
                 .getState()
                 .addGroupWithMembers("Trip", ["Alice", "Bob"]);
@@ -750,8 +752,34 @@ describe("AppStore", () => {
             expect(result.valid).toBe(false);
             if (!result.valid)
                 expect(result.reason).toBe(
-                    "group must have at least 2 members",
+                    `Group must retain at least ${GROUP_MEMBERS_MIN} active members`,
                 );
+        });
+
+        test("counts only active members when checking minimum member guard", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+
+            // Soft-delete Carol first (3 members → 2 active)
+            useAppStore.getState().removeMemberFromGroup(1, 3);
+
+            // Now try to remove Bob (2 active → would leave 1)
+            const result = useAppStore.getState().removeMemberFromGroup(1, 2);
+            expect(result.valid).toBe(false);
+        });
+
+        test("returns invalid when attempting to remove an already-deleted member", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+
+            useAppStore.getState().removeMemberFromGroup(1, 3);
+
+            const result = useAppStore.getState().removeMemberFromGroup(1, 3);
+            expect(result.valid).toBe(false);
+            if (!result.valid)
+                expect(result.reason).toBe("member not found in group");
         });
 
         test("returns invalid when member has non-zero balance", () => {
@@ -770,7 +798,7 @@ describe("AppStore", () => {
             const result = useAppStore.getState().removeMemberFromGroup(1, 1);
             expect(result.valid).toBe(false);
             if (!result.valid)
-                expect(result.reason).toBe("member has non-zero balance");
+                expect(result.reason).toBe("Member has a non-zero balance");
         });
 
         test("does not affect other groups when removing a member", () => {
@@ -788,7 +816,7 @@ describe("AppStore", () => {
         });
 
         describe("defensive guards (unreachable in valid usage)", () => {
-            test("removes member when balance entry is absent for that member", () => {
+            test("soft-deletes member when balance entry is absent for that member", () => {
                 vi.mocked(computeBalances).mockReturnValueOnce([]);
 
                 useAppStore
@@ -800,7 +828,9 @@ describe("AppStore", () => {
                     .removeMemberFromGroup(1, 3);
                 expect(result.valid).toBe(true);
                 const group = useAppStore.getState().global.groups[0];
-                expect(group.members.find((m) => m.id === 3)).toBeUndefined();
+                expect(
+                    group.members.find((m) => m.id === 3)?.deletedAt,
+                ).toBeDefined();
             });
         });
     });

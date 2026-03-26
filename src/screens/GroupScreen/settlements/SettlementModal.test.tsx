@@ -17,6 +17,7 @@ type HookReturn = ReturnType<typeof useSettlementFormModule.useSettlementForm>;
 function makeHookReturn(overrides: Partial<HookReturn> = {}): HookReturn {
     return {
         isEditing: false,
+        isReadOnly: false,
         fromMemberId: null,
         toMemberId: null,
         amount: 0,
@@ -325,6 +326,26 @@ describe("SettlementModal", () => {
             renderModal(hookReturn);
             await userEvent.click(screen.getByTestId("__dialog_open__"));
             expect(hookReturn.handleOpenChange).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe("read-only mode", () => {
+        test("shows read-only banner when isReadOnly is true", () => {
+            renderModal(makeHookReturn({ isReadOnly: true, isEditing: true }));
+            expect(screen.getByText(/removed member/i)).toBeInTheDocument();
+        });
+
+        test("Save button is disabled when isReadOnly is true regardless of canSubmit", () => {
+            renderModal(
+                makeHookReturn({
+                    isReadOnly: true,
+                    isEditing: true,
+                    canSubmit: true,
+                }),
+            );
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeDisabled();
         });
     });
 

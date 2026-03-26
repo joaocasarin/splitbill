@@ -167,6 +167,28 @@ describe("SettlementsSection", () => {
                 }),
             ).toBeInTheDocument();
         });
+
+        test("resolves name for a soft-deleted member included in members list", () => {
+            const allMembers = [...members, { id: 3, name: "Carol" }];
+            render(
+                <SettlementsSection
+                    settlements={[
+                        {
+                            id: 2,
+                            fromMemberId: 3,
+                            toMemberId: 1,
+                            amount: 5000,
+                            createdAt: 1000000,
+                        },
+                    ]}
+                    members={allMembers}
+                    onAddSettlement={vi.fn()}
+                    onEditSettlement={vi.fn()}
+                    onDeleteSettlement={vi.fn()}
+                />,
+            );
+            expect(screen.getByText(/carol.*alice/i)).toBeInTheDocument();
+        });
     });
 
     describe("editing", () => {
