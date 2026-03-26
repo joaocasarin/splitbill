@@ -2,13 +2,12 @@ import { computeBalances } from "@domain/balance";
 import {
     createIdGenerator,
     type EntityId,
-    GROUP_MEMBERS_MIN,
     SCHEMA_VERSION,
 } from "@domain/common";
 import type { CreateExpense, Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
-import type { Member } from "@domain/member";
+import { type Member, validateMemberDeletion } from "@domain/member";
 import {
     type CreateSettlement,
     type Settlement,
@@ -154,23 +153,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
-        if (!group.members.some((m) => m.id === userId)) {
+        const isActiveMember = group.members.some(
+            (m) => m.id === userId && !m.deletedAt,
+        );
+        if (!isActiveMember) {
             return { valid: false, reason: "member not found in group" };
         }
 
-        if (group.members.length <= GROUP_MEMBERS_MIN) {
-            return {
-                valid: false,
-                reason: "group must have at least 2 members",
-            };
-        }
-
+        const activeCount = group.members.filter((m) => !m.deletedAt).length;
         const balances = computeBalances(group);
-        const memberBalance = balances.find((b) => b.memberId === userId);
+        const validation = validateMemberDeletion(
+            userId,
+            balances,
+            activeCount,
+        );
 
-        if (memberBalance && memberBalance.amount !== 0) {
-            return { valid: false, reason: "member has non-zero balance" };
-        }
+        if (!validation.valid) return validation;
 
         set({
             status: "loaded",
@@ -180,7 +178,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                     g.id === groupId
                         ? {
                               ...g,
-                              members: g.members.filter((m) => m.id !== userId),
+                              members: g.members.map((m) =>
+                                  m.id === userId
+                                      ? { ...m, deletedAt: Date.now() }
+                                      : m,
+                              ),
                           }
                         : g,
                 ),

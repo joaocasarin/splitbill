@@ -400,9 +400,9 @@ describe("useGroupScreen", () => {
                 (result.current as FoundState).removeMember(1);
             });
             const updatedGroup = useAppStore.getState().global.groups[0];
-            expect(
-                updatedGroup.members.find((m) => m.id === 1),
-            ).toBeUndefined();
+            const removed = updatedGroup.members.find((m) => m.id === 1);
+            expect(removed).toBeDefined();
+            expect(removed?.deletedAt).toBeDefined();
         });
     });
 
