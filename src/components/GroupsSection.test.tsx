@@ -109,6 +109,23 @@ describe("GroupsSection", () => {
             expect(screen.getByText("3 members")).toBeInTheDocument();
         });
 
+        test("excludes deleted members from member count", () => {
+            const groupWithDeleted: Group = {
+                ...groups[0],
+                members: [
+                    { id: 1, name: "Alice", createdAt: 1000000 },
+                    {
+                        id: 2,
+                        name: "Bob",
+                        createdAt: 1000000,
+                        deletedAt: 2000000,
+                    },
+                ],
+            };
+            renderSection({ groups: [groupWithDeleted] });
+            expect(screen.getByText("1 members")).toBeInTheDocument();
+        });
+
         test("marks active group with aria-current", () => {
             renderSection({ view: { screen: "group", groupId: 1 } });
             expect(

@@ -5,11 +5,10 @@ import type { Expense } from "@domain/expense";
 import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import type { MemberRow } from "../members/MembersSection";
 
 type Props = {
     expenses: Expense[];
-    members: MemberRow[];
+    members: { id: EntityId; name: string }[];
     onAddExpense: () => void;
     onEditExpense: (expense: Expense) => void;
     onDeleteExpense: (expenseId: EntityId) => void;
