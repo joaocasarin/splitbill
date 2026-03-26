@@ -92,6 +92,18 @@ describe("useExpenseForm", () => {
             const hook = renderHook(() => useExpenseForm(999, onClose));
             expect(hook.result.current.members).toEqual([]);
         });
+
+        test("excludes deleted members from members list", () => {
+            const group = setupGroupWithTwoMembers();
+            useAppStore.getState().addMemberByName(group.id, "Carol");
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
+            const onClose = vi.fn();
+            const hook = renderHook(() => useExpenseForm(group.id, onClose));
+            expect(hook.result.current.members).toHaveLength(2);
+            expect(
+                hook.result.current.members.find((m) => m.name === "Carol"),
+            ).toBeUndefined();
+        });
     });
 
     describe("setTitle", () => {

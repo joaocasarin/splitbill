@@ -18,7 +18,7 @@ export function useExpenseForm(
 ) {
     const { global, addExpense, updateExpense } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
-    const members: Member[] = group?.members ?? [];
+    const members: Member[] = group?.members.filter((m) => !m.deletedAt) ?? [];
 
     const firstMemberId = members[0]?.id ?? null;
     const isEditing = expense !== undefined;

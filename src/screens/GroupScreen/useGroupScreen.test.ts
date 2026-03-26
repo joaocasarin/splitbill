@@ -53,8 +53,33 @@ describe("useGroupScreen", () => {
             ]);
         });
 
-        test("returns memberCount matching group.members length", () => {
+        test("returns memberCount equal to active member count", () => {
             const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.memberCount).toBe(2);
+        });
+
+        test("excludes deleted members from members list", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.members).toHaveLength(2);
+            expect(
+                state.members.find((m) => m.name === "Carol"),
+            ).toBeUndefined();
+        });
+
+        test("memberCount counts only active members", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.memberCount).toBe(2);
@@ -79,6 +104,23 @@ describe("useGroupScreen", () => {
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.canAddMember).toBe(false);
+        });
+
+        test("canAddMember counts only active members", () => {
+            useAppStore.getState().addGroupWithMembers(
+                "Trip",
+                Array.from(
+                    { length: GROUP_MEMBERS_MAX },
+                    (_, i) => `Member${i + 1}`,
+                ),
+            );
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore
+                .getState()
+                .removeMemberFromGroup(group.id, GROUP_MEMBERS_MAX);
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.canAddMember).toBe(true);
         });
     });
 
