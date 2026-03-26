@@ -29,9 +29,23 @@ The domain is broken down into several core entities, primarily located in `src/
 - Any participant can record a settlement of any value for any other participant, with the strict rule that a participant cannot settle a debt with themselves.
 
 ### 5. Balances (Derived State)
-- **Important Note**: User balances are **not** explicitly saved in the URL state. 
+- **Important Note**: User balances are **not** explicitly saved in the URL state.
 - The URL only stores the raw, source-of-truth actions: the group members, the expenses, and the settlements (which contain their respective creation and update dates).
 - Every time a user loads the app or an action occurs, the individual balance for each participant is **computed dynamically** in the store by deriving the net differences between their involved expenses and settlements.
+
+#### Debt computation pipeline
+
+Three functions derive debt state from the raw group data, in order:
+
+| Function | Input | Output | Description |
+|---|---|---|---|
+| `computeBalances` | `Group` | `MemberBalance[]` | Net balance per member (positive = to receive, negative = to pay). Invariant: sum is always 0. |
+| `computeDirectDebts` | `Group` | `DirectDebt[]` | Actual per-expense debts between pairs, with cross-pair netting applied. |
+| `simplifyDebts` | `MemberBalance[]` | `SimplifiedDebt[]` | Greedy two-pointer algorithm that minimizes the number of transactions needed to fully settle the group. |
+
+`SimplifiedDebt` is defined in `balance.schema.ts` and has the same shape as `DirectDebt` (`fromMemberId`, `toMemberId`, `amount`).
+
+Both `DirectDebt[]` and `SimplifiedDebt[]` arrays are memoized on the `Group` object in `useGroupScreen` — they are recomputed only when an expense or settlement action mutates the group, never on UI interactions such as toggling the simplified view.
 
 ## Validation Strategy
 Using Zod allows us to share types across the application statically and validate them at runtime dynamically. The integration of `.refine` and `.superRefine` ensures that complex cross-field validations (like verifying that the sum of percentages equals exactly 100%) are caught early before they mutate the application state.

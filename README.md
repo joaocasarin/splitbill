@@ -54,9 +54,9 @@ The user interface is designed to be minimal and responsive:
 - [x] Timestamps on all expenses and settlements ([#41](https://github.com/joaocasarin/splitbill/pull/41))
 - [x] Per-group member management — add or remove members with balance and minimum-member guards ([#47](https://github.com/joaocasarin/splitbill/pull/47))
 - [x] Free-form settlements — any member, any amount, no debt constraint required ([#48](https://github.com/joaocasarin/splitbill/pull/48))
+- [x] Debt simplification — greedy algorithm to minimize settlement transactions, with a toggle to switch views per member card
 
 ### Upcoming
-- [ ] Debt simplification — suggest the minimum number of transactions to fully settle a group
 - [ ] Soft delete for members — preserve expense/settlement history when removing settled-out participants
 - [ ] Multi-currency support with live exchange rate snapshots
 - [ ] Receipt scanning (OCR, fully client-side)
