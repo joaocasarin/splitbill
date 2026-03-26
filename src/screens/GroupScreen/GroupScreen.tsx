@@ -33,6 +33,8 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
         members,
         memberCount,
         canAddMember,
+        isSimplifiedView,
+        toggleSimplifiedView,
         editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
@@ -76,8 +78,10 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 members={members}
                 memberCount={memberCount}
                 canAddMember={canAddMember}
+                isSimplifiedView={isSimplifiedView}
                 onAddMember={openAddMember}
                 onRemoveMember={removeMember}
+                onToggleSimplifiedView={toggleSimplifiedView}
             />
 
             <ExpensesSection

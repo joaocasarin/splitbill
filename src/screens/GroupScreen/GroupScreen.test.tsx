@@ -10,9 +10,11 @@ vi.mock("./members/MembersSection", () => ({
     MembersSection: ({
         onAddMember,
         onRemoveMember,
+        onToggleSimplifiedView,
     }: {
         onAddMember: () => void;
         onRemoveMember: (id: number) => void;
+        onToggleSimplifiedView: () => void;
     }) => (
         <>
             <button type="button" onClick={onAddMember}>
@@ -20,6 +22,9 @@ vi.mock("./members/MembersSection", () => ({
             </button>
             <button type="button" onClick={() => onRemoveMember(1)}>
                 Remove Alice
+            </button>
+            <button type="button" onClick={onToggleSimplifiedView}>
+                Toggle simplified
             </button>
         </>
     ),
@@ -148,8 +153,8 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         })),
         memberCount: 2,
         canAddMember: false,
-        directDebts: [],
-        editDirectDebts: [],
+        isSimplifiedView: false,
+        toggleSimplifiedView: vi.fn(),
         editingExpense: null,
         isAddMemberOpen: false,
         isAddExpenseOpen: false,
@@ -241,6 +246,17 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(closeAddMember).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("simplified view toggle", () => {
+        test("calls toggleSimplifiedView when toggle is clicked", async () => {
+            const toggleSimplifiedView = vi.fn();
+            renderScreen(makeHookReturn({ toggleSimplifiedView }));
+            await userEvent.click(
+                screen.getByRole("button", { name: /toggle simplified/i }),
+            );
+            expect(toggleSimplifiedView).toHaveBeenCalledOnce();
         });
     });
 
