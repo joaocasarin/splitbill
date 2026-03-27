@@ -25,6 +25,7 @@ The domain is broken down into several core entities, primarily located in `src/
   - **Fixed Value**: A specific, arbitrary amount assigned per participant.
   - **Percentage**: Divides the total cost across participants based on specified percentages.
 - **Important Rule**: The person who paid the expense (the creator) does *not* necessarily need to be a participant in the expense division.
+- **Remainder distribution**: All monetary values are stored as integer cents. When a total cannot be divided evenly, the indivisible remainder cents are distributed one-at-a-time — the payer receives the first extra cent (if they are a participant), and the remaining extras are distributed to other participants in order. This applies to both Equal and Percentage splits and is handled by `computeEqualShares` and `computePercentageShares` in `src/domain/balance/compute-shares.ts`.
 
 ### 4. Settlement
 - Represents a repayment to balance out the expenses.
@@ -42,8 +43,15 @@ Three functions derive debt state from the raw group data, in order:
 | Function | Input | Output | Description |
 |---|---|---|---|
 | `computeBalances` | `Group` | `MemberBalance[]` | Net balance per member (positive = to receive, negative = to pay). Invariant: sum is always 0. |
-| `computeDirectDebts` | `Group` | `DirectDebt[]` | Actual per-expense debts between pairs, with cross-pair netting applied. |
+| `computeDirectDebts` | `Group` | `DirectDebt[]` | Actual per-expense debts between pairs, with cross-pair netting applied. Settlements are normalized as reverse credits across the expense graph. |
 | `simplifyDebts` | `MemberBalance[]` | `SimplifiedDebt[]` | Greedy two-pointer algorithm that minimizes the number of transactions needed to fully settle the group. |
+
+Both `computeBalances` and `computeDirectDebts` share the same low-level share-computation helpers defined in `src/domain/balance/compute-shares.ts`:
+
+| Helper | Description |
+|---|---|
+| `computeEqualShares` | Divides a total evenly across members; distributes remainder cents one-at-a-time (payer first). |
+| `computePercentageShares` | Divides a total by basis-point weights; distributes any rounding remainder one-at-a-time (payer first). |
 
 `SimplifiedDebt` is defined in `balance.schema.ts` and has the same shape as `DirectDebt` (`fromMemberId`, `toMemberId`, `amount`).
 
