@@ -29,7 +29,7 @@ describe("computeBalances", () => {
             );
         });
 
-        test("remainder absorbed by payer when payer is a participant", () => {
+        test("payer absorbs the first remainder cent, then non-payers in order", () => {
             const balances = computeBalances({
                 ...baseGroup,
                 expenses: [
@@ -50,6 +50,32 @@ describe("computeBalances", () => {
                     { memberId: 1, amount: 66 },
                     { memberId: 2, amount: -33 },
                     { memberId: 3, amount: -33 },
+                ]),
+            );
+        });
+
+        test("distributes remainder > 1: payer absorbs first cent, non-payers absorb the rest in order", () => {
+            const balances = computeBalances({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 200,
+                        payerId: 1,
+                        splitMode: "equal",
+                        memberIds: [1, 2, 3],
+                        createdAt: 1000000,
+                    },
+                ],
+            });
+
+            // baseShare=66, remainder=2 → payer(1) absorbs 1, member2 absorbs 1
+            expect(balances).toEqual(
+                expect.arrayContaining([
+                    { memberId: 1, amount: 133 },
+                    { memberId: 2, amount: -67 },
+                    { memberId: 3, amount: -66 },
                 ]),
             );
         });

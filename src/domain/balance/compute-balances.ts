@@ -37,17 +37,22 @@ function applyEqualSplit(
 ): void {
     const participantCount = memberIds.length;
     const baseShare = Math.floor(total / participantCount);
-    const remainder = total - baseShare * participantCount;
+    let remainderLeft = total - baseShare * participantCount;
 
     for (const memberId of memberIds) {
         updateBalance(balances, memberId, -baseShare);
     }
 
-    if (remainder !== 0) {
-        const remainderTarget = memberIds.includes(payerId)
-            ? payerId
-            : memberIds[0];
-        updateBalance(balances, remainderTarget, -remainder);
+    if (remainderLeft > 0 && memberIds.includes(payerId)) {
+        updateBalance(balances, payerId, -1);
+        remainderLeft--;
+    }
+
+    for (const memberId of memberIds) {
+        if (remainderLeft === 0) break;
+        if (memberId === payerId) continue;
+        updateBalance(balances, memberId, -1);
+        remainderLeft--;
     }
 }
 
@@ -133,8 +138,9 @@ function balancesToArray(balances: Map<EntityId, number>): MemberBalance[] {
  * Computes the net balance of each member in a group.
  *
  * Remainder cents (equal split) and rounding remainders (percentage split)
- * are absorbed by the payer when the payer is a participant, otherwise by the
- * first participant in the list — this ensures symmetric expenses cancel out.
+ * are distributed one cent at a time: the payer absorbs the first cent (when
+ * a participant), then each subsequent cent goes to the next non-payer in
+ * order — this ensures symmetric expenses cancel out.
  *
  * Invariant: sum of all returned amounts === 0.
  */
