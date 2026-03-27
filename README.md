@@ -50,7 +50,7 @@ The user interface is designed to be minimal and responsive:
 ## Roadmap
 
 ### Implemented
-- [x] Expense splitting — equal, fixed amount, or percentage ([#35](https://github.com/joaocasarin/splitbill/pull/35), [#36](https://github.com/joaocasarin/splitbill/pull/36))
+- [x] Expense splitting — equal, fixed amount, or percentage ([#35](https://github.com/joaocasarin/splitbill/pull/35), [#36](https://github.com/joaocasarin/splitbill/pull/36), [#52](https://github.com/joaocasarin/splitbill/pull/52))
 - [x] Timestamps on all expenses and settlements ([#41](https://github.com/joaocasarin/splitbill/pull/41))
 - [x] Per-group member management — add or remove members with balance and minimum-member guards ([#47](https://github.com/joaocasarin/splitbill/pull/47))
 - [x] Free-form settlements — any member, any amount, no debt constraint required ([#48](https://github.com/joaocasarin/splitbill/pull/48))
