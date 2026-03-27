@@ -663,7 +663,7 @@ describe("computeBalances", () => {
         });
 
         describe("percentage split", () => {
-            test("remainder goes to payer even with duplicate shares", () => {
+            test("duplicate shares are collapsed by Map — only last base amount kept", () => {
                 const balances = computeBalances({
                     ...baseGroup,
                     expenses: [
@@ -673,7 +673,9 @@ describe("computeBalances", () => {
                             total: 100,
                             payerId: 1,
                             splitMode: "percentage",
-                            // Invalid data by design: duplicates — remainder still goes to payer.
+                            // Invalid data by design: duplicates are collapsed by
+                            // computePercentageShares Map, so only 1 share is kept
+                            // instead of 3. Payment (+100) minus share (-34) = +66.
                             shares: [
                                 { memberId: 1, value: 3334 },
                                 { memberId: 1, value: 3333 },
@@ -685,7 +687,7 @@ describe("computeBalances", () => {
                 });
 
                 const member1 = balances.find((b) => b.memberId === 1);
-                expect(member1?.amount).toBe(0);
+                expect(member1?.amount).toBe(66);
             });
         });
     });

@@ -1,10 +1,9 @@
 import type { EntityId } from "../common";
-import { BPS_TOTAL } from "../common";
 import type { Expense } from "../expense";
 import type { Group } from "../group";
 import type { Settlement } from "../settlement";
 import type { MemberBalance } from "./balance.schema";
-import { computeEqualShares } from "./compute-shares";
+import { computeEqualShares, computePercentageShares } from "./compute-shares";
 
 function initializeBalances(memberIds: EntityId[]): Map<EntityId, number> {
     const balances = new Map<EntityId, number>();
@@ -57,33 +56,9 @@ function applyPercentageSplit(
     total: number,
     payerId: EntityId,
 ): void {
-    const computedShares = shares.map((share) => ({
-        memberId: share.memberId,
-        value: Math.round((total * share.value) / BPS_TOTAL),
-    }));
-
-    const computedSum = computedShares.reduce((acc, s) => acc + s.value, 0);
-    const remainder = total - computedSum;
-
-    for (const { memberId, value } of computedShares) {
-        updateBalance(balances, memberId, -value);
-    }
-
-    if (remainder !== 0) {
-        const step = remainder > 0 ? -1 : 1;
-        let left = Math.abs(remainder);
-
-        if (computedShares.some((s) => s.memberId === payerId)) {
-            updateBalance(balances, payerId, step);
-            left--;
-        }
-
-        for (const share of computedShares) {
-            if (left === 0) break;
-            if (share.memberId === payerId) continue;
-            updateBalance(balances, share.memberId, step);
-            left--;
-        }
+    const computed = computePercentageShares(shares, total, payerId);
+    for (const [memberId, amount] of computed) {
+        updateBalance(balances, memberId, -amount);
     }
 }
 

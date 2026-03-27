@@ -1,7 +1,6 @@
-import { BPS_TOTAL } from "../common";
 import type { Group } from "../group";
 import type { DirectDebt } from "./balance.schema";
-import { computeEqualShares } from "./compute-shares";
+import { computeEqualShares, computePercentageShares } from "./compute-shares";
 
 export function computeDirectDebts(group: Group): DirectDebt[] {
     const debts = new Map<string, number>();
@@ -37,27 +36,14 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
                 }
                 break;
             case "percentage": {
-                const amounts = expense.shares.map((s) =>
-                    Math.round((expense.total * s.value) / BPS_TOTAL),
+                const computed = computePercentageShares(
+                    expense.shares,
+                    expense.total,
+                    expense.payerId,
                 );
-                const remainder =
-                    expense.total - amounts.reduce((a, b) => a + b, 0);
-                const payerInShares = expense.shares.some(
-                    (s) => s.memberId === expense.payerId,
-                );
-                let remainderAssigned = payerInShares;
-
-                for (let i = 0; i < expense.shares.length; i++) {
-                    const share = expense.shares[i];
-
-                    if (share.memberId === expense.payerId) continue;
-
-                    const memberAmount = !remainderAssigned
-                        ? amounts[i] + remainder
-                        : amounts[i];
-
-                    remainderAssigned = true;
-                    addDebt(share.memberId, expense.payerId, memberAmount);
+                for (const [memberId, amount] of computed) {
+                    if (memberId === expense.payerId) continue;
+                    addDebt(memberId, expense.payerId, amount);
                 }
                 break;
             }
