@@ -1,6 +1,7 @@
 import { BPS_TOTAL } from "../common";
 import type { Group } from "../group";
 import type { DirectDebt } from "./balance.schema";
+import { computeEqualShares } from "./compute-shares";
 
 export function computeDirectDebts(group: Group): DirectDebt[] {
     const debts = new Map<string, number>();
@@ -17,23 +18,14 @@ export function computeDirectDebts(group: Group): DirectDebt[] {
     for (const expense of group.expenses) {
         switch (expense.splitMode) {
             case "equal": {
-                const membersAmount = expense.memberIds.length;
-                const share = Math.floor(expense.total / membersAmount);
-                const remainder = expense.total - share * membersAmount;
-                const payerIsParticipant = expense.memberIds.includes(
+                const shares = computeEqualShares(
+                    expense.memberIds,
+                    expense.total,
                     expense.payerId,
                 );
-                let remainderAssigned = payerIsParticipant;
-
-                for (const memberId of expense.memberIds) {
+                for (const [memberId, share] of shares) {
                     if (memberId === expense.payerId) continue;
-
-                    const memberShare = !remainderAssigned
-                        ? share + remainder
-                        : share;
-
-                    remainderAssigned = true;
-                    addDebt(memberId, expense.payerId, memberShare);
+                    addDebt(memberId, expense.payerId, share);
                 }
                 break;
             }

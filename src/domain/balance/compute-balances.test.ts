@@ -638,7 +638,7 @@ describe("computeBalances", () => {
         });
 
         describe("equal split", () => {
-            test("remainder goes to payer even with duplicate memberIds", () => {
+            test("duplicate memberIds are collapsed by Map — remainder absorbed by payer", () => {
                 const balances = computeBalances({
                     ...baseGroup,
                     expenses: [
@@ -648,7 +648,9 @@ describe("computeBalances", () => {
                             total: 3,
                             payerId: 1,
                             splitMode: "equal",
-                            // Invalid data by design: duplicates — remainder still goes to payer.
+                            // Invalid data by design: duplicates are collapsed by
+                            // computeEqualShares Map, so only 1 share is computed
+                            // instead of 2. Payment (+3) minus share (-2) = +1.
                             memberIds: [1, 1],
                             createdAt: 1000000,
                         },
@@ -656,7 +658,7 @@ describe("computeBalances", () => {
                 });
 
                 const member1 = balances.find((b) => b.memberId === 1);
-                expect(member1?.amount).toBe(0);
+                expect(member1?.amount).toBe(1);
             });
         });
 

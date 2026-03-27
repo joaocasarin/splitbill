@@ -4,6 +4,7 @@ import type { Expense } from "../expense";
 import type { Group } from "../group";
 import type { Settlement } from "../settlement";
 import type { MemberBalance } from "./balance.schema";
+import { computeEqualShares } from "./compute-shares";
 
 function initializeBalances(memberIds: EntityId[]): Map<EntityId, number> {
     const balances = new Map<EntityId, number>();
@@ -35,24 +36,9 @@ function applyEqualSplit(
     total: number,
     payerId: EntityId,
 ): void {
-    const participantCount = memberIds.length;
-    const baseShare = Math.floor(total / participantCount);
-    let remainderLeft = total - baseShare * participantCount;
-
-    for (const memberId of memberIds) {
-        updateBalance(balances, memberId, -baseShare);
-    }
-
-    if (remainderLeft > 0 && memberIds.includes(payerId)) {
-        updateBalance(balances, payerId, -1);
-        remainderLeft--;
-    }
-
-    for (const memberId of memberIds) {
-        if (remainderLeft === 0) break;
-        if (memberId === payerId) continue;
-        updateBalance(balances, memberId, -1);
-        remainderLeft--;
+    const shares = computeEqualShares(memberIds, total, payerId);
+    for (const [memberId, share] of shares) {
+        updateBalance(balances, memberId, -share);
     }
 }
 
