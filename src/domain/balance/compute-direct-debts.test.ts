@@ -290,6 +290,70 @@ describe("computeDirectDebts", () => {
             );
         });
 
+        test("cross-path settlement creates reverse credit", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 200,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 200 }],
+                        createdAt: 1000000,
+                    },
+                ],
+                settlements: [
+                    {
+                        id: 1,
+                        fromMemberId: 3,
+                        toMemberId: 1,
+                        amount: 100,
+                        createdAt: 1000000,
+                    },
+                ],
+            });
+
+            expect(debts).toEqual(
+                expect.arrayContaining([
+                    { fromMemberId: 2, toMemberId: 1, amount: 200 },
+                    { fromMemberId: 1, toMemberId: 3, amount: 100 },
+                ]),
+            );
+            expect(debts).toHaveLength(2);
+        });
+
+        test("overpayment on direct path creates reverse credit", () => {
+            const debts = computeDirectDebts({
+                ...baseGroup,
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 200,
+                        payerId: 1,
+                        splitMode: "fixed",
+                        shares: [{ memberId: 2, value: 200 }],
+                        createdAt: 1000000,
+                    },
+                ],
+                settlements: [
+                    {
+                        id: 1,
+                        fromMemberId: 2,
+                        toMemberId: 1,
+                        amount: 250,
+                        createdAt: 1000000,
+                    },
+                ],
+            });
+
+            expect(debts).toEqual([
+                { fromMemberId: 1, toMemberId: 2, amount: 50 },
+            ]);
+        });
+
         test("settlement that fully pays debt removes it from result", () => {
             const debts = computeDirectDebts({
                 ...baseGroup,
