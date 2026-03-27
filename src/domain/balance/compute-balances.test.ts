@@ -245,7 +245,7 @@ describe("computeBalances", () => {
             );
         });
 
-        test("rounding remainder absorbed by payer when payer is in shares", () => {
+        test("payer absorbs the first rounding remainder cent, then non-payers in order", () => {
             const balances = computeBalances({
                 ...baseGroup,
                 expenses: [
@@ -270,6 +270,97 @@ describe("computeBalances", () => {
                     { memberId: 1, amount: 66 },
                     { memberId: 2, amount: -33 },
                     { memberId: 3, amount: -33 },
+                ]),
+            );
+        });
+
+        test("distributes positive remainder > 1: payer absorbs first cent, non-payers absorb the rest in order", () => {
+            const group = {
+                ...baseGroup,
+                members: [
+                    { id: 1, name: "Alice", createdAt: 1000000 },
+                    { id: 2, name: "Bob", createdAt: 1000000 },
+                    { id: 3, name: "Carol", createdAt: 1000000 },
+                    { id: 4, name: "Dave", createdAt: 1000000 },
+                    { id: 5, name: "Eve", createdAt: 1000000 },
+                ],
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 100,
+                        payerId: 1,
+                        splitMode: "percentage" as const,
+                        // round(20.49)=20 (×4), round(18.04)=18 → sum=98, remainder=+2
+                        shares: [
+                            { memberId: 1, value: 2049 },
+                            { memberId: 2, value: 2049 },
+                            { memberId: 3, value: 2049 },
+                            { memberId: 4, value: 2049 },
+                            { memberId: 5, value: 1804 },
+                        ],
+                        createdAt: 1000000,
+                    },
+                ],
+            };
+
+            const balances = computeBalances(group);
+
+            // payer(1) absorbs 1 → +79; member2 absorbs 1 → -21; rest unchanged
+            expect(balances).toEqual(
+                expect.arrayContaining([
+                    { memberId: 1, amount: 79 },
+                    { memberId: 2, amount: -21 },
+                    { memberId: 3, amount: -20 },
+                    { memberId: 4, amount: -20 },
+                    { memberId: 5, amount: -18 },
+                ]),
+            );
+        });
+
+        test("distributes negative remainder: payer absorbs first cent back, non-payers absorb the rest in order", () => {
+            const group = {
+                ...baseGroup,
+                members: [
+                    { id: 1, name: "Alice", createdAt: 1000000 },
+                    { id: 2, name: "Bob", createdAt: 1000000 },
+                    { id: 3, name: "Carol", createdAt: 1000000 },
+                    { id: 4, name: "Dave", createdAt: 1000000 },
+                    { id: 5, name: "Eve", createdAt: 1000000 },
+                    { id: 6, name: "Frank", createdAt: 1000000 },
+                ],
+                expenses: [
+                    {
+                        id: 1,
+                        title: "Dinner",
+                        total: 100,
+                        payerId: 1,
+                        splitMode: "percentage" as const,
+                        // round(16.67)=17 (×4), round(16.66)=17 (×2) → sum=102, remainder=-2
+                        shares: [
+                            { memberId: 1, value: 1667 },
+                            { memberId: 2, value: 1667 },
+                            { memberId: 3, value: 1667 },
+                            { memberId: 4, value: 1667 },
+                            { memberId: 5, value: 1666 },
+                            { memberId: 6, value: 1666 },
+                        ],
+                        createdAt: 1000000,
+                    },
+                ],
+            };
+
+            const balances = computeBalances(group);
+
+            // payer(1) gets +1 back → +84; member2 gets +1 back → -16; rest unchanged
+            expect(balances).toEqual(
+                expect.arrayContaining([
+                    { memberId: 1, amount: 84 },
+                    { memberId: 2, amount: -16 },
+                    { memberId: 3, amount: -17 },
+                    { memberId: 4, amount: -17 },
+                    { memberId: 5, amount: -17 },
+                    { memberId: 6, amount: -17 },
                 ]),
             );
         });

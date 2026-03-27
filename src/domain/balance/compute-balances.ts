@@ -84,12 +84,20 @@ function applyPercentageSplit(
     }
 
     if (remainder !== 0) {
-        const remainderTarget = computedShares.some(
-            (s) => s.memberId === payerId,
-        )
-            ? payerId
-            : computedShares[0].memberId;
-        updateBalance(balances, remainderTarget, -remainder);
+        const step = remainder > 0 ? -1 : 1;
+        let left = Math.abs(remainder);
+
+        if (computedShares.some((s) => s.memberId === payerId)) {
+            updateBalance(balances, payerId, step);
+            left--;
+        }
+
+        for (const share of computedShares) {
+            if (left === 0) break;
+            if (share.memberId === payerId) continue;
+            updateBalance(balances, share.memberId, step);
+            left--;
+        }
     }
 }
 
