@@ -8,12 +8,17 @@ import {
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
 import {
+    GROUP_MEMBERS_MAX,
     GROUP_MEMBERS_MIN,
     GROUP_NAME_MAX,
     GROUP_NAME_MIN,
+    USER_NAME_MAX,
+    USER_NAME_MIN,
 } from "@domain/common";
 import { useAppStore } from "@store";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
+
+type MemberRow = { id: number; name: string };
 
 type Props = {
     open: boolean;
@@ -21,40 +26,56 @@ type Props = {
 };
 
 export function AddGroupModal({ open, onClose }: Props) {
-    const { global, addGroup } = useAppStore();
-    const users = global.users;
+    const { addGroupWithMembers } = useAppStore();
 
-    const [name, setName] = useState("");
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-    const checkboxBaseId = useId();
+    const [groupName, setGroupName] = useState("");
+    const [memberRows, setMemberRows] = useState<MemberRow[]>([
+        { id: 1, name: "" },
+        { id: 2, name: "" },
+    ]);
+    const nextIdRef = useRef(3);
+    const nameInputId = useId();
+    const memberBaseId = useId();
 
+    const trimmedName = groupName.trim();
     const isNameValid =
-        name.trim().length >= GROUP_NAME_MIN &&
-        name.trim().length <= GROUP_NAME_MAX;
-    const hasSufficientMembers = selectedIds.size >= GROUP_MEMBERS_MIN;
-    const canCreate = isNameValid && hasSufficientMembers;
+        trimmedName.length >= GROUP_NAME_MIN &&
+        trimmedName.length <= GROUP_NAME_MAX;
+    const validMembers = memberRows
+        .map((r) => r.name.trim())
+        .filter((n) => n.length >= USER_NAME_MIN && n.length <= USER_NAME_MAX);
+    const canCreate = isNameValid && validMembers.length >= GROUP_MEMBERS_MIN;
 
-    function toggleMember(id: number) {
-        setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
+    function updateMemberName(id: number, value: string) {
+        setMemberRows((prev) =>
+            prev.map((r) => (r.id === id ? { ...r, name: value } : r)),
+        );
+    }
+
+    function addMemberRow() {
+        const id = nextIdRef.current;
+        nextIdRef.current += 1;
+        setMemberRows((prev) => [...prev, { id, name: "" }]);
+    }
+
+    function removeMemberRow(id: number) {
+        setMemberRows((prev) => prev.filter((r) => r.id !== id));
     }
 
     function handleCreate() {
-        addGroup(name.trim(), Array.from(selectedIds));
+        if (!canCreate) return;
+        addGroupWithMembers(trimmedName, validMembers);
         reset();
         onClose();
     }
 
     function reset() {
-        setName("");
-        setSelectedIds(new Set());
+        setGroupName("");
+        setMemberRows([
+            { id: 1, name: "" },
+            { id: 2, name: "" },
+        ]);
+        nextIdRef.current = 3;
     }
 
     function handleOpenChange(next: boolean) {
@@ -71,65 +92,94 @@ export function AddGroupModal({ open, onClose }: Props) {
                     <DialogTitle>Create group</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 py-2">
-                    <div className="flex flex-col gap-1.5">
-                        <label
-                            htmlFor={`${checkboxBaseId}-name`}
-                            className="text-sm font-medium"
-                        >
-                            Name
-                        </label>
-                        <Input
-                            id={`${checkboxBaseId}-name`}
-                            placeholder="e.g. Trip to Lisbon"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            autoFocus
-                        />
-                    </div>
+                <form
+                    data-testid="add-group-form"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleCreate();
+                    }}
+                >
+                    <div className="flex flex-col gap-4 py-2">
+                        <div className="flex flex-col gap-1.5">
+                            <label
+                                htmlFor={nameInputId}
+                                className="text-sm font-medium"
+                            >
+                                Name
+                            </label>
+                            <Input
+                                id={nameInputId}
+                                placeholder="e.g. Trip to Lisbon"
+                                value={groupName}
+                                onChange={(e) => setGroupName(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-sm font-medium">Members</span>
-                        <ul className="flex flex-col gap-1">
-                            {users.map((user) => (
-                                <li key={user.id}>
-                                    <label
-                                        htmlFor={`${checkboxBaseId}-member-${user.id}`}
-                                        className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-sm font-medium">Members</span>
+                            <ul className="flex flex-col gap-1.5">
+                                {memberRows.map((row, idx) => (
+                                    <li
+                                        key={row.id}
+                                        className="flex items-center gap-2"
                                     >
-                                        <input
-                                            id={`${checkboxBaseId}-member-${user.id}`}
-                                            type="checkbox"
-                                            checked={selectedIds.has(user.id)}
-                                            onChange={() =>
-                                                toggleMember(user.id)
+                                        <Input
+                                            id={`${memberBaseId}-${row.id}`}
+                                            placeholder={`Member ${idx + 1}`}
+                                            value={row.name}
+                                            onChange={(e) =>
+                                                updateMemberName(
+                                                    row.id,
+                                                    e.target.value,
+                                                )
                                             }
-                                            className="cursor-pointer rounded border-border accent-primary"
                                         />
-                                        {user.name}
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
+                                        {memberRows.length >
+                                            GROUP_MEMBERS_MIN && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                type="button"
+                                                onClick={() =>
+                                                    removeMemberRow(row.id)
+                                                }
+                                                aria-label={`Remove member ${idx + 1}`}
+                                            >
+                                                ×
+                                            </Button>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                disabled={
+                                    memberRows.length >= GROUP_MEMBERS_MAX
+                                }
+                                onClick={addMemberRow}
+                            >
+                                Add member
+                            </Button>
+                        </div>
                     </div>
-                </div>
 
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenChange(false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        size="sm"
-                        disabled={!canCreate}
-                        onClick={handleCreate}
-                    >
-                        Create
-                    </Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            onClick={() => handleOpenChange(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="submit" size="sm" disabled={!canCreate}>
+                            Create
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

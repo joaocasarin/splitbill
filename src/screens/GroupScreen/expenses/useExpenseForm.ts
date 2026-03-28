@@ -5,7 +5,7 @@ import {
     buildFixedExpense,
     buildPercentageExpense,
 } from "@domain/expense";
-import type { User } from "@domain/user";
+import type { Member } from "@domain/member";
 import { useAppStore } from "@store";
 import { useState } from "react";
 import { computeCanSubmit } from "./computeCanSubmit";
@@ -18,16 +18,17 @@ export function useExpenseForm(
 ) {
     const { global, addExpense, updateExpense } = useAppStore();
     const group = global.groups.find((g) => g.id === groupId);
-    const members: User[] = group
-        ? group.memberIds.map(
-              (id) =>
-                  global.users.find((u) => u.id === id) ?? {
-                      id,
-                      name: `User ${id}`,
-                      createdAt: 0,
-                  },
-          )
-        : [];
+    const members: Member[] = group?.members.filter((m) => !m.deletedAt) ?? [];
+
+    const deletedIds = new Set(
+        (group?.members ?? []).filter((m) => m.deletedAt).map((m) => m.id),
+    );
+    const isReadOnly =
+        expense !== undefined &&
+        (deletedIds.has(expense.payerId) ||
+            (expense.splitMode === "equal"
+                ? expense.memberIds.some((id) => deletedIds.has(id))
+                : expense.shares.some((s) => deletedIds.has(s.memberId))));
 
     const firstMemberId = members[0]?.id ?? null;
     const isEditing = expense !== undefined;
@@ -134,6 +135,7 @@ export function useExpenseForm(
     return {
         members,
         isEditing,
+        isReadOnly,
         title,
         setTitle,
         total,

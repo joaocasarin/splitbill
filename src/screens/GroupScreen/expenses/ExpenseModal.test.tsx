@@ -2,7 +2,7 @@ import type { Expense } from "@domain/expense";
 import * as expenseDomain from "@domain/expense";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ExpenseModal } from "./ExpenseModal";
@@ -113,7 +113,7 @@ vi.mock("./SplitModeToggle", () => ({
     ),
 }));
 
-const members = testUsers;
+const members = testMembers;
 
 function makeHookReturn(
     overrides: Partial<
@@ -123,6 +123,7 @@ function makeHookReturn(
     return {
         members,
         isEditing: false,
+        isReadOnly: false,
         title: "",
         setTitle: vi.fn(),
         total: 0,
@@ -438,6 +439,26 @@ describe("ExpenseModal", () => {
             renderModal(hookReturn);
             await userEvent.click(screen.getByTestId("__dialog_open__"));
             expect(hookReturn.handleOpenChange).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe("read-only mode", () => {
+        test("shows read-only banner when isReadOnly is true", () => {
+            renderModal(makeHookReturn({ isReadOnly: true, isEditing: true }));
+            expect(screen.getByText(/removed member/i)).toBeInTheDocument();
+        });
+
+        test("Save button is disabled when isReadOnly is true regardless of canSubmit", () => {
+            renderModal(
+                makeHookReturn({
+                    isReadOnly: true,
+                    isEditing: true,
+                    canSubmit: true,
+                }),
+            );
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeDisabled();
         });
     });
 

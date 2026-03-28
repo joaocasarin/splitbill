@@ -9,7 +9,10 @@ const groups: Group[] = [
         id: 1,
         name: "Trip",
         createdAt: 1000000,
-        memberIds: [1, 2],
+        members: [
+            { id: 1, name: "Alice", createdAt: 1000000 },
+            { id: 2, name: "Bob", createdAt: 1000000 },
+        ],
         expenses: [],
         settlements: [],
     },
@@ -17,7 +20,11 @@ const groups: Group[] = [
         id: 2,
         name: "Dinner",
         createdAt: 1000000,
-        memberIds: [1, 2, 3],
+        members: [
+            { id: 1, name: "Alice", createdAt: 1000000 },
+            { id: 2, name: "Bob", createdAt: 1000000 },
+            { id: 3, name: "Carol", createdAt: 1000000 },
+        ],
         expenses: [],
         settlements: [],
     },
@@ -100,6 +107,23 @@ describe("GroupsSection", () => {
             renderSection();
             expect(screen.getByText("2 members")).toBeInTheDocument();
             expect(screen.getByText("3 members")).toBeInTheDocument();
+        });
+
+        test("excludes deleted members from member count", () => {
+            const groupWithDeleted: Group = {
+                ...groups[0],
+                members: [
+                    { id: 1, name: "Alice", createdAt: 1000000 },
+                    {
+                        id: 2,
+                        name: "Bob",
+                        createdAt: 1000000,
+                        deletedAt: 2000000,
+                    },
+                ],
+            };
+            renderSection({ groups: [groupWithDeleted] });
+            expect(screen.getByText("1 members")).toBeInTheDocument();
         });
 
         test("marks active group with aria-current", () => {

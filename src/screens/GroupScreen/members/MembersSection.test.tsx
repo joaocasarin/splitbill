@@ -15,8 +15,10 @@ function renderSection(
         members: MemberRow[];
         memberCount: number;
         canAddMember: boolean;
+        isSimplifiedView: boolean;
         onAddMember: () => void;
         onRemoveMember: (id: number) => void;
+        onToggleSimplifiedView: () => void;
     }> = {},
 ) {
     return render(
@@ -24,8 +26,10 @@ function renderSection(
             members={members}
             memberCount={members.length}
             canAddMember={false}
+            isSimplifiedView={false}
             onAddMember={vi.fn()}
             onRemoveMember={vi.fn()}
+            onToggleSimplifiedView={vi.fn()}
             {...overrides}
         />,
     );
@@ -236,6 +240,38 @@ describe("MembersSection", () => {
             });
             expect(screen.queryByText(/owes/)).not.toBeInTheDocument();
             expect(screen.queryByText(/receives/)).not.toBeInTheDocument();
+        });
+    });
+
+    describe("simplified view toggle", () => {
+        test("renders Simplify button", () => {
+            renderSection();
+            expect(
+                screen.getByRole("button", { name: /toggle simplified view/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("Simplify button is not pressed when isSimplifiedView is false", () => {
+            renderSection({ isSimplifiedView: false });
+            expect(
+                screen.getByRole("button", { name: /toggle simplified view/i }),
+            ).toHaveAttribute("aria-pressed", "false");
+        });
+
+        test("Simplify button is pressed when isSimplifiedView is true", () => {
+            renderSection({ isSimplifiedView: true });
+            expect(
+                screen.getByRole("button", { name: /toggle simplified view/i }),
+            ).toHaveAttribute("aria-pressed", "true");
+        });
+
+        test("calls onToggleSimplifiedView when Simplify is clicked", async () => {
+            const onToggleSimplifiedView = vi.fn();
+            renderSection({ onToggleSimplifiedView });
+            await userEvent.click(
+                screen.getByRole("button", { name: /toggle simplified view/i }),
+            );
+            expect(onToggleSimplifiedView).toHaveBeenCalledOnce();
         });
     });
 

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { GroupScreen } from "./GroupScreen";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
@@ -10,9 +10,11 @@ vi.mock("./members/MembersSection", () => ({
     MembersSection: ({
         onAddMember,
         onRemoveMember,
+        onToggleSimplifiedView,
     }: {
         onAddMember: () => void;
         onRemoveMember: (id: number) => void;
+        onToggleSimplifiedView: () => void;
     }) => (
         <>
             <button type="button" onClick={onAddMember}>
@@ -20,6 +22,9 @@ vi.mock("./members/MembersSection", () => ({
             </button>
             <button type="button" onClick={() => onRemoveMember(1)}>
                 Remove Alice
+            </button>
+            <button type="button" onClick={onToggleSimplifiedView}>
+                Toggle simplified
             </button>
         </>
     ),
@@ -133,21 +138,23 @@ function makeHookReturn(overrides: Partial<FoundState> = {}) {
         group: {
             id: 1,
             name: "Trip",
-            memberIds: [1, 2],
+            members: [
+                { id: 1, name: "Alice", createdAt: 1000000 },
+                { id: 2, name: "Bob", createdAt: 1000000 },
+            ],
             expenses: [],
             settlements: [],
         },
-        users: testUsers,
-        members: testUsers.map((u) => ({
-            ...u,
+        members: testMembers.map((m) => ({
+            ...m,
             amount: 0,
             owes: [],
             receives: [],
         })),
         memberCount: 2,
         canAddMember: false,
-        directDebts: [],
-        editDirectDebts: [],
+        isSimplifiedView: false,
+        toggleSimplifiedView: vi.fn(),
         editingExpense: null,
         isAddMemberOpen: false,
         isAddExpenseOpen: false,
@@ -239,6 +246,17 @@ describe("GroupScreen", () => {
                 screen.getByRole("button", { name: /cancel/i }),
             );
             expect(closeAddMember).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("simplified view toggle", () => {
+        test("calls toggleSimplifiedView when toggle is clicked", async () => {
+            const toggleSimplifiedView = vi.fn();
+            renderScreen(makeHookReturn({ toggleSimplifiedView }));
+            await userEvent.click(
+                screen.getByRole("button", { name: /toggle simplified/i }),
+            );
+            expect(toggleSimplifiedView).toHaveBeenCalledOnce();
         });
     });
 

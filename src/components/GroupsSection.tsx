@@ -77,7 +77,12 @@ export function GroupsSection({
                                     </span>
 
                                     <span className="text-xs text-muted-foreground">
-                                        {group.memberIds.length} members
+                                        {
+                                            group.members.filter(
+                                                (m) => !m.deletedAt,
+                                            ).length
+                                        }{" "}
+                                        members
                                     </span>
                                 </button>
                             </li>

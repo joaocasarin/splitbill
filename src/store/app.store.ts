@@ -1,21 +1,18 @@
-import { computeBalances, computeDirectDebts } from "@domain/balance";
+import { computeBalances } from "@domain/balance";
 import {
     createIdGenerator,
     type EntityId,
-    GROUP_MEMBERS_MIN,
     SCHEMA_VERSION,
 } from "@domain/common";
 import type { CreateExpense, Expense } from "@domain/expense";
 import { type Global, GlobalSchema } from "@domain/global";
 import type { Group } from "@domain/group";
+import { type Member, validateMemberDeletion } from "@domain/member";
 import {
     type CreateSettlement,
     type Settlement,
     type ValidationResult,
-    validateSettlementCreation,
-    validateSettlementsStillValid,
 } from "@domain/settlement";
-import type { User } from "@domain/user";
 import lzstring from "lz-string";
 import { create } from "zustand";
 
@@ -31,35 +28,24 @@ type AppActions = {
     hydrateFromUrl: () => void;
     initEmpty: () => void;
     syncToUrl: () => void;
-    addUser: (name: string) => void;
-    addGroup: (name: string, memberIds: EntityId[]) => void;
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => void;
+    addGroupWithMembers: (name: string, memberNames: string[]) => void;
+    addMemberByName: (groupId: EntityId, name: string) => void;
     removeMemberFromGroup: (
         groupId: EntityId,
         userId: EntityId,
     ) => ValidationResult;
     addExpense: (groupId: EntityId, expense: CreateExpense) => void;
-    updateExpense: (groupId: EntityId, expense: Expense) => ValidationResult;
-    deleteExpense: (groupId: EntityId, expenseId: EntityId) => ValidationResult;
-    addSettlement: (
-        groupId: EntityId,
-        settlement: CreateSettlement,
-    ) => ValidationResult;
-    updateSettlement: (
-        groupId: EntityId,
-        settlement: Settlement,
-    ) => ValidationResult;
-    deleteSettlement: (
-        groupId: EntityId,
-        settlementId: EntityId,
-    ) => ValidationResult;
+    updateExpense: (groupId: EntityId, expense: Expense) => void;
+    deleteExpense: (groupId: EntityId, expenseId: EntityId) => void;
+    addSettlement: (groupId: EntityId, settlement: CreateSettlement) => void;
+    updateSettlement: (groupId: EntityId, settlement: Settlement) => void;
+    deleteSettlement: (groupId: EntityId, settlementId: EntityId) => void;
 };
 
 export type AppStore = AppState & AppActions;
 
 const emptyGlobal: Global = {
     version: SCHEMA_VERSION,
-    users: [],
     groups: [],
 };
 
@@ -111,29 +97,18 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         url.searchParams.set("state", compressedState);
         window.history.replaceState(null, "", url.toString());
     },
-    addUser: (name: string) => {
+    addGroupWithMembers: (name: string, memberNames: string[]) => {
         const { global, createId, syncToUrl } = get();
-        const newUser: User = {
-            id: createId("user"),
-            name,
+        const members: Member[] = memberNames.map((memberName) => ({
+            id: createId("member"),
+            name: memberName,
             createdAt: Date.now(),
-        };
-        set({
-            status: "loaded",
-            global: {
-                ...global,
-                users: [...global.users, newUser],
-            },
-        });
-        syncToUrl();
-    },
-    addGroup: (name: string, memberIds: EntityId[]) => {
-        const { global, createId, syncToUrl } = get();
+        }));
         const newGroup: Group = {
             id: createId("group"),
             name,
             createdAt: Date.now(),
-            memberIds,
+            members,
             expenses: [],
             settlements: [],
         };
@@ -143,15 +118,24 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
-    addMemberToGroup: (groupId: EntityId, userId: EntityId) => {
-        const { global, syncToUrl } = get();
+    addMemberByName: (groupId: EntityId, name: string) => {
+        const { global, createId, syncToUrl } = get();
+        const memberId = createId("member");
+        const newMember: Member = {
+            id: memberId,
+            name,
+            createdAt: Date.now(),
+        };
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId && !g.memberIds.includes(userId)
-                        ? { ...g, memberIds: [...g.memberIds, userId] }
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              members: [...g.members, newMember],
+                          }
                         : g,
                 ),
             },
@@ -169,23 +153,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             return { valid: false, reason: "group not found" };
         }
 
-        if (!group.memberIds.includes(userId)) {
+        const isActiveMember = group.members.some(
+            (m) => m.id === userId && !m.deletedAt,
+        );
+        if (!isActiveMember) {
             return { valid: false, reason: "member not found in group" };
         }
 
-        if (group.memberIds.length <= GROUP_MEMBERS_MIN) {
-            return {
-                valid: false,
-                reason: "group must have at least 2 members",
-            };
-        }
-
+        const activeCount = group.members.filter((m) => !m.deletedAt).length;
         const balances = computeBalances(group);
-        const memberBalance = balances.find((b) => b.memberId === userId);
+        const validation = validateMemberDeletion(
+            userId,
+            balances,
+            activeCount,
+        );
 
-        if (memberBalance && memberBalance.amount !== 0) {
-            return { valid: false, reason: "member has non-zero balance" };
-        }
+        if (!validation.valid) return validation;
 
         set({
             status: "loaded",
@@ -195,8 +178,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                     g.id === groupId
                         ? {
                               ...g,
-                              memberIds: g.memberIds.filter(
-                                  (id) => id !== userId,
+                              members: g.members.map((m) =>
+                                  m.id === userId
+                                      ? { ...m, deletedAt: Date.now() }
+                                      : m,
                               ),
                           }
                         : g,
@@ -229,106 +214,64 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
         syncToUrl();
     },
-    deleteExpense: (
-        groupId: EntityId,
-        expenseId: EntityId,
-    ): ValidationResult => {
+    deleteExpense: (groupId: EntityId, expenseId: EntityId) => {
         const { global, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
 
-        if (!group) {
-            return { valid: false, reason: "group not found" };
-        }
-
-        const groupWithoutExpense: Group = {
-            ...group,
-            expenses: group.expenses.filter((e) => e.id !== expenseId),
-        };
-
-        const directDebts = computeDirectDebts(groupWithoutExpense);
-        const settlementCheck = validateSettlementsStillValid(
-            directDebts,
-            group.settlements,
-        );
-
-        if (!settlementCheck.valid) {
-            return settlementCheck;
-        }
+        if (!group) return;
 
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId ? groupWithoutExpense : g,
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              expenses: g.expenses.filter(
+                                  (e) => e.id !== expenseId,
+                              ),
+                          }
+                        : g,
                 ),
             },
         });
         syncToUrl();
-
-        return { valid: true };
     },
-    updateExpense: (groupId: EntityId, expense: Expense): ValidationResult => {
+    updateExpense: (groupId: EntityId, expense: Expense) => {
         const { global, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
 
-        if (!group) {
-            return { valid: false, reason: "group not found" };
-        }
-
-        const groupWithUpdatedExpense: Group = {
-            ...group,
-            expenses: group.expenses.map((e) =>
-                e.id === expense.id ? { ...expense, updatedAt: Date.now() } : e,
-            ),
-        };
-
-        const directDebts = computeDirectDebts(groupWithUpdatedExpense);
-        const settlementCheck = validateSettlementsStillValid(
-            directDebts,
-            group.settlements,
-        );
-
-        if (!settlementCheck.valid) {
-            return settlementCheck;
-        }
+        if (!group) return;
 
         set({
             status: "loaded",
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
-                    g.id === groupId ? groupWithUpdatedExpense : g,
+                    g.id === groupId
+                        ? {
+                              ...g,
+                              expenses: g.expenses.map((e) =>
+                                  e.id === expense.id
+                                      ? { ...expense, updatedAt: Date.now() }
+                                      : e,
+                              ),
+                          }
+                        : g,
                 ),
             },
         });
         syncToUrl();
-
-        return { valid: true };
     },
     addSettlement: (groupId: EntityId, settlement: CreateSettlement) => {
         const { global, createId, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
 
-        if (!group) {
-            return { valid: false, reason: "group not found" };
-        }
-
-        const directDebts = computeDirectDebts(group);
-
-        const validation = validateSettlementCreation(
-            directDebts,
-            settlement.fromMemberId,
-            settlement.toMemberId,
-            settlement.amount,
-        );
-
-        if (!validation.valid) {
-            return validation;
-        }
+        if (!group) return;
 
         const newSettlement: Settlement = {
             ...settlement,
@@ -340,55 +283,25 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             status: "loaded",
             global: {
                 ...global,
-                groups: global.groups.map((group) =>
-                    group.id === groupId
+                groups: global.groups.map((g) =>
+                    g.id === groupId
                         ? {
-                              ...group,
-                              settlements: [
-                                  ...group.settlements,
-                                  newSettlement,
-                              ],
+                              ...g,
+                              settlements: [...g.settlements, newSettlement],
                           }
-                        : group,
+                        : g,
                 ),
             },
         });
 
         syncToUrl();
-
-        return { valid: true };
     },
-    updateSettlement: (
-        groupId: EntityId,
-        settlement: Settlement,
-    ): ValidationResult => {
+    updateSettlement: (groupId: EntityId, settlement: Settlement) => {
         const { global, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
 
-        if (!group) {
-            return { valid: false, reason: "group not found" };
-        }
-
-        const groupWithoutSettlement: Group = {
-            ...group,
-            settlements: group.settlements.filter(
-                (s) => s.id !== settlement.id,
-            ),
-        };
-
-        const directDebts = computeDirectDebts(groupWithoutSettlement);
-
-        const validation = validateSettlementCreation(
-            directDebts,
-            settlement.fromMemberId,
-            settlement.toMemberId,
-            settlement.amount,
-        );
-
-        if (!validation.valid) {
-            return validation;
-        }
+        if (!group) return;
 
         set({
             status: "loaded",
@@ -413,20 +326,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         });
 
         syncToUrl();
-
-        return { valid: true };
     },
-    deleteSettlement: (
-        groupId: EntityId,
-        settlementId: EntityId,
-    ): ValidationResult => {
+    deleteSettlement: (groupId: EntityId, settlementId: EntityId) => {
         const { global, syncToUrl } = get();
 
         const group = global.groups.find((g) => g.id === groupId);
 
-        if (!group) {
-            return { valid: false, reason: "group not found" };
-        }
+        if (!group) return;
 
         set({
             status: "loaded",
@@ -445,7 +351,5 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             },
         });
         syncToUrl();
-
-        return { valid: true };
     },
 }));

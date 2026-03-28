@@ -2,14 +2,13 @@ import { ConfirmDeleteDialog } from "@components/ConfirmDeleteDialog";
 import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import type { Expense } from "@domain/expense";
-import type { User } from "@domain/user";
 import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
     expenses: Expense[];
-    users: User[];
+    members: { id: EntityId; name: string }[];
     onAddExpense: () => void;
     onEditExpense: (expense: Expense) => void;
     onDeleteExpense: (expenseId: EntityId) => void;
@@ -17,7 +16,7 @@ type Props = {
 
 export function ExpensesSection({
     expenses,
-    users,
+    members,
     onAddExpense,
     onEditExpense,
     onDeleteExpense,
@@ -58,7 +57,7 @@ export function ExpensesSection({
                         )
                         .map((expense) => {
                             const payerName =
-                                users.find((u) => u.id === expense.payerId)
+                                members.find((m) => m.id === expense.payerId)
                                     ?.name ?? `User ${expense.payerId}`;
                             return (
                                 <li

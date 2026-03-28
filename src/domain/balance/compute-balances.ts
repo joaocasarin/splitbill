@@ -1,9 +1,9 @@
 import type { EntityId } from "../common";
-import { BPS_TOTAL } from "../common";
 import type { Expense } from "../expense";
 import type { Group } from "../group";
 import type { Settlement } from "../settlement";
 import type { MemberBalance } from "./balance.schema";
+import { computeEqualShares, computePercentageShares } from "./compute-shares";
 
 function initializeBalances(memberIds: EntityId[]): Map<EntityId, number> {
     const balances = new Map<EntityId, number>();
@@ -35,19 +35,9 @@ function applyEqualSplit(
     total: number,
     payerId: EntityId,
 ): void {
-    const participantCount = memberIds.length;
-    const baseShare = Math.floor(total / participantCount);
-    const remainder = total - baseShare * participantCount;
-
-    for (const memberId of memberIds) {
-        updateBalance(balances, memberId, -baseShare);
-    }
-
-    if (remainder !== 0) {
-        const remainderTarget = memberIds.includes(payerId)
-            ? payerId
-            : memberIds[0];
-        updateBalance(balances, remainderTarget, -remainder);
+    const shares = computeEqualShares(memberIds, total, payerId);
+    for (const [memberId, share] of shares) {
+        updateBalance(balances, memberId, -share);
     }
 }
 
@@ -66,25 +56,9 @@ function applyPercentageSplit(
     total: number,
     payerId: EntityId,
 ): void {
-    const computedShares = shares.map((share) => ({
-        memberId: share.memberId,
-        value: Math.round((total * share.value) / BPS_TOTAL),
-    }));
-
-    const computedSum = computedShares.reduce((acc, s) => acc + s.value, 0);
-    const remainder = total - computedSum;
-
-    for (const { memberId, value } of computedShares) {
-        updateBalance(balances, memberId, -value);
-    }
-
-    if (remainder !== 0) {
-        const remainderTarget = computedShares.some(
-            (s) => s.memberId === payerId,
-        )
-            ? payerId
-            : computedShares[0].memberId;
-        updateBalance(balances, remainderTarget, -remainder);
+    const computed = computePercentageShares(shares, total, payerId);
+    for (const [memberId, amount] of computed) {
+        updateBalance(balances, memberId, -amount);
     }
 }
 
@@ -133,13 +107,14 @@ function balancesToArray(balances: Map<EntityId, number>): MemberBalance[] {
  * Computes the net balance of each member in a group.
  *
  * Remainder cents (equal split) and rounding remainders (percentage split)
- * are absorbed by the payer when the payer is a participant, otherwise by the
- * first participant in the list — this ensures symmetric expenses cancel out.
+ * are distributed one cent at a time: the payer absorbs the first cent (when
+ * a participant), then each subsequent cent goes to the next non-payer in
+ * order — this ensures symmetric expenses cancel out.
  *
  * Invariant: sum of all returned amounts === 0.
  */
 export function computeBalances(group: Group): MemberBalance[] {
-    const balances = initializeBalances(group.memberIds);
+    const balances = initializeBalances(group.members.map((m) => m.id));
 
     for (const expense of group.expenses) {
         applyExpense(balances, expense);

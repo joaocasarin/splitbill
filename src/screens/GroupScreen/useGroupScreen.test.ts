@@ -1,9 +1,9 @@
 import type { DirectDebt } from "@domain/balance";
 import * as balanceDomain from "@domain/balance";
+import { GROUP_MEMBERS_MAX } from "@domain/common";
 import { useAppStore } from "@store";
 import { act, renderHook } from "@testing-library/react";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
-import { defaultEqualExpense } from "@tests/mocks";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { UseGroupScreenReturn } from "./useGroupScreen";
@@ -34,12 +34,13 @@ describe("useGroupScreen", () => {
             expect(result.current.group?.name).toBe("Trip");
         });
 
-        test("returns users from store", () => {
-            const group = setupGroupWithTwoMembers();
+        test("returns empty members when group has no inline members", () => {
+            useAppStore.getState().addGroupWithMembers("Trip", []);
+            const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
-            expect(result.current).toHaveProperty("users");
             const state = result.current as FoundState;
-            expect(state.users).toHaveLength(2);
+            expect(state.members).toEqual([]);
+            expect(state.memberCount).toBe(0);
         });
 
         test("returns computed members with name and balance", () => {
@@ -52,26 +53,71 @@ describe("useGroupScreen", () => {
             ]);
         });
 
-        test("returns memberCount matching group memberIds length", () => {
+        test("returns memberCount equal to active member count", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.memberCount).toBe(2);
         });
 
-        test("canAddMember is false when all users are members", () => {
+        test("excludes deleted members from members list", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.members).toHaveLength(2);
+            expect(
+                state.members.find((m) => m.name === "Carol"),
+            ).toBeUndefined();
+        });
+
+        test("memberCount counts only active members", () => {
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
+            const group = useAppStore.getState().global.groups[0];
+            useAppStore.getState().removeMemberFromGroup(group.id, 3);
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.memberCount).toBe(2);
+        });
+
+        test("canAddMember is true when below GROUP_MEMBERS_MAX", () => {
             const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            const state = result.current as FoundState;
+            expect(state.canAddMember).toBe(true);
+        });
+
+        test("canAddMember is false when at GROUP_MEMBERS_MAX", () => {
+            useAppStore.getState().addGroupWithMembers(
+                "Trip",
+                Array.from(
+                    { length: GROUP_MEMBERS_MAX },
+                    (_, i) => `Member${i + 1}`,
+                ),
+            );
+            const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.canAddMember).toBe(false);
         });
 
-        test("canAddMember is true when non-members exist", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2]);
+        test("canAddMember counts only active members", () => {
+            useAppStore.getState().addGroupWithMembers(
+                "Trip",
+                Array.from(
+                    { length: GROUP_MEMBERS_MAX },
+                    (_, i) => `Member${i + 1}`,
+                ),
+            );
             const group = useAppStore.getState().global.groups[0];
+            useAppStore
+                .getState()
+                .removeMemberFromGroup(group.id, GROUP_MEMBERS_MAX);
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
             expect(state.canAddMember).toBe(true);
@@ -260,75 +306,61 @@ describe("useGroupScreen", () => {
         });
     });
 
-    describe("directDebts", () => {
-        test("returns empty array when group has no expenses", () => {
+    describe("isSimplifiedView", () => {
+        test("defaults to false", () => {
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.directDebts).toEqual([]);
+            expect(state.isSimplifiedView).toBe(false);
         });
 
-        test("returns computed direct debts from group", () => {
-            const mockDebts: DirectDebt[] = [
+        test("toggleSimplifiedView sets isSimplifiedView to true", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            expect((result.current as FoundState).isSimplifiedView).toBe(true);
+        });
+
+        test("toggleSimplifiedView toggles back to false on second call", () => {
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            expect((result.current as FoundState).isSimplifiedView).toBe(false);
+        });
+
+        test("members owes come from directDebts when isSimplifiedView is false", () => {
+            const mockDirect: DirectDebt[] = [
                 { fromMemberId: 2, toMemberId: 1, amount: 5000 },
             ];
-            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValueOnce(
-                mockDebts,
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValue(
+                mockDirect,
             );
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            expect(state.directDebts).toEqual(mockDebts);
-        });
-    });
-
-    describe("editDirectDebts", () => {
-        test("equals directDebts when editingSettlement is null", () => {
-            const group = setupGroupWithTwoMembers();
-            const { result } = renderHook(() => useGroupScreen(group.id));
-            const state = result.current as FoundState;
-            expect(state.editDirectDebts).toEqual(state.directDebts);
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]).toEqual({ name: "Alice", amount: 5000 });
         });
 
-        test("excludes edited settlement from debt calculation", () => {
-            const group = setupGroupWithTwoMembers();
-            useAppStore.getState().addExpense(group.id, {
-                ...defaultEqualExpense,
-                title: "Lunch",
-                total: 2500,
-            });
-            useAppStore.getState().addSettlement(group.id, {
-                fromMemberId: 2,
-                toMemberId: 1,
-                amount: 1000,
-            });
-            const { result } = renderHook(() => useGroupScreen(group.id));
-
-            // Before editing: directDebts reflects remaining debt (1250 - 1000 = 250)
-            const stateBefore = result.current as FoundState;
-            expect(stateBefore.directDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 250 },
+        test("members owes come from simplifiedDebts when isSimplifiedView is true", () => {
+            vi.spyOn(balanceDomain, "simplifyDebts").mockReturnValue([
+                { fromMemberId: 1, toMemberId: 2, amount: 3000 },
             ]);
-            expect(stateBefore.editDirectDebts).toEqual(
-                stateBefore.directDebts,
-            );
-
-            // Open edit on the settlement
-            const settlement =
-                useAppStore.getState().global.groups[0].settlements[0];
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
             act(() => {
-                (result.current as FoundState).openEditSettlement(settlement);
+                (result.current as FoundState).toggleSimplifiedView();
             });
-
-            // After editing: editDirectDebts excludes the settlement (full debt = 1250)
-            const stateAfter = result.current as FoundState;
-            expect(stateAfter.editDirectDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 1250 },
-            ]);
-            // directDebts is still the same (includes the settlement)
-            expect(stateAfter.directDebts).toEqual([
-                { fromMemberId: 2, toMemberId: 1, amount: 250 },
-            ]);
+            const state = result.current as FoundState;
+            const aliceRow = state.members.find((m) => m.name === "Alice");
+            expect(aliceRow?.owes[0]).toEqual({ name: "Bob", amount: 3000 });
         });
     });
 
@@ -401,32 +433,52 @@ describe("useGroupScreen", () => {
 
     describe("removeMember", () => {
         test("removes member from group via store", () => {
-            useAppStore.getState().addUser("Alice");
-            useAppStore.getState().addUser("Bob");
-            useAppStore.getState().addUser("Carol");
-            useAppStore.getState().addGroup("Trip", [1, 2, 3]);
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob", "Carol"]);
             const group = useAppStore.getState().global.groups[0];
             const { result } = renderHook(() => useGroupScreen(group.id));
             act(() => {
                 (result.current as FoundState).removeMember(1);
             });
             const updatedGroup = useAppStore.getState().global.groups[0];
-            expect(updatedGroup.memberIds).not.toContain(1);
+            const removed = updatedGroup.members.find((m) => m.id === 1);
+            expect(removed).toBeDefined();
+            expect(removed?.deletedAt).toBeDefined();
         });
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
-        test("falls back to User {id} name when member has no matching user", () => {
+        test("falls back to 'User {id}' in direct debt display when member is unknown", () => {
+            const mockDebts: DirectDebt[] = [
+                { fromMemberId: 2, toMemberId: 999, amount: 5000 },
+            ];
+            vi.spyOn(balanceDomain, "computeDirectDebts").mockReturnValue(
+                mockDebts,
+            );
             const group = setupGroupWithTwoMembers();
-            useAppStore.getState().addMemberToGroup(group.id, 999);
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;
-            const member999 = state.members.find((m) => m.id === 999);
-            expect(member999?.name).toBe("User 999");
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]?.name).toBe("User 999");
+        });
+
+        test("falls back to 'User {id}' in simplified debt display when member is unknown", () => {
+            vi.spyOn(balanceDomain, "simplifyDebts").mockReturnValue([
+                { fromMemberId: 2, toMemberId: 999, amount: 5000 },
+            ]);
+            const group = setupGroupWithTwoMembers();
+            const { result } = renderHook(() => useGroupScreen(group.id));
+            act(() => {
+                (result.current as FoundState).toggleSimplifiedView();
+            });
+            const state = result.current as FoundState;
+            const bobRow = state.members.find((m) => m.name === "Bob");
+            expect(bobRow?.owes[0]?.name).toBe("User 999");
         });
 
         test("falls back to amount 0 when computeBalances has no entry for member", () => {
-            vi.spyOn(balanceDomain, "computeBalances").mockReturnValueOnce([]);
+            vi.spyOn(balanceDomain, "computeBalances").mockReturnValue([]);
             const group = setupGroupWithTwoMembers();
             const { result } = renderHook(() => useGroupScreen(group.id));
             const state = result.current as FoundState;

@@ -1,9 +1,9 @@
 import { CurrencyInput } from "@components/CurrencyInput";
 import type { EntityId } from "@domain/common";
-import type { User } from "@domain/user";
+import type { Member } from "@domain/member";
 
 type Props = {
-    members: User[];
+    members: Member[];
     shares: Map<EntityId, number>;
     total: number;
     onShareChange: (id: EntityId, value: number) => void;

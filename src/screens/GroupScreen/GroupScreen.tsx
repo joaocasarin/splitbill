@@ -30,12 +30,11 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
     const {
         group,
-        users,
         members,
         memberCount,
         canAddMember,
-        directDebts,
-        editDirectDebts,
+        isSimplifiedView,
+        toggleSimplifiedView,
         editingExpense,
         isAddMemberOpen,
         isAddExpenseOpen,
@@ -79,13 +78,15 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 members={members}
                 memberCount={memberCount}
                 canAddMember={canAddMember}
+                isSimplifiedView={isSimplifiedView}
                 onAddMember={openAddMember}
                 onRemoveMember={removeMember}
+                onToggleSimplifiedView={toggleSimplifiedView}
             />
 
             <ExpensesSection
                 expenses={group.expenses}
-                users={users}
+                members={group.members}
                 onAddExpense={openAddExpense}
                 onEditExpense={openEditExpense}
                 onDeleteExpense={deleteExpense}
@@ -93,7 +94,7 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
 
             <SettlementsSection
                 settlements={group.settlements}
-                users={users}
+                members={group.members}
                 onAddSettlement={openAddSettlement}
                 onEditSettlement={openEditSettlement}
                 onDeleteSettlement={deleteSettlement}
@@ -124,7 +125,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
             <SettlementModal
                 open={isAddSettlementOpen}
                 members={members}
-                directDebts={directDebts}
                 onSubmit={addSettlement}
                 onClose={closeAddSettlement}
             />
@@ -133,7 +133,6 @@ export function GroupScreen({ groupId, onNavigate }: Props) {
                 <SettlementModal
                     open
                     members={members}
-                    directDebts={editDirectDebts}
                     settlement={editingSettlement}
                     onSubmit={(data) =>
                         updateSettlement({

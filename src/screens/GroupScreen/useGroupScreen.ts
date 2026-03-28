@@ -1,24 +1,25 @@
-import type { DirectDebt } from "@domain/balance";
-import { computeBalances, computeDirectDebts } from "@domain/balance";
-import type { EntityId } from "@domain/common";
+import {
+    computeBalances,
+    computeDirectDebts,
+    simplifyDebts,
+} from "@domain/balance";
+import { type EntityId, GROUP_MEMBERS_MAX } from "@domain/common";
 import type { Expense } from "@domain/expense";
 import type { Group } from "@domain/group";
 import type { CreateSettlement, Settlement } from "@domain/settlement";
-import type { User } from "@domain/user";
 import { useAppStore } from "@store";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { MemberRow } from "./members/MembersSection";
 
 type GroupNotFound = { group: null };
 
 type GroupFound = {
     group: Group;
-    users: User[];
     members: MemberRow[];
     memberCount: number;
     canAddMember: boolean;
-    directDebts: DirectDebt[];
-    editDirectDebts: DirectDebt[];
+    isSimplifiedView: boolean;
+    toggleSimplifiedView: () => void;
     isAddMemberOpen: boolean;
     editingExpense: Expense | null;
     isAddExpenseOpen: boolean;
@@ -52,67 +53,105 @@ export function useGroupScreen(groupId: EntityId): UseGroupScreenReturn {
         deleteExpense: storeDeleteExpense,
         deleteSettlement: storeDeleteSettlement,
     } = useAppStore();
+
     const group = global.groups.find((g) => g.id === groupId);
-    const users = global.users;
+
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [isAddSettlementOpen, setIsAddSettlementOpen] = useState(false);
     const [editingSettlement, setEditingSettlement] =
         useState<Settlement | null>(null);
+    const [isSimplifiedView, setIsSimplifiedView] = useState(false);
+
+    const balances = useMemo(
+        () => (group ? computeBalances(group) : []),
+        [group],
+    );
+    const directDebts = useMemo(
+        () => (group ? computeDirectDebts(group) : []),
+        [group],
+    );
+    const simplifiedDebts = useMemo(() => simplifyDebts(balances), [balances]);
+
+    const membersWithDirectDebts = useMemo<MemberRow[]>(() => {
+        if (!group) return [];
+        const getMemberName = (id: EntityId) =>
+            group.members.find((m) => m.id === id)?.name ?? `User ${id}`;
+        return group.members
+            .filter((m) => !m.deletedAt)
+            .map((member) => {
+                const balance = balances.find((b) => b.memberId === member.id);
+                const owes = directDebts
+                    .filter((d) => d.fromMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.toMemberId),
+                        amount: d.amount,
+                    }));
+                const receives = directDebts
+                    .filter((d) => d.toMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.fromMemberId),
+                        amount: d.amount,
+                    }));
+                return {
+                    id: member.id,
+                    name: member.name,
+                    amount: balance?.amount ?? 0,
+                    owes,
+                    receives,
+                };
+            });
+    }, [group, balances, directDebts]);
+
+    const membersWithSimplifiedDebts = useMemo<MemberRow[]>(() => {
+        if (!group) return [];
+        const getMemberName = (id: EntityId) =>
+            group.members.find((m) => m.id === id)?.name ?? `User ${id}`;
+        return group.members
+            .filter((m) => !m.deletedAt)
+            .map((member) => {
+                const balance = balances.find((b) => b.memberId === member.id);
+                const owes = simplifiedDebts
+                    .filter((d) => d.fromMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.toMemberId),
+                        amount: d.amount,
+                    }));
+                const receives = simplifiedDebts
+                    .filter((d) => d.toMemberId === member.id)
+                    .map((d) => ({
+                        name: getMemberName(d.fromMemberId),
+                        amount: d.amount,
+                    }));
+                return {
+                    id: member.id,
+                    name: member.name,
+                    amount: balance?.amount ?? 0,
+                    owes,
+                    receives,
+                };
+            });
+    }, [group, balances, simplifiedDebts]);
 
     if (!group) {
         return { group: null };
     }
 
-    const balances = computeBalances(group);
-    const directDebts = computeDirectDebts(group);
+    const members = isSimplifiedView
+        ? membersWithSimplifiedDebts
+        : membersWithDirectDebts;
 
-    const getUserName = (id: EntityId) =>
-        users.find((u) => u.id === id)?.name ?? `User ${id}`;
-
-    const members: MemberRow[] = group.memberIds.map((id) => {
-        const balance = balances.find((b) => b.memberId === id);
-        const owes = directDebts
-            .filter((d) => d.fromMemberId === id)
-            .map((d) => ({
-                name: getUserName(d.toMemberId),
-                amount: d.amount,
-            }));
-        const receives = directDebts
-            .filter((d) => d.toMemberId === id)
-            .map((d) => ({
-                name: getUserName(d.fromMemberId),
-                amount: d.amount,
-            }));
-        return {
-            id,
-            name: getUserName(id),
-            amount: balance?.amount ?? 0,
-            owes,
-            receives,
-        };
-    });
-
-    const nonMembers = users.filter((u) => !group.memberIds.includes(u.id));
-    const canAddMember = nonMembers.length > 0;
-    const editDirectDebts = editingSettlement
-        ? computeDirectDebts({
-              ...group,
-              settlements: group.settlements.filter(
-                  (s) => s.id !== editingSettlement.id,
-              ),
-          })
-        : directDebts;
+    const activeCount = group.members.filter((m) => !m.deletedAt).length;
+    const canAddMember = activeCount < GROUP_MEMBERS_MAX;
 
     return {
         group,
-        users,
         members,
-        memberCount: group.memberIds.length,
+        memberCount: activeCount,
         canAddMember,
-        directDebts,
-        editDirectDebts,
+        isSimplifiedView,
+        toggleSimplifiedView: () => setIsSimplifiedView((v) => !v),
         isAddMemberOpen,
         editingExpense,
         isAddExpenseOpen,

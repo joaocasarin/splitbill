@@ -2,7 +2,7 @@ import type { AppView } from "@app";
 import type { Group } from "@domain/group";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupGroupWithTwoMembers, setupTwoUsers } from "@tests/helpers";
+import { setupGroupWithTwoMembers } from "@tests/helpers";
 import { setupStoreOnly } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
@@ -13,23 +13,6 @@ let capturedGroupsProps: {
     canCreateGroup: boolean;
     onClose?: () => void;
 } | null = null;
-
-vi.mock("@components/UsersSection", () => ({
-    UsersSection: ({
-        users,
-        onAddUser,
-    }: {
-        users: unknown[];
-        onAddUser: () => void;
-    }) => (
-        <div data-testid="users-section">
-            <span data-testid="users-count">{(users as unknown[]).length}</span>
-            <button type="button" onClick={onAddUser}>
-                mock-add-user
-            </button>
-        </div>
-    ),
-}));
 
 vi.mock("@components/GroupsSection", () => ({
     GroupsSection: ({
@@ -80,34 +63,6 @@ beforeEach(() => {
 });
 
 describe("Sidebar", () => {
-    describe("users section", () => {
-        test("renders UsersSection with users from store", () => {
-            setupGroupWithTwoMembers();
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByTestId("users-section")).toBeInTheDocument();
-            expect(screen.getByTestId("users-count")).toHaveTextContent("2");
-        });
-
-        test("opens AddUsersModal when UsersSection triggers onAddUser", async () => {
-            render(<Sidebar {...defaultProps} />);
-            await userEvent.click(
-                screen.getByRole("button", { name: /mock-add-user/i }),
-            );
-            expect(screen.getByRole("dialog")).toBeInTheDocument();
-        });
-
-        test("closes AddUsersModal when cancel is clicked", async () => {
-            render(<Sidebar {...defaultProps} />);
-            await userEvent.click(
-                screen.getByRole("button", { name: /mock-add-user/i }),
-            );
-            await userEvent.click(
-                screen.getByRole("button", { name: /cancel/i }),
-            );
-            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        });
-    });
-
     describe("groups section", () => {
         test("renders GroupsSection with groups from store", () => {
             setupGroupWithTwoMembers();
@@ -116,15 +71,7 @@ describe("Sidebar", () => {
             expect(screen.getByTestId("groups-count")).toHaveTextContent("1");
         });
 
-        test("passes canCreateGroup as false when fewer than 2 users", () => {
-            render(<Sidebar {...defaultProps} />);
-            expect(screen.getByTestId("can-create-group")).toHaveTextContent(
-                "false",
-            );
-        });
-
-        test("passes canCreateGroup as true when 2 or more users exist", () => {
-            setupTwoUsers();
+        test("passes canCreateGroup as true always", () => {
             render(<Sidebar {...defaultProps} />);
             expect(screen.getByTestId("can-create-group")).toHaveTextContent(
                 "true",

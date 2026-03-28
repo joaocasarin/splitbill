@@ -2,14 +2,13 @@ import { ConfirmDeleteDialog } from "@components/ConfirmDeleteDialog";
 import { Button } from "@components/ui/button";
 import type { EntityId } from "@domain/common";
 import type { Settlement } from "@domain/settlement";
-import type { User } from "@domain/user";
 import { formatCurrency, formatTimestamp } from "@lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
     settlements: Settlement[];
-    users: User[];
+    members: { id: EntityId; name: string }[];
     onAddSettlement: () => void;
     onEditSettlement: (settlement: Settlement) => void;
     onDeleteSettlement: (settlementId: EntityId) => void;
@@ -17,7 +16,7 @@ type Props = {
 
 export function SettlementsSection({
     settlements,
-    users,
+    members,
     onAddSettlement,
     onEditSettlement,
     onDeleteSettlement,
@@ -58,12 +57,12 @@ export function SettlementsSection({
                         )
                         .map((settlement) => {
                             const fromName =
-                                users.find(
-                                    (u) => u.id === settlement.fromMemberId,
+                                members.find(
+                                    (m) => m.id === settlement.fromMemberId,
                                 )?.name ?? `User ${settlement.fromMemberId}`;
                             const toName =
-                                users.find(
-                                    (u) => u.id === settlement.toMemberId,
+                                members.find(
+                                    (m) => m.id === settlement.toMemberId,
                                 )?.name ?? `User ${settlement.toMemberId}`;
                             return (
                                 <li

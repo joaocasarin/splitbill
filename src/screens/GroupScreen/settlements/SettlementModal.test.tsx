@@ -17,13 +17,12 @@ type HookReturn = ReturnType<typeof useSettlementFormModule.useSettlementForm>;
 function makeHookReturn(overrides: Partial<HookReturn> = {}): HookReturn {
     return {
         isEditing: false,
+        isReadOnly: false,
         fromMemberId: null,
         toMemberId: null,
         amount: 0,
         setAmount: vi.fn(),
-        debtorsWithDebts: testMembers,
-        creditorsForDebtor: [],
-        maxAmount: 0,
+        membersExceptFrom: testMembers,
         canSubmit: false,
         handleFromChange: vi.fn(),
         handleToChange: vi.fn(),
@@ -49,7 +48,6 @@ function renderModal(
             <SettlementModal
                 open={true}
                 members={testMembers}
-                directDebts={[]}
                 onSubmit={vi.fn()}
                 onClose={vi.fn()}
                 settlement={props.settlement}
@@ -165,14 +163,14 @@ describe("SettlementModal", () => {
             renderModal();
             const fromSelect = screen.getByRole("combobox", { name: /from/i });
             expect(fromSelect).toBeInTheDocument();
-            expect(screen.getByText("Select debtor")).toBeInTheDocument();
+            expect(screen.getAllByText("Select member")[0]).toBeInTheDocument();
         });
 
         test("renders To select with placeholder", () => {
             renderModal();
             const toSelect = screen.getByRole("combobox", { name: /to/i });
             expect(toSelect).toBeInTheDocument();
-            expect(screen.getByText("Select creditor")).toBeInTheDocument();
+            expect(screen.getAllByText("Select member")[1]).toBeInTheDocument();
         });
 
         test("To select is disabled when fromMemberId is null", () => {
@@ -186,8 +184,14 @@ describe("SettlementModal", () => {
             renderModal(
                 makeHookReturn({
                     fromMemberId: 1,
-                    creditorsForDebtor: [
-                        { id: 2, name: "Bob", maxAmount: 5000 },
+                    membersExceptFrom: [
+                        {
+                            id: 2,
+                            name: "Bob",
+                            amount: 0,
+                            owes: [],
+                            receives: [],
+                        },
                     ],
                 }),
             );
@@ -200,36 +204,16 @@ describe("SettlementModal", () => {
                 screen.getByRole("textbox", { name: /amount/i }),
             ).toBeInTheDocument();
         });
-
-        test("does not show max amount when maxAmount is 0", () => {
-            renderModal(makeHookReturn({ maxAmount: 0 }));
-            expect(screen.queryByText(/max:/i)).not.toBeInTheDocument();
-        });
-
-        test("shows max amount when maxAmount > 0", () => {
-            renderModal(makeHookReturn({ maxAmount: 5000 }));
-            expect(screen.getByText(/max:/i)).toBeInTheDocument();
-            expect(screen.getByText(/50,00/)).toBeInTheDocument();
-        });
     });
 
     describe("From select options", () => {
-        test("renders debtor options from debtorsWithDebts", () => {
-            renderModal(
-                makeHookReturn({
-                    debtorsWithDebts: [
-                        {
-                            id: 1,
-                            name: "Alice",
-                            amount: 0,
-                            owes: [],
-                            receives: [],
-                        },
-                    ],
-                }),
-            );
+        test("renders all member options from members prop", () => {
+            renderModal(makeHookReturn({ membersExceptFrom: [] }));
             expect(
                 screen.getByRole("option", { name: "Alice" }),
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole("option", { name: "Bob" }),
             ).toBeInTheDocument();
         });
 
@@ -242,12 +226,18 @@ describe("SettlementModal", () => {
     });
 
     describe("To select options", () => {
-        test("renders creditor options from creditorsForDebtor", () => {
+        test("renders options from membersExceptFrom", () => {
             renderModal(
                 makeHookReturn({
                     fromMemberId: 1,
-                    creditorsForDebtor: [
-                        { id: 3, name: "Charlie", maxAmount: 3000 },
+                    membersExceptFrom: [
+                        {
+                            id: 3,
+                            name: "Charlie",
+                            amount: 0,
+                            owes: [],
+                            receives: [],
+                        },
                     ],
                 }),
             );
@@ -261,8 +251,14 @@ describe("SettlementModal", () => {
                 makeHookReturn({
                     fromMemberId: 1,
                     toMemberId: 2,
-                    creditorsForDebtor: [
-                        { id: 2, name: "Bob", maxAmount: 5000 },
+                    membersExceptFrom: [
+                        {
+                            id: 2,
+                            name: "Bob",
+                            amount: 0,
+                            owes: [],
+                            receives: [],
+                        },
                     ],
                 }),
             );
@@ -274,12 +270,7 @@ describe("SettlementModal", () => {
 
     describe("handler wiring", () => {
         test("From select change calls handleFromChange", async () => {
-            const hookReturn = makeHookReturn({
-                debtorsWithDebts: [
-                    { id: 1, name: "Alice", amount: 0, owes: [], receives: [] },
-                    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
-                ],
-            });
+            const hookReturn = makeHookReturn();
             renderModal(hookReturn);
             await userEvent.selectOptions(
                 screen.getByRole("combobox", { name: /from/i }),
@@ -291,9 +282,15 @@ describe("SettlementModal", () => {
         test("To select change calls handleToChange", async () => {
             const hookReturn = makeHookReturn({
                 fromMemberId: 1,
-                creditorsForDebtor: [
-                    { id: 2, name: "Bob", maxAmount: 5000 },
-                    { id: 3, name: "Charlie", maxAmount: 3000 },
+                membersExceptFrom: [
+                    { id: 2, name: "Bob", amount: 0, owes: [], receives: [] },
+                    {
+                        id: 3,
+                        name: "Charlie",
+                        amount: 0,
+                        owes: [],
+                        receives: [],
+                    },
                 ],
             });
             renderModal(hookReturn);
@@ -329,6 +326,26 @@ describe("SettlementModal", () => {
             renderModal(hookReturn);
             await userEvent.click(screen.getByTestId("__dialog_open__"));
             expect(hookReturn.handleOpenChange).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe("read-only mode", () => {
+        test("shows read-only banner when isReadOnly is true", () => {
+            renderModal(makeHookReturn({ isReadOnly: true, isEditing: true }));
+            expect(screen.getByText(/removed member/i)).toBeInTheDocument();
+        });
+
+        test("Save button is disabled when isReadOnly is true regardless of canSubmit", () => {
+            renderModal(
+                makeHookReturn({
+                    isReadOnly: true,
+                    isEditing: true,
+                    canSubmit: true,
+                }),
+            );
+            expect(
+                screen.getByRole("button", { name: /^save$/i }),
+            ).toBeDisabled();
         });
     });
 

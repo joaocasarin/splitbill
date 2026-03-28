@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { testUsers } from "@tests/mocks";
+import { testMembers } from "@tests/mocks";
 import { describe, expect, test, vi } from "vitest";
 import { EqualSplitSection } from "./EqualSplitSection";
 
-const members = testUsers;
+const members = testMembers;
 
 describe("EqualSplitSection", () => {
     describe("initial state", () => {
