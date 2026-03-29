@@ -3,6 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { AppLayout } from "./AppLayout";
 
+vi.mock("@components/AppLogo", () => ({
+    AppLogo: () => <div data-testid="app-logo" />,
+}));
+
 const defaultProps = {
     isSidebarOpen: false,
     onToggleSidebar: vi.fn(),
@@ -10,13 +14,13 @@ const defaultProps = {
 };
 
 describe("AppLayout", () => {
-    test("renders brand name", () => {
+    test("renders brand name via AppLogo", () => {
         render(
             <AppLayout {...defaultProps} sidebar={<div />}>
                 <div />
             </AppLayout>,
         );
-        expect(screen.getByText("Splitbill")).toBeInTheDocument();
+        expect(screen.getByTestId("app-logo")).toBeInTheDocument();
     });
 
     test("renders tagline", () => {
@@ -123,6 +127,51 @@ describe("AppLayout", () => {
         expect(
             screen.getByRole("link", { name: /github repository/i }),
         ).toHaveAttribute("href", "https://github.com/joaocasarin/splitbill");
+    });
+
+    describe("logo navigation", () => {
+        test("renders logo as a button when onNavigateHome is provided", () => {
+            render(
+                <AppLayout
+                    {...defaultProps}
+                    onNavigateHome={vi.fn()}
+                    sidebar={<div />}
+                >
+                    <div />
+                </AppLayout>,
+            );
+            expect(
+                screen.getByRole("button", { name: /go to home/i }),
+            ).toBeInTheDocument();
+        });
+
+        test("calls onNavigateHome when logo button is clicked", async () => {
+            const onNavigateHome = vi.fn();
+            render(
+                <AppLayout
+                    {...defaultProps}
+                    onNavigateHome={onNavigateHome}
+                    sidebar={<div />}
+                >
+                    <div />
+                </AppLayout>,
+            );
+            await userEvent.click(
+                screen.getByRole("button", { name: /go to home/i }),
+            );
+            expect(onNavigateHome).toHaveBeenCalledOnce();
+        });
+
+        test("does not render logo as a button when onNavigateHome is omitted", () => {
+            render(
+                <AppLayout {...defaultProps} sidebar={<div />}>
+                    <div />
+                </AppLayout>,
+            );
+            expect(
+                screen.queryByRole("button", { name: /go to home/i }),
+            ).not.toBeInTheDocument();
+        });
     });
 
     test("calls onCloseSidebar when backdrop is clicked", async () => {

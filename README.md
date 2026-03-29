@@ -1,8 +1,7 @@
 <div align="center">
-  <!-- TODO: Replace with your actual logo URL -->
-  <img src="https://via.placeholder.com/120/000000/FFFFFF/?text=Logo" alt="SplitBill Logo" width="120" />
+  <img src="public/favicon.svg" alt="SplitBill Logo" width="120" />
   
-  <h1>SplitBill</h1>
+  <h1>splitbill</h1>
   <p><strong>Split the bill, not the friendship.</strong></p>
   <br />
   <p>A serverless, URL-driven application for conveniently dividing group expenses.</p>
@@ -18,8 +17,7 @@
 
   <br />
 
-  <!-- TODO: Replace with your actual project screenshot URL -->
-  <img src="https://via.placeholder.com/800x400/000000/FFFFFF/?text=SplitBill+Dashboard+Preview" alt="SplitBill Dashboard Preview" width="800" style="border-radius: 8px;" />
+  <img src="docs/dashboard.png" alt="SplitBill Dashboard Preview" width="800" style="border-radius: 8px;" />
   
   <br />
 </div>

@@ -1,3 +1,4 @@
+import { AppLogo } from "@components/AppLogo";
 import { Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { siGithub } from "simple-icons";
@@ -8,6 +9,7 @@ type Props = {
     isSidebarOpen: boolean;
     onToggleSidebar: () => void;
     onCloseSidebar: () => void;
+    onNavigateHome?: () => void;
 };
 
 export function AppLayout({
@@ -15,6 +17,7 @@ export function AppLayout({
     isSidebarOpen,
     onCloseSidebar,
     onToggleSidebar,
+    onNavigateHome,
     sidebar,
 }: Props) {
     return (
@@ -34,9 +37,26 @@ export function AppLayout({
                     )}
                 </button>
 
-                <span className="font-semibold text-base tracking-tight">
-                    Splitbill
-                </span>
+                {onNavigateHome ? (
+                    <button
+                        type="button"
+                        aria-label="Go to home"
+                        onClick={onNavigateHome}
+                        className="cursor-pointer rounded-md hover:opacity-80 transition-opacity"
+                    >
+                        <AppLogo
+                            background="none"
+                            foreground="primary"
+                            label="splitbill"
+                        />
+                    </button>
+                ) : (
+                    <AppLogo
+                        background="none"
+                        foreground="primary"
+                        label="splitbill"
+                    />
+                )}
 
                 <span className="text-primary-foreground/60 text-sm hidden md:block">
                     Split the bill, not the friendship.
