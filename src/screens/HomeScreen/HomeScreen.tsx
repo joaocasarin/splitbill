@@ -11,7 +11,11 @@ export function HomeScreen({ onNavigate: _onNavigate }: Props) {
     const { status } = useAppStore();
 
     if (status === "empty") {
-        return <ImportDropZone />;
+        return (
+            <div className="flex h-full flex-col justify-center min-h-80">
+                <ImportDropZone />
+            </div>
+        );
     }
 
     return (

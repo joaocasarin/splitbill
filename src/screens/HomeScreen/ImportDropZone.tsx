@@ -29,7 +29,7 @@ export function ImportDropZone() {
                 type="button"
                 aria-label="Import JSON file"
                 data-dragging={isDragging}
-                className={`mx-8 my-20 flex h-48 cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors ${
+                className={`mx-8 flex h-48 cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors ${
                     isDragging
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50 hover:bg-muted/40"
