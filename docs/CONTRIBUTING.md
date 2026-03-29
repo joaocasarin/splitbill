@@ -38,11 +38,13 @@ SplitBill is built to be simple to use, yet scalable inside the browser. If you 
 - Use a browser-compatible library (such as [tesseract.js](https://tesseract.projectnaptha.com/)) to visually parse the receipt.
 - Automatically identify total values or even participants without ever saving the physical image to a backend server (keeping the URL clean). The image stays safely embedded entirely inside the user's browser runtime.
 
-### 3. Data Export & Import (Backups)
+### 3. Data Export & Import (Backups) ✅ Partially Implemented
+
 - Although the URL mechanism works great, users may reach an arbitrary character limit or simply want to back up their data.
-- **JSON / CSV Export**: Allow users to download a historical backup of their state in purely structured formats.
-- **State Hydration**: Provide an upload form input that reads the `.json` or `.csv` file and securely restores the state to the UI.
-- **PDF Export**: Generate a clean, readable PDF report of total aggregate group expenses.
+- ✅ **JSON Export**: Download a full state snapshot as a dated `.json` file via the **Export JSON** button in the sidebar (`ExportSection`).
+- ✅ **JSON Import**: Restore state from a `.json` file via the drag-and-drop / file-picker zone on the home screen (`ImportDropZone`). Import is only permitted when the store is empty (no groups). The snapshot is validated against the current schema version before being applied.
+- [ ] **CSV Export**: Download a per-group expense summary in CSV format.
+- [ ] **PDF Export**: Generate a clean, readable PDF report of total aggregate group expenses.
 
 ### 4. Additional Enhancements
 - **Copy Share Link**: A dedicated button in the UI with a visual success effect to instantly copy the current URL to the clipboard.

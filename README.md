@@ -56,11 +56,12 @@ The user interface is designed to be minimal and responsive:
 - [x] Free-form settlements — any member, any amount, no debt constraint required ([#48](https://github.com/joaocasarin/splitbill/pull/48))
 - [x] Debt simplification — greedy algorithm to minimize settlement transactions, with a toggle to switch views per member card ([#50](https://github.com/joaocasarin/splitbill/pull/50))
 - [x] Soft delete for members — stamp `deletedAt` on removal; deleted members hidden from active UI, historical records preserved in read-only mode ([#51](https://github.com/joaocasarin/splitbill/pull/51))
+- [x] JSON export & import — export full state to a dated `.json` file; import from a clean (empty) state via drag-and-drop or file picker, with schema validation and version guard ([#55](https://github.com/joaocasarin/splitbill/pull/55))
 
 ### Upcoming
 - [ ] Multi-currency support with live exchange rate snapshots
 - [ ] Receipt scanning (OCR, fully client-side)
-- [ ] Data export & import (JSON, CSV, PDF)
+- [ ] Data export & import (CSV, PDF)
 - [ ] Backend integration (v2) — cross-device sync and authentication
 
 ## Documentation Reference
