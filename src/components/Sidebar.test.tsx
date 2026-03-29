@@ -14,6 +14,8 @@ let capturedGroupsProps: {
     onClose?: () => void;
 } | null = null;
 
+let capturedHasGroups: boolean | null = null;
+
 vi.mock("@components/GroupsSection", () => ({
     GroupsSection: ({
         groups,
@@ -51,6 +53,23 @@ vi.mock("@components/GroupsSection", () => ({
     },
 }));
 
+vi.mock("@components/DataTransferControls", () => ({
+    DataTransferControls: ({
+        hasGroups,
+        onExport,
+    }: {
+        hasGroups: boolean;
+        onExport: () => void;
+    }) => {
+        capturedHasGroups = hasGroups;
+        return hasGroups ? (
+            <button type="button" onClick={onExport}>
+                mock-export
+            </button>
+        ) : null;
+    },
+}));
+
 const defaultProps = {
     view: { screen: "home" as const },
     onNavigate: vi.fn(),
@@ -60,6 +79,9 @@ beforeEach(() => {
     setupStoreOnly();
     vi.clearAllMocks();
     capturedGroupsProps = null;
+    capturedHasGroups = null;
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test-url");
+    vi.spyOn(URL, "revokeObjectURL").mockReturnValue(undefined);
 });
 
 describe("Sidebar", () => {
@@ -115,6 +137,30 @@ describe("Sidebar", () => {
                 screen: "group",
                 groupId: 1,
             });
+        });
+    });
+
+    describe("data transfer controls", () => {
+        test("passes hasGroups=false when store is empty", () => {
+            render(<Sidebar {...defaultProps} />);
+            expect(capturedHasGroups).toBe(false);
+        });
+
+        test("passes hasGroups=true when store has groups", () => {
+            setupGroupWithTwoMembers();
+            render(<Sidebar {...defaultProps} />);
+            expect(capturedHasGroups).toBe(true);
+        });
+
+        test("export creates a blob URL and triggers download", async () => {
+            setupGroupWithTwoMembers();
+            render(<Sidebar {...defaultProps} />);
+            await userEvent.click(
+                screen.getByRole("button", { name: /mock-export/i }),
+            );
+            expect(URL.createObjectURL).toHaveBeenCalledOnce();
+            expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+            expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test-url");
         });
     });
 });

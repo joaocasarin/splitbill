@@ -2,6 +2,7 @@ import type { AppView } from "@app";
 import { AddGroupModal } from "@screens/HomeScreen/AddGroupModal";
 import { useAppStore } from "@store";
 import { useState } from "react";
+import { DataTransferControls } from "./DataTransferControls";
 import { GroupsSection } from "./GroupsSection";
 
 type Props = {
@@ -16,6 +17,17 @@ export function Sidebar({ onNavigate, view, onClose }: Props) {
 
     const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
 
+    function handleExport() {
+        const json = JSON.stringify(global, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `splitbill-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
     return (
         <>
             <div className="flex flex-col gap-6 p-4">
@@ -26,6 +38,11 @@ export function Sidebar({ onNavigate, view, onClose }: Props) {
                     onAddGroup={() => setIsAddGroupOpen(true)}
                     onNavigate={onNavigate}
                     onClose={onClose}
+                />
+
+                <DataTransferControls
+                    hasGroups={groups.length > 0}
+                    onExport={handleExport}
                 />
             </div>
 
