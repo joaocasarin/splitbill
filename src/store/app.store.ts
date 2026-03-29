@@ -5,7 +5,7 @@ import {
     SCHEMA_VERSION,
 } from "@domain/common";
 import type { CreateExpense, Expense } from "@domain/expense";
-import { type Global, GlobalSchema } from "@domain/global";
+import { type Global, parseGlobal } from "@domain/global";
 import type { Group } from "@domain/group";
 import { type Member, validateMemberDeletion } from "@domain/member";
 import {
@@ -71,11 +71,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             }
 
             const parsed = JSON.parse(decompressedState);
-            const result = GlobalSchema.parse(parsed);
+            const result = parseGlobal(parsed);
+
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+
             set({
                 status: "loaded",
-                global: result,
-                createId: createIdGenerator(result),
+                global: result.data,
+                createId: createIdGenerator(result.data),
             });
         } catch {
             set({ status: "error" });

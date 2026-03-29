@@ -3,7 +3,11 @@ import { GROUP_MEMBERS_MIN, SCHEMA_VERSION } from "@domain/common";
 import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
-import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
+import {
+    defaultEqualExpense,
+    invalidGlobalEncoded,
+    validGlobalEncoded,
+} from "@tests/mocks";
 import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -68,6 +72,15 @@ describe("AppStore", () => {
             );
             Object.defineProperty(window, "location", {
                 value: { search: `?state=${invalidGlobal}` },
+                writable: true,
+            });
+
+            useAppStore.getState().hydrateFromUrl();
+            expect(useAppStore.getState().status).toBe("error");
+        });
+        test("sets status to error when decompressed state fails schema validation", () => {
+            Object.defineProperty(window, "location", {
+                value: { search: `?state=${invalidGlobalEncoded}` },
                 writable: true,
             });
 
