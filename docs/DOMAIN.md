@@ -57,5 +57,16 @@ Both `computeBalances` and `computeDirectDebts` share the same low-level share-c
 
 Both `DirectDebt[]` and `SimplifiedDebt[]` arrays are memoized on the `Group` object in `useGroupScreen` — they are recomputed only when an expense or settlement action mutates the group, never on UI interactions such as toggling the simplified view.
 
+### 6. Global
+- The root container for the entire application state, defined in `src/domain/global/`.
+- `GlobalSchema` wraps a `version` integer and a `groups` array. A `superRefine` check enforces that all group IDs are unique within the snapshot.
+- `parseGlobal(raw: unknown): ParseGlobalResult` — a pure utility function that calls `GlobalSchema.safeParse` and returns a discriminated union:
+  - `{ success: true; data: Global }` on a valid snapshot
+  - `{ success: false; error: string }` on any validation failure
+- Callers are responsible for their own pre-processing before calling `parseGlobal`:
+  - `hydrateFromUrl` decompresses the LZ-string and runs `JSON.parse` first.
+  - `importGlobal` (store action) runs `JSON.parse` and a version check before delegating to `parseGlobal`.
+  - Future importers (CSV, XML) would build the object themselves and then pass it to `parseGlobal`.
+
 ## Validation Strategy
 Using Zod allows us to share types across the application statically and validate them at runtime dynamically. The integration of `.refine` and `.superRefine` ensures that complex cross-field validations (like verifying that the sum of percentages equals exactly 100%) are caught early before they mutate the application state.

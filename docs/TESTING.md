@@ -11,8 +11,8 @@ Reliability is crucial for SplitBill, especially regarding its complex expense d
 
 ## What We Test
 1. **State & Core Logic**: The primary focus of our tests lies in ensuring that actions correctly mutate the global Zustand state, and that the URL hydration/decompression pipeline perfectly recovers the application payload.
-2. **Domain Operations**: While we define strict domain rules using Zod in our `.schema.ts` files, the raw schemas themselves are currently excluded from unit coverage (`vitest.config.ts`) in favor of testing the store and application methods that ultimately utilize them.
+2. **Domain Operations**: While we define strict domain rules using Zod in our `.schema.ts` files, the raw schemas themselves are currently excluded from unit coverage (`vitest.config.ts`) in favor of testing the store and application methods that ultimately utilize them. Pure domain utilities such as `parseGlobal` (`src/domain/global/parse-global.test.ts`) are tested directly where their logic warrants it.
 3. **Component Interaction**: Key components are tested to confirm they render correctly in the simulated Happy-DOM environment and respond properly to user interactions (clicks, inputs, edge cases).
 
 ## How to Extend
-When contributing new features or domains (like the upcoming Debt Simplification feature), ensure you create corresponding `.test.ts` or `.test.tsx` files alongside your new code blocks. This localized testing structure helps maintain context and organization.
+When contributing new features or domains, ensure you create corresponding `.test.ts` or `.test.tsx` files alongside your new code blocks. This localized testing structure helps maintain context and organization.
