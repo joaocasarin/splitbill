@@ -10,9 +10,29 @@ beforeEach(() => {
 });
 
 describe("App", () => {
-    test("renders Splitbill heading", () => {
+    test("renders splitbill heading", () => {
         render(<App />);
-        expect(screen.getByText("Splitbill")).toBeInTheDocument();
+        expect(screen.getByText("splitbill")).toBeInTheDocument();
+    });
+
+    test("navigates to home screen when logo is clicked from group view", async () => {
+        setupGroupWithTwoMembers();
+        render(<App />);
+
+        await userEvent.click(screen.getByRole("button", { name: /trip/i }));
+        expect(
+            screen.getByRole("heading", { name: "Trip" }),
+        ).toBeInTheDocument();
+
+        await userEvent.click(
+            screen.getByRole("button", { name: /go to home/i }),
+        );
+        expect(
+            screen.queryByRole("heading", { name: "Trip" }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByText(/select a group from the sidebar/i),
+        ).toBeInTheDocument();
     });
 
     test("renders error screen on error status", () => {

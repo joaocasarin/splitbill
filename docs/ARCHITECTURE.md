@@ -13,6 +13,7 @@ SplitBill embraces a purely serverless, front-end-only architecture. By persisti
 
 ## Screens and Components
 
+- **AppLogo**: Reusable SVG logo component (`src/components/AppLogo.tsx`). Accepts `size` (number, default 32), `background` (`"primary" | "secondary" | "none"`), `foreground` (`"primary" | "secondary" | "none"`), and an optional `label` string. When `label` is provided, the SVG and text are wrapped in a flex container; the text inherits color from its parent and uses `font-semibold text-base tracking-tight`. Used in the `AppLayout` header with `label="splitbill"`; can be reused anywhere a scaled or recoloured logo is needed. The same shape is served as a static `public/favicon.svg` for the browser tab icon.
 - **HomeScreen**: Shown when `view === "home"`. Renders `ImportDropZone` when the store is empty (no groups), or a prompt to select a group from the sidebar when groups exist.
 - **GroupScreen**: The main interaction area for a specific group — expenses, members, settlements.
 - **ErrorScreen**: Rendered when the store status is `"error"` (invalid or incompatible URL state). Displays a message and a **Back to home** button to recover.

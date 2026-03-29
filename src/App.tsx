@@ -29,6 +29,7 @@ export function App() {
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
             onCloseSidebar={() => setIsSidebarOpen(false)}
+            onNavigateHome={() => setView({ screen: "home" })}
             sidebar={
                 <Sidebar
                     view={view}
