@@ -40,6 +40,7 @@ type AppActions = {
     addSettlement: (groupId: EntityId, settlement: CreateSettlement) => void;
     updateSettlement: (groupId: EntityId, settlement: Settlement) => void;
     deleteSettlement: (groupId: EntityId, settlementId: EntityId) => void;
+    importGlobal: (raw: string) => void;
 };
 
 export type AppStore = AppState & AppActions;
@@ -356,5 +357,36 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             },
         });
         syncToUrl();
+    },
+    importGlobal: (raw) => {
+        const { global } = get();
+
+        if (global.groups.length !== 0) {
+            set({ status: "error" });
+            return;
+        }
+
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            set({ status: "error" });
+            return;
+        }
+
+        const result = parseGlobal(parsed);
+        if (!result.success) {
+            set({ status: "error" });
+            return;
+        }
+
+        if (result.data.version !== SCHEMA_VERSION) {
+            set({ status: "error" });
+            return;
+        }
+
+        const nextId = createIdGenerator(result.data);
+        set({ status: "loaded", global: result.data, createId: nextId });
+        get().syncToUrl();
     },
 }));
