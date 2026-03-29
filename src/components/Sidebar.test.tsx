@@ -53,8 +53,8 @@ vi.mock("@components/GroupsSection", () => ({
     },
 }));
 
-vi.mock("@components/DataTransferControls", () => ({
-    DataTransferControls: ({
+vi.mock("@components/ExportSection", () => ({
+    ExportSection: ({
         hasGroups,
         onExport,
     }: {

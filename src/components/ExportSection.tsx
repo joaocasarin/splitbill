@@ -6,7 +6,7 @@ type Props = {
     onExport: () => void;
 };
 
-export function DataTransferControls({ hasGroups, onExport }: Props) {
+export function ExportSection({ hasGroups, onExport }: Props) {
     if (!hasGroups) return null;
 
     return (

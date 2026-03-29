@@ -2,7 +2,7 @@ import type { AppView } from "@app";
 import { AddGroupModal } from "@screens/HomeScreen/AddGroupModal";
 import { useAppStore } from "@store";
 import { useState } from "react";
-import { DataTransferControls } from "./DataTransferControls";
+import { ExportSection } from "./ExportSection";
 import { GroupsSection } from "./GroupsSection";
 
 type Props = {
@@ -40,7 +40,7 @@ export function Sidebar({ onNavigate, view, onClose }: Props) {
                     onClose={onClose}
                 />
 
-                <DataTransferControls
+                <ExportSection
                     hasGroups={groups.length > 0}
                     onExport={handleExport}
                 />
