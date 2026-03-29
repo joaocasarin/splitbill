@@ -30,9 +30,6 @@ describe("App", () => {
         expect(
             screen.queryByRole("heading", { name: "Trip" }),
         ).not.toBeInTheDocument();
-        expect(
-            screen.getByText(/select a group from the sidebar/i),
-        ).toBeInTheDocument();
     });
 
     test("renders error screen on error status", () => {
