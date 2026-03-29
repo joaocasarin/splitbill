@@ -15,3 +15,7 @@ export const validGlobal: Global = {
 export const validGlobalEncoded = lzstring.compressToEncodedURIComponent(
     JSON.stringify(validGlobal),
 );
+
+export const invalidGlobalEncoded = lzstring.compressToEncodedURIComponent(
+    JSON.stringify({ version: -1 }),
+);

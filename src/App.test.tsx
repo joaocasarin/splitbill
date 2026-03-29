@@ -43,10 +43,10 @@ describe("App", () => {
         ).toBeInTheDocument();
     });
 
-    test("renders home screen on initial load", () => {
+    test("renders import drop zone on initial load with empty state", () => {
         render(<App />);
         expect(
-            screen.getByText(/select a group from the sidebar to get started/i),
+            screen.getByText(/drop a splitbill json file here/i),
         ).toBeInTheDocument();
     });
 

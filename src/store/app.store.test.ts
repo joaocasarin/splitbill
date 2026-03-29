@@ -3,7 +3,13 @@ import { GROUP_MEMBERS_MIN, SCHEMA_VERSION } from "@domain/common";
 import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
-import { defaultEqualExpense, validGlobalEncoded } from "@tests/mocks";
+import {
+    baseGroup,
+    defaultEqualExpense,
+    invalidGlobalEncoded,
+    validGlobal,
+    validGlobalEncoded,
+} from "@tests/mocks";
 import { setupStoreAndWindow } from "@tests/setup";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -68,6 +74,15 @@ describe("AppStore", () => {
             );
             Object.defineProperty(window, "location", {
                 value: { search: `?state=${invalidGlobal}` },
+                writable: true,
+            });
+
+            useAppStore.getState().hydrateFromUrl();
+            expect(useAppStore.getState().status).toBe("error");
+        });
+        test("sets status to error when decompressed state fails schema validation", () => {
+            Object.defineProperty(window, "location", {
+                value: { search: `?state=${invalidGlobalEncoded}` },
                 writable: true,
             });
 
@@ -832,6 +847,51 @@ describe("AppStore", () => {
                     group.members.find((m) => m.id === 3)?.deletedAt,
                 ).toBeDefined();
             });
+        });
+    });
+
+    describe("importGlobal", () => {
+        test("sets status to loaded and replaces global when valid JSON and empty state", () => {
+            const raw = JSON.stringify({
+                ...validGlobal,
+                groups: [baseGroup],
+            });
+            useAppStore.getState().importGlobal(raw);
+            expect(useAppStore.getState().status).toBe("loaded");
+            expect(useAppStore.getState().global.groups).toHaveLength(1);
+        });
+
+        test("syncs to URL on success", () => {
+            useAppStore.getState().importGlobal(JSON.stringify(validGlobal));
+            expect(window.history.replaceState).toHaveBeenCalled();
+        });
+
+        test("sets status to error when state is not empty", () => {
+            setupGroupWithTwoMembers();
+            useAppStore.getState().importGlobal(JSON.stringify(validGlobal));
+            expect(useAppStore.getState().status).toBe("error");
+        });
+
+        test("sets status to error when JSON is malformed", () => {
+            useAppStore.getState().importGlobal("not valid json {");
+            expect(useAppStore.getState().status).toBe("error");
+        });
+
+        test("sets status to error when schema is invalid", () => {
+            useAppStore
+                .getState()
+                .importGlobal(JSON.stringify({ version: SCHEMA_VERSION }));
+            expect(useAppStore.getState().status).toBe("error");
+        });
+
+        test("sets status to error when version does not match", () => {
+            useAppStore.getState().importGlobal(
+                JSON.stringify({
+                    ...validGlobal,
+                    version: SCHEMA_VERSION + 1,
+                }),
+            );
+            expect(useAppStore.getState().status).toBe("error");
         });
     });
 });
