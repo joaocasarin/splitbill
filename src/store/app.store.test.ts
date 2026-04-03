@@ -96,7 +96,9 @@ describe("AppStore", () => {
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).not.toBeNull();
+            expect(useAppStore.getState().error).toBe(
+                "version: Too small: expected number to be >0\ngroups: Invalid input: expected array, received undefined",
+            );
         });
         test("initializes createId counters from loaded state", () => {
             Object.defineProperty(window, "location", {
@@ -935,7 +937,9 @@ describe("AppStore", () => {
                 .getState()
                 .importGlobal(JSON.stringify({ version: SCHEMA_VERSION }));
             expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).not.toBeNull();
+            expect(useAppStore.getState().error).toBe(
+                "groups: Invalid input: expected array, received undefined",
+            );
         });
 
         test("sets status to error when version does not match", () => {
