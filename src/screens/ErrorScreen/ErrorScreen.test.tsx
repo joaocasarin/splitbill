@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ErrorScreen } from "./ErrorScreen";
 
 const mockInitEmpty = vi.fn();
+let mockError: string | null = null;
 
 vi.mock("@store", () => ({
-    useAppStore: () => ({ initEmpty: mockInitEmpty }),
+    useAppStore: () => ({ error: mockError, initEmpty: mockInitEmpty }),
 }));
 
 vi.mock("@components/ui/button", () => ({
@@ -25,14 +26,38 @@ vi.mock("@components/ui/button", () => ({
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockError = null;
 });
 
 describe("ErrorScreen", () => {
     describe("initial state", () => {
-        test("renders error message", () => {
+        test("renders the error message from the store", () => {
+            mockError =
+                "Failed to load state from URL: the data is invalid or corrupted";
             render(<ErrorScreen />);
             expect(
-                screen.getByText(/invalid or corrupted state/i),
+                screen.getByText(
+                    "Failed to load state from URL: the data is invalid or corrupted",
+                ),
+            ).toBeInTheDocument();
+        });
+
+        test("renders all lines when error contains multiple messages", () => {
+            mockError =
+                "Group 'braddock' (createdAt): Invalid input\nGroup 'braddock' (members.0.createdAt): Invalid input";
+            render(<ErrorScreen />);
+            expect(
+                screen.getByText(/Group 'braddock' \(createdAt\)/),
+            ).toBeInTheDocument();
+            expect(
+                screen.getByText(/Group 'braddock' \(members\.0\.createdAt\)/),
+            ).toBeInTheDocument();
+        });
+
+        test("renders fallback message when error is null", () => {
+            render(<ErrorScreen />);
+            expect(
+                screen.getByText("An unknown error occurred."),
             ).toBeInTheDocument();
         });
 

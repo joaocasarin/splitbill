@@ -20,6 +20,7 @@ type AppStatus = "empty" | "loaded" | "error";
 
 type AppState = {
     status: AppStatus;
+    error: string | null;
     global: Global;
     createId: ReturnType<typeof createIdGenerator>;
 };
@@ -52,6 +53,7 @@ const emptyGlobal: Global = {
 
 export const useAppStore = create<AppStore>()((set, get) => ({
     status: "empty",
+    error: null,
     global: emptyGlobal,
     createId: createIdGenerator(emptyGlobal),
     hydrateFromUrl: () => {
@@ -59,37 +61,49 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const raw = params.get("state");
 
         if (!raw) {
-            set({ status: "empty" });
+            set({ status: "empty", error: null });
             return;
         }
 
-        try {
-            const decompressedState =
-                lzstring.decompressFromEncodedURIComponent(raw);
+        const decompressedState =
+            lzstring.decompressFromEncodedURIComponent(raw);
 
-            if (!decompressedState) {
-                throw new Error("decompression failed");
-            }
-
-            const parsed = JSON.parse(decompressedState);
-            const result = parseGlobal(parsed);
-
-            if (!result.success) {
-                throw new Error(result.error);
-            }
-
+        if (!decompressedState) {
             set({
-                status: "loaded",
-                global: result.data,
-                createId: createIdGenerator(result.data),
+                status: "error",
+                error: "Failed to load state from URL: decompression failed",
             });
-        } catch {
-            set({ status: "error" });
+            return;
         }
+
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(decompressedState);
+        } catch {
+            set({
+                status: "error",
+                error: "Failed to load state from URL: invalid JSON",
+            });
+            return;
+        }
+
+        const result = parseGlobal(parsed);
+        if (!result.success) {
+            set({ status: "error", error: result.error });
+            return;
+        }
+
+        set({
+            status: "loaded",
+            error: null,
+            global: result.data,
+            createId: createIdGenerator(result.data),
+        });
     },
     initEmpty: () => {
         set({
             status: "empty",
+            error: null,
             global: emptyGlobal,
             createId: createIdGenerator(emptyGlobal),
         });
@@ -120,6 +134,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
         set({
             status: "loaded",
+            error: null,
             global: { ...global, groups: [...global.groups, newGroup] },
         });
         syncToUrl();
@@ -134,6 +149,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -178,6 +194,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -206,6 +223,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         } as Expense;
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((group) =>
@@ -229,6 +247,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -254,6 +273,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -287,6 +307,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -311,6 +332,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -342,6 +364,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
         set({
             status: "loaded",
+            error: null,
             global: {
                 ...global,
                 groups: global.groups.map((g) =>
@@ -360,33 +383,42 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     importGlobal: (raw) => {
         const { global } = get();
-
-        if (global.groups.length !== 0) {
-            set({ status: "error" });
-            return;
-        }
-
-        let parsed: unknown;
         try {
-            parsed = JSON.parse(raw);
-        } catch {
-            set({ status: "error" });
-            return;
-        }
+            if (global.groups.length !== 0) {
+                throw new Error(
+                    "Cannot import: existing groups must be cleared first",
+                );
+            }
 
-        const result = parseGlobal(parsed);
-        if (!result.success) {
-            set({ status: "error" });
-            return;
-        }
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(raw);
+            } catch {
+                throw new Error("Import failed: file contains invalid JSON");
+            }
 
-        if (result.data.version !== SCHEMA_VERSION) {
-            set({ status: "error" });
-            return;
-        }
+            const result = parseGlobal(parsed);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
 
-        const nextId = createIdGenerator(result.data);
-        set({ status: "loaded", global: result.data, createId: nextId });
-        get().syncToUrl();
+            if (result.data.version !== SCHEMA_VERSION) {
+                throw new Error("Import failed: schema version mismatch");
+            }
+
+            const nextId = createIdGenerator(result.data);
+            set({
+                status: "loaded",
+                error: null,
+                global: result.data,
+                createId: nextId,
+            });
+            get().syncToUrl();
+        } catch (err) {
+            set({
+                status: "error",
+                error: (err as Error).message,
+            });
+        }
     },
 }));

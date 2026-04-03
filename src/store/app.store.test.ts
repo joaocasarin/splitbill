@@ -11,6 +11,7 @@ import {
     validGlobalEncoded,
 } from "@tests/mocks";
 import { setupStoreAndWindow } from "@tests/setup";
+import lzstring from "lz-string";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@domain/balance", async (importOriginal) => {
@@ -49,6 +50,7 @@ describe("AppStore", () => {
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("empty");
+            expect(useAppStore.getState().error).toBeNull();
         });
         test("sets status to loaded with parsed global when valid state", () => {
             Object.defineProperty(window, "location", {
@@ -58,8 +60,9 @@ describe("AppStore", () => {
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("loaded");
+            expect(useAppStore.getState().error).toBeNull();
         });
-        test("sets status to error when state is invalid JSON", () => {
+        test("sets status to error when decompression fails", () => {
             Object.defineProperty(window, "location", {
                 value: { search: "?state=invalid" },
                 writable: true,
@@ -67,18 +70,23 @@ describe("AppStore", () => {
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("error");
-        });
-        test("sets status to error when state fails schema validation", () => {
-            const invalidGlobal = encodeURIComponent(
-                JSON.stringify({ version: -1 }),
+            expect(useAppStore.getState().error).toBe(
+                "Failed to load state from URL: decompression failed",
             );
+        });
+        test("sets status to error when decompressed state is not valid JSON", () => {
+            const notJsonEncoded =
+                lzstring.compressToEncodedURIComponent("not valid json {{{");
             Object.defineProperty(window, "location", {
-                value: { search: `?state=${invalidGlobal}` },
+                value: { search: `?state=${notJsonEncoded}` },
                 writable: true,
             });
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "Failed to load state from URL: invalid JSON",
+            );
         });
         test("sets status to error when decompressed state fails schema validation", () => {
             Object.defineProperty(window, "location", {
@@ -88,6 +96,9 @@ describe("AppStore", () => {
 
             useAppStore.getState().hydrateFromUrl();
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "version: Too small: expected number to be >0\ngroups: Invalid input: expected array, received undefined",
+            );
         });
         test("initializes createId counters from loaded state", () => {
             Object.defineProperty(window, "location", {
@@ -124,6 +135,43 @@ describe("AppStore", () => {
                 version: SCHEMA_VERSION,
                 groups: [],
             });
+        });
+        test("clears error field", () => {
+            Object.defineProperty(window, "location", {
+                value: { search: "?state=invalid" },
+                writable: true,
+            });
+            useAppStore.getState().hydrateFromUrl();
+            expect(useAppStore.getState().error).not.toBeNull();
+
+            useAppStore.getState().initEmpty();
+            expect(useAppStore.getState().error).toBeNull();
+        });
+    });
+
+    describe("error field", () => {
+        test("initial error is null", () => {
+            expect(useAppStore.getState().error).toBeNull();
+        });
+        test("error is cleared when status transitions to loaded", () => {
+            Object.defineProperty(window, "location", {
+                value: {
+                    search: "?state=invalid",
+                    href: "http://localhost/?state=invalid",
+                },
+                writable: true,
+            });
+            useAppStore.getState().hydrateFromUrl();
+            expect(useAppStore.getState().error).not.toBeNull();
+
+            Object.defineProperty(window, "location", {
+                value: { search: "", href: "http://localhost/" },
+                writable: true,
+            });
+            useAppStore
+                .getState()
+                .addGroupWithMembers("Trip", ["Alice", "Bob"]);
+            expect(useAppStore.getState().error).toBeNull();
         });
     });
 
@@ -858,6 +906,7 @@ describe("AppStore", () => {
             });
             useAppStore.getState().importGlobal(raw);
             expect(useAppStore.getState().status).toBe("loaded");
+            expect(useAppStore.getState().error).toBeNull();
             expect(useAppStore.getState().global.groups).toHaveLength(1);
         });
 
@@ -870,11 +919,17 @@ describe("AppStore", () => {
             setupGroupWithTwoMembers();
             useAppStore.getState().importGlobal(JSON.stringify(validGlobal));
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "Cannot import: existing groups must be cleared first",
+            );
         });
 
         test("sets status to error when JSON is malformed", () => {
             useAppStore.getState().importGlobal("not valid json {");
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "Import failed: file contains invalid JSON",
+            );
         });
 
         test("sets status to error when schema is invalid", () => {
@@ -882,6 +937,9 @@ describe("AppStore", () => {
                 .getState()
                 .importGlobal(JSON.stringify({ version: SCHEMA_VERSION }));
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "groups: Invalid input: expected array, received undefined",
+            );
         });
 
         test("sets status to error when version does not match", () => {
@@ -892,6 +950,9 @@ describe("AppStore", () => {
                 }),
             );
             expect(useAppStore.getState().status).toBe("error");
+            expect(useAppStore.getState().error).toBe(
+                "Import failed: schema version mismatch",
+            );
         });
     });
 });

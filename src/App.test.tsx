@@ -44,7 +44,9 @@ describe("App", () => {
         render(<App />);
 
         expect(
-            screen.getByText(/invalid or corrupted state/i),
+            screen.getByText(
+                "Failed to load state from URL: decompression failed",
+            ),
         ).toBeInTheDocument();
     });
 
