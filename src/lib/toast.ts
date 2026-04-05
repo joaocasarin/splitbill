@@ -9,7 +9,17 @@ export const errorClassNames = {
     closeButton: "!bg-red-50 !border-red-200 !text-red-600 hover:!bg-red-200",
 };
 
+export const successClassNames = {
+    toast: "!bg-green-50 !border-green-200",
+    title: "!text-green-700",
+    icon: "!text-green-600",
+    closeButton:
+        "!bg-green-50 !border-green-200 !text-green-600 hover:!bg-green-100",
+};
+
 export const showToast = {
     error: (message: string, options?: ExternalToast) =>
         toast.error(message, { classNames: errorClassNames, ...options }),
+    success: (message: string, options?: ExternalToast) =>
+        toast.success(message, { classNames: successClassNames, ...options }),
 };
