@@ -1,6 +1,7 @@
 import { computeBalances } from "@domain/balance";
 import { GROUP_MEMBERS_MIN, SCHEMA_VERSION } from "@domain/common";
 import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
+import { showToast } from "@lib/toast";
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
 import {
@@ -13,6 +14,12 @@ import {
 import { setupStoreAndWindow } from "@tests/setup";
 import lzstring from "lz-string";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+
+vi.mock("@lib/toast", () => ({
+    showToast: {
+        error: vi.fn(),
+    },
+}));
 
 vi.mock("@domain/balance", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@domain/balance")>();
@@ -915,44 +922,44 @@ describe("AppStore", () => {
             expect(window.history.replaceState).toHaveBeenCalled();
         });
 
-        test("sets status to error when state is not empty", () => {
+        test("shows error toast and keeps status when state is not empty", () => {
             setupGroupWithTwoMembers();
             useAppStore.getState().importGlobal(JSON.stringify(validGlobal));
-            expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).toBe(
+            expect(showToast.error).toHaveBeenCalledWith(
                 "Cannot import: existing groups must be cleared first",
             );
+            expect(useAppStore.getState().status).toBe("loaded");
         });
 
-        test("sets status to error when JSON is malformed", () => {
+        test("shows error toast and keeps status when JSON is malformed", () => {
             useAppStore.getState().importGlobal("not valid json {");
-            expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).toBe(
+            expect(showToast.error).toHaveBeenCalledWith(
                 "Import failed: file contains invalid JSON",
             );
+            expect(useAppStore.getState().status).toBe("empty");
         });
 
-        test("sets status to error when schema is invalid", () => {
+        test("shows error toast and keeps status when schema is invalid", () => {
             useAppStore
                 .getState()
                 .importGlobal(JSON.stringify({ version: SCHEMA_VERSION }));
-            expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).toBe(
+            expect(showToast.error).toHaveBeenCalledWith(
                 "groups: Invalid input: expected array, received undefined",
             );
+            expect(useAppStore.getState().status).toBe("empty");
         });
 
-        test("sets status to error when version does not match", () => {
+        test("shows error toast and keeps status when version does not match", () => {
             useAppStore.getState().importGlobal(
                 JSON.stringify({
                     ...validGlobal,
                     version: SCHEMA_VERSION + 1,
                 }),
             );
-            expect(useAppStore.getState().status).toBe("error");
-            expect(useAppStore.getState().error).toBe(
+            expect(showToast.error).toHaveBeenCalledWith(
                 "Import failed: schema version mismatch",
             );
+            expect(useAppStore.getState().status).toBe("empty");
         });
     });
 });

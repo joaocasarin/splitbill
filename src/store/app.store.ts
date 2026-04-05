@@ -13,6 +13,7 @@ import {
     type Settlement,
     type ValidationResult,
 } from "@domain/settlement";
+import { showToast } from "@lib/toast";
 import lzstring from "lz-string";
 import { create } from "zustand";
 
@@ -415,10 +416,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             });
             get().syncToUrl();
         } catch (err) {
-            set({
-                status: "error",
-                error: (err as Error).message,
-            });
+            showToast.error((err as Error).message);
         }
     },
 }));
