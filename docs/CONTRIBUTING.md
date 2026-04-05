@@ -7,6 +7,7 @@ The project is built with a modern, fast, and strict toolchain:
 - **Framework**: React via Vite (TypeScript)
 - **Styling**: Tailwind CSS + `shadcn/ui` (for reusable, accessible components)
 - **Icons**: `lucide-react` for standard UI icons and `simple-icons` for brand logos.
+- **Toast Notifications**: `sonner` — all user-facing feedback toasts (errors, successes) are issued via `src/lib/toast.ts`.
 - **Linting & Formatting**: Biome JS
 
 ## Local Setup

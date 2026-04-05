@@ -20,6 +20,32 @@ SplitBill embraces a purely serverless, front-end-only architecture. By persisti
 - **Sidebar**: Navigation listing all groups. Includes `ExportSection` at the bottom, which provides a JSON download button when groups exist.
 - **ImportDropZone**: A drag-and-drop / click-to-browse zone on the home screen for restoring state from a `.json` file.
 - **ExportSection**: A sidebar footer section with a **Export JSON** button; delegates the download trigger to the UI layer, keeping domain and store logic pure.
+- **Toaster** (`src/components/ui/sonner.tsx`): Thin wrapper around the `sonner` Toaster, pre-configured with design-system icons (`lucide-react`) and CSS variable–based styling tokens. Mounted once at the root of the app (`App.tsx`) with `position="top-right"` and `closeButton` enabled.
+
+## Toast Notifications
+
+All user-facing feedback is issued through `src/lib/toast.ts`, which wraps `sonner`'s `toast.error` and `toast.success` with shared design-system class names and centrally configured durations.
+
+```
+src/lib/toast.ts
+├── errorClassNames   — Tailwind classes for error toasts (red palette)
+├── successClassNames — Tailwind classes for success toasts (green palette)
+└── showToast
+    ├── .error(message, options?)   — 30 s auto-dismiss
+    └── .success(message, options?) — 10 s auto-dismiss
+```
+
+Durations and the default position are defined as named constants in `src/common/constants.ts`:
+
+| Constant | Value |
+|---|---|
+| `TOAST_POSITION` | `"top-right"` |
+| `ERROR_TOAST_DURATION_SECONDS` | `30 000 ms` |
+| `SUCCESS_TOAST_DURATION_SECONDS` | `10 000 ms` |
+
+Current call sites:
+- **`ImportDropZone`** — calls `showToast.error(...)` when the imported file contains invalid JSON or fails schema validation.
+- **`importGlobal` (store action)** — calls `showToast.success(...)` after a snapshot is successfully imported.
 
 ## URL State Synchronization
 Instead of querying a backend, the entire application state is serialized and strictly maintained within the browser's URL. This creates a seamlessly reactive experience where the application re-renders instantly upon any state mutation.

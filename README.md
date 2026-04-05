@@ -44,6 +44,7 @@ The user interface is designed to be minimal and responsive:
 - **Sidebar**: A navigation menu (accessible via a hamburger icon on mobile devices) that lists your groups and provides an option to create new ones.
 - **Header & Footer**: The header displays the project title, while the footer contains copyright information and a link to the GitHub repository.
 - **Error Screen**: A fallback UI displayed if the URL state becomes invalid or corrupted.
+- **Toast Notifications**: Contextual feedback toasts appear on key actions (e.g., successful or failed JSON import), displayed in the top-right corner and auto-dismissed after a short interval.
 
 ## Roadmap
 

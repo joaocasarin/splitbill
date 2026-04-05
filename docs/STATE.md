@@ -45,6 +45,8 @@ The Zustand store (`src/store/app.store.ts`) exposes the following actions:
 
 Returns `{ success: true }` or `{ success: false; error: string }`.
 
+On success, `importGlobal` also fires `showToast.success(...)` so the user receives a visual confirmation that the snapshot was applied. On failure the caller (e.g. `ImportDropZone`) is responsible for surfacing the error — typically via `showToast.error(...)`.
+
 ## Error State
 
 If `hydrateFromUrl` fails validation (tampered or incompatible URL), the store sets `status: "error"`. The `App` component renders `ErrorScreen` in this case, which displays a message and a **Back to home** button that calls `initEmpty()` to recover to a clean state.
