@@ -7,6 +7,7 @@ import { HomeScreen } from "@screens/HomeScreen";
 import { useAppStore } from "@store";
 import { useEffect, useState } from "react";
 import { AppLayout } from "./AppLayout";
+import { TOAST_DURATION_SECONDS, TOAST_POSITION } from "./common/constants";
 
 export type AppView =
     | { screen: "home" }
@@ -27,7 +28,10 @@ export function App() {
 
     return (
         <>
-            <Toaster />
+            <Toaster
+                position={TOAST_POSITION}
+                duration={TOAST_DURATION_SECONDS}
+            />
             <AppLayout
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
