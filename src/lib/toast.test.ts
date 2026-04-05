@@ -20,6 +20,7 @@ describe("showToast", () => {
 
             expect(toast.error).toHaveBeenCalledWith("something went wrong", {
                 classNames: errorClassNames,
+                duration: 30000,
             });
         });
 
@@ -29,6 +30,7 @@ describe("showToast", () => {
 
             expect(toast.error).toHaveBeenCalledWith("something went wrong", {
                 classNames: errorClassNames,
+                duration: 30000,
                 action,
             });
         });
@@ -46,7 +48,7 @@ describe("showToast", () => {
 
             expect(toast.success).toHaveBeenCalledWith(
                 "file imported successfully",
-                { classNames: successClassNames },
+                { classNames: successClassNames, duration: 10000 },
             );
         });
 
@@ -56,7 +58,7 @@ describe("showToast", () => {
 
             expect(toast.success).toHaveBeenCalledWith(
                 "file imported successfully",
-                { classNames: successClassNames, action },
+                { classNames: successClassNames, duration: 10000, action },
             );
         });
 
