@@ -31,6 +31,7 @@ export function App() {
             <Toaster
                 position={TOAST_POSITION}
                 duration={TOAST_DURATION_SECONDS}
+                closeButton
             />
             <AppLayout
                 isSidebarOpen={isSidebarOpen}
