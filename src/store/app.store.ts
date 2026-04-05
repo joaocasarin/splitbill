@@ -415,6 +415,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
                 createId: nextId,
             });
             get().syncToUrl();
+            showToast.success("File imported successfully");
         } catch (err) {
             showToast.error((err as Error).message);
         }

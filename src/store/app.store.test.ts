@@ -2,6 +2,7 @@ import { computeBalances } from "@domain/balance";
 import { GROUP_MEMBERS_MIN, SCHEMA_VERSION } from "@domain/common";
 import type { CreateEqualExpense, EqualExpense } from "@domain/expense";
 import { showToast } from "@lib/toast";
+
 import { useAppStore } from "@store";
 import { setupGroupWithTwoMembers } from "@tests/helpers";
 import {
@@ -18,6 +19,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("@lib/toast", () => ({
     showToast: {
         error: vi.fn(),
+        success: vi.fn(),
     },
 }));
 
@@ -915,6 +917,9 @@ describe("AppStore", () => {
             expect(useAppStore.getState().status).toBe("loaded");
             expect(useAppStore.getState().error).toBeNull();
             expect(useAppStore.getState().global.groups).toHaveLength(1);
+            expect(showToast.success).toHaveBeenCalledWith(
+                "File imported successfully",
+            );
         });
 
         test("syncs to URL on success", () => {
