@@ -202,6 +202,21 @@ describe("ImportDropZone", () => {
                 screen.queryByRole("status", { name: /loading/i }),
             ).not.toBeInTheDocument();
         });
+
+        test("resets input value after onload so same file can be re-uploaded", () => {
+            render(<ImportDropZone />);
+            const input = document.querySelector(
+                'input[type="file"]',
+            ) as HTMLInputElement;
+            const file = new File(["content"], "test.json");
+            fireEvent.change(input, { target: { files: [file] } });
+            act(() => {
+                (lastReaderInstance as MockFileReader).onload?.({
+                    target: { result: "content" },
+                });
+            });
+            expect(input.value).toBe("");
+        });
     });
 
     describe("reader error", () => {
@@ -230,6 +245,19 @@ describe("ImportDropZone", () => {
                 screen.queryByRole("status", { name: /loading/i }),
             ).not.toBeInTheDocument();
         });
+
+        test("resets input value after onerror so same file can be re-uploaded", () => {
+            render(<ImportDropZone />);
+            const input = document.querySelector(
+                'input[type="file"]',
+            ) as HTMLInputElement;
+            const file = new File(["content"], "test.json");
+            fireEvent.change(input, { target: { files: [file] } });
+            act(() => {
+                (lastReaderInstance as MockFileReader).onerror?.();
+            });
+            expect(input.value).toBe("");
+        });
     });
 
     describe("defensive guards (unreachable in valid usage)", () => {
@@ -241,6 +269,34 @@ describe("ImportDropZone", () => {
             fireEvent.change(input, { target: { files: [] } });
             expect(mockImportGlobal).not.toHaveBeenCalled();
             expect(lastReaderInstance).toBeNull();
+        });
+
+        test("onload does not throw when inputRef is null after unmount", () => {
+            const { unmount } = render(<ImportDropZone />);
+            const input = document.querySelector(
+                'input[type="file"]',
+            ) as HTMLInputElement;
+            const file = new File(["content"], "test.json");
+            fireEvent.change(input, { target: { files: [file] } });
+            unmount();
+            expect(() => {
+                (lastReaderInstance as MockFileReader).onload?.({
+                    target: { result: "content" },
+                });
+            }).not.toThrow();
+        });
+
+        test("onerror does not throw when inputRef is null after unmount", () => {
+            const { unmount } = render(<ImportDropZone />);
+            const input = document.querySelector(
+                'input[type="file"]',
+            ) as HTMLInputElement;
+            const file = new File(["content"], "test.json");
+            fireEvent.change(input, { target: { files: [file] } });
+            unmount();
+            expect(() => {
+                (lastReaderInstance as MockFileReader).onerror?.();
+            }).not.toThrow();
         });
     });
 });
