@@ -7,4 +7,5 @@ type Position =
     | "bottom-center";
 
 export const TOAST_POSITION: Position = "top-right";
-export const TOAST_DURATION_SECONDS: number = 10 * 1000;
+export const ERROR_TOAST_DURATION_SECONDS: number = 30 * 1000;
+export const SUCCESS_TOAST_DURATION_SECONDS: number = 10 * 1000;

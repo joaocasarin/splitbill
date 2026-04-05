@@ -1,3 +1,7 @@
+import {
+    ERROR_TOAST_DURATION_SECONDS,
+    SUCCESS_TOAST_DURATION_SECONDS,
+} from "@common/constants";
 import type { ExternalToast } from "sonner";
 import { toast } from "sonner";
 
@@ -19,7 +23,15 @@ export const successClassNames = {
 
 export const showToast = {
     error: (message: string, options?: ExternalToast) =>
-        toast.error(message, { classNames: errorClassNames, ...options }),
+        toast.error(message, {
+            classNames: errorClassNames,
+            duration: ERROR_TOAST_DURATION_SECONDS,
+            ...options,
+        }),
     success: (message: string, options?: ExternalToast) =>
-        toast.success(message, { classNames: successClassNames, ...options }),
+        toast.success(message, {
+            classNames: successClassNames,
+            duration: SUCCESS_TOAST_DURATION_SECONDS,
+            ...options,
+        }),
 };
