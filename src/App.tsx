@@ -1,4 +1,5 @@
 import { Sidebar } from "@components/Sidebar";
+import { Toaster } from "@components/ui/sonner";
 import type { EntityId } from "@domain/common";
 import { ErrorScreen } from "@screens/ErrorScreen";
 import { GroupScreen } from "@screens/GroupScreen";
@@ -25,23 +26,26 @@ export function App() {
     }
 
     return (
-        <AppLayout
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-            onCloseSidebar={() => setIsSidebarOpen(false)}
-            onNavigateHome={() => setView({ screen: "home" })}
-            sidebar={
-                <Sidebar
-                    view={view}
-                    onNavigate={setView}
-                    onClose={() => setIsSidebarOpen(false)}
-                />
-            }
-        >
-            {view.screen === "home" && <HomeScreen onNavigate={setView} />}
-            {view.screen === "group" && (
-                <GroupScreen groupId={view.groupId} onNavigate={setView} />
-            )}
-        </AppLayout>
+        <>
+            <Toaster />
+            <AppLayout
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+                onCloseSidebar={() => setIsSidebarOpen(false)}
+                onNavigateHome={() => setView({ screen: "home" })}
+                sidebar={
+                    <Sidebar
+                        view={view}
+                        onNavigate={setView}
+                        onClose={() => setIsSidebarOpen(false)}
+                    />
+                }
+            >
+                {view.screen === "home" && <HomeScreen onNavigate={setView} />}
+                {view.screen === "group" && (
+                    <GroupScreen groupId={view.groupId} onNavigate={setView} />
+                )}
+            </AppLayout>
+        </>
     );
 }
