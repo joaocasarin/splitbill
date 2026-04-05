@@ -3,6 +3,7 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
+            "@common/*": ["src/common/*"],
             "@components/*": ["src/components/*"],
             "@domain/*": ["src/domain/*"],
             "@hooks/*": ["src/hooks/*"],
