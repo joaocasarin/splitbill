@@ -15,10 +15,12 @@ export function ImportDropZone() {
         reader.onload = (e) => {
             importGlobal((e.target as FileReader).result as string);
             setIsLoading(false);
+            if (inputRef.current) inputRef.current.value = "";
         };
         reader.onerror = () => {
             importGlobal("");
             setIsLoading(false);
+            if (inputRef.current) inputRef.current.value = "";
         };
         reader.readAsText(file);
     }

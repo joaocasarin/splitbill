@@ -8,6 +8,7 @@ export const userConfig: UserConfig = {
     resolve: {
         alias: {
             "@app": path.resolve(__dirname, "./src/App.tsx"),
+            "@common": path.resolve(__dirname, "./src/common"),
             "@components": path.resolve(__dirname, "./src/components"),
             "@domain": path.resolve(__dirname, "./src/domain"),
             "@hooks": path.resolve(__dirname, "./src/hooks"),

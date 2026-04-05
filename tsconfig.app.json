@@ -23,16 +23,16 @@
         "erasableSyntaxOnly": true,
         "noFallthroughCasesInSwitch": true,
         "noUncheckedSideEffectImports": true,
-        "baseUrl": ".",
         "paths": {
-            "@app": ["src/App.tsx"],
-            "@components/*": ["src/components/*"],
-            "@domain/*": ["src/domain/*"],
-            "@hooks/*": ["src/hooks/*"],
-            "@lib/*": ["src/lib/*"],
-            "@screens/*": ["src/screens/*"],
-            "@store": ["src/store/index.ts"],
-            "@tests/*": ["tests/*"]
+            "@app": ["./src/App.tsx"],
+            "@common/*": ["./src/common/*"],
+            "@components/*": ["./src/components/*"],
+            "@domain/*": ["./src/domain/*"],
+            "@hooks/*": ["./src/hooks/*"],
+            "@lib/*": ["./src/lib/*"],
+            "@screens/*": ["./src/screens/*"],
+            "@store": ["./src/store/index.ts"],
+            "@tests/*": ["./tests/*"]
         }
     },
     "include": ["src", "tests"]
